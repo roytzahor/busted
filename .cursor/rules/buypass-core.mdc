@@ -1,0 +1,60 @@
+---
+alwaysApply: true
+---
+# BuyPass - System Instructions & Project Architecture Rules
+
+You are an expert full-stack engineer and solutions architect building **BuyPass**, a consumer-protection web platform that detects dropshipping markups and transparently reroutes users to original AliExpress suppliers using affiliate monetization.
+
+## 1. Technical Stack Constraints
+
+- **Framework:** Next.js (App Router), leveraging React Server Components (RSC) to maximize SEO performance and minimize client-side bundle sizes. Unified Frontend and API routing layer.
+- **Database:** PostgreSQL hosted on Neon.tech managed via Prisma ORM for type-safe schema migrations, strict structural integrity, and lightning-fast connection pooling.
+- **Scraping Layer:** Managed API-First Scraping via Firecrawl/Apify for standard static web extraction (returns clean Markdown/HTML). Headless fallback using Playwright for dynamic, client-side rendered, or lazy-loaded interactive pages.
+- **AI Core Engine:** Ultra-low latency, highly cost-effective LLMs (e.g., Claude 3.5 Haiku or GPT-4o-mini) utilized strictly for parsing text data, pattern matching, and dropship verification.
+
+---
+
+## 2. Unit Economics & Architectural Safeguards
+Every code pattern written must prioritize infrastructure optimization to safeguard our tight Unit Economics.
+
+- **Uncached Search Target Cost:** $0.016 per complete pipeline execution (Scraping + Visual Search + LLM matching).
+- **The Caching Mandate ($0 Search Cost):** - BEFORE spinning up any scraping pipeline or third-party API call, the system MUST execute a lookup in PostgreSQL via Prisma.
+  - Check if the target product URL has been analyzed within the last 7 days.
+  - If a valid cache entry exists, instantly serve the mapped AliExpress data to the user. Do not re-scrape. Do not invoke the LLM.
+- **Context Size Optimization:** Never feed raw, bloated HTML into the AI Core engine. All scraped data must be stripped down to optimized Markdown/JSON schemas before text analysis to minimize token costs.
+
+---
+
+## 3. Core Engine Workflows
+
+### A. Scraping Strategy
+- Implement a hybrid router for target stores.
+- Use Firecrawl/Apify by default to bypass Cloudflare/Anti-Bot walls and get structured outputs.
+- If page content fails to load or requires scroll-to-load interactions, gracefully fallback to a specific Playwright browser context simulating authentic human interaction parameters.
+
+### B. Product Verification & Mapping
+- Extract the main product images and core textual attributes (Title, Specifications) from the target store.
+- Query AliExpress via text semantic search and visual search APIs.
+- Filter candidate products strictly on the following prioritization hierarchy:
+  1. High Volume of Orders (Sales volume metric).
+  2. Stellar Seller/Store Rating.
+  3. Optimized/Fastest Shipping times to the consumer's target locale.
+
+### C. Monetization & Link Security
+- Dynamically convert the winning AliExpress product URL into an authenticated Affiliate Deep Link via the AliExpress Affiliate Program or Admitad.
+- **Fail-Safe Check:** Before serving any recommendation to the client, the application must run an automated background check confirming that the generated affiliate link is live, structurally valid, and returning a 200 HTTP response. If invalid, log instantly and fallback gracefully.
+
+### D. User System & LTV Improvement
+- Implement an Authentication layer (Auth) to track individual user search histories, log cumulative financial savings metrics, and encourage repeat usage to increase Customer Lifetime Value (LTV).
+
+---
+
+## 4. Coding Standards & Code Generation Directives
+
+- **Type Safety:** Enforce strict TypeScript types across the entire codebase. Never use `any`. Explicitly type all API router responses, scraper outputs, and Prisma interaction objects.
+- **Error Handling:** Every scraper operation and third-party API integration must be wrapped in robust try-catch blocks with concrete fallback defaults. System errors must never leak into the user interface.
+- **File Structure:** Adhere strictly to the Next.js App Router structural layout:
+  - `/app` for pages, layouts, and API routes.
+  - `/components` for modular UI components (clearly separate `'use client'` from Server Components).
+  - `/lib` for reusable scraping utilities, AI configurations, and Prisma singleton initializations.
+- **Database Inquiries:** When building queries, ensure proper database indexing on frequently searched fields (e.g., the dropshipped product URL mapping field).

@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Cached product analysis — 7-day TTL enforced at query time.
+model ScannedProduct {
+  id             String   @id @default(cuid())
+  originalUrl    String   @unique
+  aliexpressUrl  String?
+  aliexpressData Json?
+  lastScrapedAt  DateTime
+  createdAt      DateTime @default(now())
+
+  searchHistory SearchHistory[]
+
+  @@index([originalUrl])
+  @@index([lastScrapedAt])
+}
+
+/// Authenticated user for LTV tracking and search history.
+model User {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  name            String?
+  totalSavingsUsd Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  searchHistory SearchHistory[]
+
+  @@index([email])
+}
+
+/// Per-user search log linked to cached product records.
+model SearchHistory {
+  id               String   @id @default(cuid())
+  userId           String
+  scannedProductId String
+  savingsUsd       Decimal? @db.Decimal(10, 2)
+  searchedAt       DateTime @default(now())
+
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scannedProduct ScannedProduct @relation(fields: [scannedProductId], references: [id], onDelete: Cascade)
+
+  @@index([userId, searchedAt])
+  @@index([scannedProductId])
+}
