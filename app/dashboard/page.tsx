@@ -24,7 +24,7 @@ import {
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Dashboard — BuyPass",
+  title: "Dashboard — Busted",
   description: "Track your scan history, price alerts, and cumulative savings.",
 };
 
@@ -74,14 +74,14 @@ export default function DashboardPage() {
           value={String(analytics.activeAlerts)}
           description="Price drops we're watching"
           icon={Bell}
-          accent="amber"
+          accent="accent"
         />
         <AnalyticsCard
           title="Cumulative Money Saved"
           value={formatUsd(analytics.cumulativeSavingsUsd)}
           description="Total vs. dropship markups"
           icon={DollarSign}
-          accent="emerald"
+          accent="success"
           className="sm:col-span-2 lg:col-span-1"
         />
       </section>
@@ -136,12 +136,12 @@ export default function DashboardPage() {
                     <TableCell className="text-right tabular-nums">
                       {formatUsd(item.storePriceUsd)}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums text-emerald-600 dark:text-emerald-400">
+                    <TableCell className="text-success text-right tabular-nums">
                       {formatUsd(item.supplierPriceUsd)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex flex-col items-end gap-0.5">
-                        <span className="font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
+                        <span className="text-success font-medium tabular-nums">
                           {formatUsd(item.savingsUsd)}
                         </span>
                         <span className="text-muted-foreground text-xs">
@@ -179,7 +179,7 @@ interface AnalyticsCardProps {
   value: string;
   description: string;
   icon: ComponentType<{ className?: string }>;
-  accent: "default" | "amber" | "emerald";
+  accent: "default" | "accent" | "success";
   className?: string;
 }
 
@@ -193,8 +193,8 @@ function AnalyticsCard({
 }: AnalyticsCardProps) {
   const accentStyles = {
     default: "bg-primary/10 text-primary",
-    amber: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
-    emerald: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+    accent: "bg-accent text-accent-foreground",
+    success: "bg-success/10 text-success",
   } as const;
 
   return (

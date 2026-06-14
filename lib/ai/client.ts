@@ -1,10 +1,18 @@
 /**
  * Type-safe AI Core client shell.
- * Supports Claude 3.5 Haiku and GPT-4o-mini for low-latency text parsing.
+ * Default: Google Gemini 3.5 Flash — ultra-low latency, cost-effective parsing.
+ * Uses the official @google/generative-ai SDK with automatic model fallback.
  * Scraped content must be pre-stripped to optimized Markdown/JSON before calling.
  */
 
-export type AIProvider = "anthropic" | "openai";
+import {
+  GoogleGenerativeAI,
+  type Content,
+  type GenerativeModel,
+  type Part,
+} from "@google/generative-ai";
+
+export type AIProvider = "google" | "anthropic" | "openai";
 
 export interface AIMessage {
   role: "system" | "user" | "assistant";
@@ -15,6 +23,7 @@ export interface AICompletionOptions {
   messages: AIMessage[];
   maxTokens?: number;
   temperature?: number;
+  jsonMode?: boolean;
 }
 
 export interface AICompletionResult {
@@ -29,37 +38,152 @@ export interface AICompletionResult {
 
 export interface AIClientConfig {
   provider?: AIProvider;
+  model?: string;
+  googleApiKey?: string;
   anthropicApiKey?: string;
   openaiApiKey?: string;
 }
 
 const DEFAULT_MODELS: Record<AIProvider, string> = {
+  google: "gemini-3.5-flash",
   anthropic: "claude-3-5-haiku-20241022",
   openai: "gpt-4o-mini",
 };
 
+/** Ordered fallback chain — gemini-3.5-flash primary (1.5/2.0 retired June 2026). */
+export const GOOGLE_MODEL_FALLBACK_CHAIN = [
+  "gemini-3.5-flash",
+  "gemini-3.1-flash-lite",
+  "gemini-2.5-flash-lite",
+] as const;
+
 function resolveProvider(config: AIClientConfig): AIProvider {
   if (config.provider) return config.provider;
-  if (process.env.AI_PROVIDER === "anthropic") return "anthropic";
-  if (process.env.AI_PROVIDER === "openai") return "openai";
+
+  const envProvider = process.env.AI_PROVIDER;
+  if (envProvider === "google") return "google";
+  if (envProvider === "anthropic") return "anthropic";
+  if (envProvider === "openai") return "openai";
+
+  if (process.env.GOOGLE_AI_API_KEY ?? process.env.GEMINI_API_KEY) return "google";
   if (process.env.ANTHROPIC_API_KEY) return "anthropic";
   if (process.env.OPENAI_API_KEY) return "openai";
-  return "openai";
+
+  return "google";
+}
+
+function resolvePrimaryGoogleModel(config: AIClientConfig): string {
+  return config.model ?? process.env.GOOGLE_AI_MODEL ?? DEFAULT_MODELS.google;
+}
+
+function resolveGoogleModelChain(config: AIClientConfig): string[] {
+  const primary = resolvePrimaryGoogleModel(config);
+  const chain = [primary, ...GOOGLE_MODEL_FALLBACK_CHAIN.filter((m) => m !== primary)];
+  return [...new Set(chain)];
 }
 
 function resolveApiKey(provider: AIProvider, config: AIClientConfig): string {
-  const key =
-    provider === "anthropic"
-      ? (config.anthropicApiKey ?? process.env.ANTHROPIC_API_KEY)
-      : (config.openaiApiKey ?? process.env.OPENAI_API_KEY);
-
-  if (!key) {
-    throw new Error(
-      `Missing API key for ${provider}. Set ${provider === "anthropic" ? "ANTHROPIC_API_KEY" : "OPENAI_API_KEY"}.`,
-    );
+  if (provider === "google") {
+    const key =
+      config.googleApiKey ??
+      process.env.GOOGLE_AI_API_KEY ??
+      process.env.GEMINI_API_KEY;
+    if (!key) {
+      throw new Error(
+        "Missing API key for Google AI. Set GOOGLE_AI_API_KEY or GEMINI_API_KEY.",
+      );
+    }
+    return key;
   }
 
+  if (provider === "anthropic") {
+    const key = config.anthropicApiKey ?? process.env.ANTHROPIC_API_KEY;
+    if (!key) {
+      throw new Error("Missing API key for Anthropic. Set ANTHROPIC_API_KEY.");
+    }
+    return key;
+  }
+
+  const key = config.openaiApiKey ?? process.env.OPENAI_API_KEY;
+  if (!key) {
+    throw new Error("Missing API key for OpenAI. Set OPENAI_API_KEY.");
+  }
   return key;
+}
+
+function isRetryableGoogleError(status: number, body: string): boolean {
+  if (status === 404 || status === 429 || status === 503) return true;
+  return (
+    body.includes("not found") ||
+    body.includes("RESOURCE_EXHAUSTED") ||
+    body.includes("quota")
+  );
+}
+
+function toGoogleHistory(messages: AIMessage[]): Content[] {
+  return messages
+    .filter((message) => message.role !== "system")
+    .map((message) => ({
+      role: message.role === "assistant" ? "model" : "user",
+      parts: [{ text: message.content } satisfies Part],
+    }));
+}
+
+async function callGoogleWithSdk(
+  apiKey: string,
+  modelChain: string[],
+  options: AICompletionOptions,
+): Promise<AICompletionResult> {
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const systemMessage = options.messages.find((m) => m.role === "system")?.content;
+  const history = toGoogleHistory(options.messages);
+  let lastError = "All Google AI models failed.";
+
+  for (const modelName of modelChain) {
+    try {
+      const model: GenerativeModel = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: systemMessage,
+        generationConfig: {
+          temperature: options.temperature ?? 0,
+          maxOutputTokens: options.maxTokens ?? 1024,
+          ...(options.jsonMode ? { responseMimeType: "application/json" } : {}),
+        },
+      });
+
+      const result = await model.generateContent({ contents: history });
+      const response = result.response;
+      const text = response.text();
+
+      if (!text) {
+        lastError = `Model ${modelName} returned an empty response.`;
+        continue;
+      }
+
+      const usage = response.usageMetadata;
+
+      return {
+        content: text,
+        provider: "google",
+        model: modelName,
+        usage: usage
+          ? {
+              inputTokens: usage.promptTokenCount ?? 0,
+              outputTokens: usage.candidatesTokenCount ?? 0,
+            }
+          : undefined,
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      lastError = message;
+
+      if (!isRetryableGoogleError(0, message)) {
+        throw new Error(`Google AI API error (${modelName}): ${message}`);
+      }
+    }
+  }
+
+  throw new Error(`Google AI API error: ${lastError}`);
 }
 
 async function callAnthropic(
@@ -156,11 +280,16 @@ export class AIClient {
   private readonly provider: AIProvider;
   private readonly apiKey: string;
   private readonly model: string;
+  private readonly googleModelChain: string[];
 
   constructor(config: AIClientConfig = {}) {
     this.provider = resolveProvider(config);
     this.apiKey = resolveApiKey(this.provider, config);
-    this.model = DEFAULT_MODELS[this.provider];
+    this.googleModelChain = resolveGoogleModelChain(config);
+    this.model =
+      this.provider === "google"
+        ? this.googleModelChain[0]
+        : config.model ?? DEFAULT_MODELS[this.provider];
   }
 
   get activeProvider(): AIProvider {
@@ -172,10 +301,14 @@ export class AIClient {
   }
 
   async complete(options: AICompletionOptions): Promise<AICompletionResult> {
-    if (this.provider === "anthropic") {
-      return callAnthropic(this.apiKey, this.model, options);
+    switch (this.provider) {
+      case "google":
+        return callGoogleWithSdk(this.apiKey, this.googleModelChain, options);
+      case "anthropic":
+        return callAnthropic(this.apiKey, this.model, options);
+      case "openai":
+        return callOpenAI(this.apiKey, this.model, options);
     }
-    return callOpenAI(this.apiKey, this.model, options);
   }
 }
 

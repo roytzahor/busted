@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Nav } from "@/components/nav";
+import { BRAND_DESCRIPTION, BRAND_NAME, BRAND_TAGLINE } from "@/lib/brand";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,9 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "BuyPass — Stop Paying Dropshipping Markups",
-  description:
-    "Detect dropshipping markups and find original AliExpress suppliers. Save up to 80% on every purchase.",
+  title: `${BRAND_NAME} — ${BRAND_TAGLINE}`,
+  description: BRAND_DESCRIPTION,
 };
 
 export default function RootLayout({
@@ -37,8 +37,7 @@ export default function RootLayout({
           <footer className="border-t py-6">
             <div className="text-muted-foreground mx-auto max-w-6xl px-4 text-center text-xs sm:px-6 sm:text-sm">
               <p>
-                BuyPass helps consumers find original suppliers and avoid
-                dropshipping markups.
+                {BRAND_NAME} — {BRAND_TAGLINE} Spot the fire, skip the markup.
               </p>
             </div>
           </footer>

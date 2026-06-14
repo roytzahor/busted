@@ -1,4 +1,6 @@
 import { Prisma } from "@prisma/client";
+import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
+import type { AnalyzeDebugInfo } from "@/lib/types/debug";
 
 /** Shape of AliExpress product data stored in ScannedProduct.aliexpressData */
 export interface AliExpressProductData {
@@ -13,27 +15,40 @@ export interface AliExpressProductData {
 }
 
 export type AnalyzeCacheStatus = "HIT" | "MISS";
+export type SupplierStatus = "complete" | "skipped" | "pending";
+export type ProductSourceType = "retail_store" | "supplier_marketplace";
 
 export interface AnalyzeRequestBody {
   url: string;
+  debug?: boolean;
+  forceRefresh?: boolean;
 }
 
-export interface AnalyzeCacheHitResponse {
+interface AnalyzeSuccessBase {
   status: "success";
-  cache: "HIT";
   originalUrl: string;
   aliexpressUrl: string | null;
   aliexpressData: AliExpressProductData | null;
+  supplierStatus: SupplierStatus;
+  supplierSkipReason?: string;
+  sourceType: ProductSourceType;
+  dropshipPrediction: DropshipPrediction | null;
   lastScrapedAt: string;
+  storeProduct: {
+    title: string;
+    priceUsd: number;
+    imageUrl: string | null;
+    storeName: string;
+  };
+  debug?: AnalyzeDebugInfo;
 }
 
-export interface AnalyzeScrapeSuccessResponse {
-  status: "success";
+export interface AnalyzeCacheHitResponse extends AnalyzeSuccessBase {
+  cache: "HIT";
+}
+
+export interface AnalyzeScrapeSuccessResponse extends AnalyzeSuccessBase {
   cache: "MISS";
-  originalUrl: string;
-  aliexpressUrl: string | null;
-  aliexpressData: AliExpressProductData;
-  lastScrapedAt: string;
   scrapeProvider: string;
 }
 
@@ -44,6 +59,7 @@ export interface AnalyzeErrorResponse {
   message: string;
   code: string;
   aliexpressData: null;
+  debug?: AnalyzeDebugInfo;
 }
 
 export type AnalyzeResponse =

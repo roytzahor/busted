@@ -45,7 +45,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
     >
       <div className="mb-6 space-y-3 text-center md:text-left">
         <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-          <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+          <Badge variant="secondary" className="bg-success/10 text-success">
             Save {savingsPercent}%
           </Badge>
           <Badge variant="outline">
@@ -57,7 +57,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
           className="text-xl font-bold tracking-tight sm:text-2xl"
         >
           {formatUsd(storeProduct.priceUsd)} vs {formatUsd(supplierProduct.priceUsd)}
-          <span className="text-emerald-600 dark:text-emerald-400">
+          <span className="text-success">
             {" "}
             — Save {savingsPercent}%
           </span>
@@ -110,7 +110,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
             />
           </div>
 
-          <div className="border-t bg-emerald-500/5 p-4 sm:p-6">
+          <div className="border-t bg-success/5 p-4 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium">Ready to skip the markup?</p>
@@ -122,7 +122,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
               <Button
                 asChild
                 size="lg"
-                className="h-11 w-full bg-emerald-600 text-white hover:bg-emerald-700 sm:w-auto sm:min-w-[260px]"
+                className="bg-success text-success-foreground hover:bg-success/90 h-11 w-full sm:w-auto sm:min-w-[260px]"
               >
                 <a
                   href={supplierProduct.affiliateUrl}
@@ -170,7 +170,7 @@ function ProductColumn({
     <article
       className={cn(
         "flex flex-col gap-4 p-4 sm:p-6",
-        isStore ? "bg-destructive/5" : "bg-emerald-500/5",
+        isStore ? "bg-destructive/5" : "bg-success/5",
       )}
     >
       <div className="flex items-center gap-2">
@@ -181,7 +181,7 @@ function ProductColumn({
           />
         ) : (
           <ShieldCheck
-            className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400"
+            className="text-success size-4 shrink-0"
             aria-hidden="true"
           />
         )}
@@ -211,7 +211,7 @@ function ProductColumn({
         <p
           className={cn(
             "text-2xl font-bold tabular-nums sm:text-3xl",
-            isStore ? "text-destructive" : "text-emerald-600 dark:text-emerald-400",
+            isStore ? "text-destructive" : "text-success",
           )}
         >
           {formatUsd(price)}
@@ -248,8 +248,8 @@ function ProductColumn({
           Dropship markup detected
         </Badge>
       ) : (
-        <Badge className="w-fit bg-emerald-600 text-white hover:bg-emerald-600">
-          Verified original supplier
+        <Badge className="bg-success text-success-foreground hover:bg-success w-fit">
+          Verified original supplier — we got you
         </Badge>
       )}
     </article>

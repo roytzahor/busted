@@ -1,5 +1,5 @@
 import { scrapeWithFirecrawl } from "@/lib/scraping/firecrawl";
-import { extractProductAttributes } from "@/lib/scraping/extract-product";
+import { extractProductAttributes, assertValidProductAttributes } from "@/lib/scraping/extract-product";
 import { scrapeWithPlaywright } from "@/lib/scraping/playwright-fallback";
 import {
   ScraperError,
@@ -19,7 +19,9 @@ export async function scrapeProductUrl(
 
   try {
     const raw = await scrapeWithFirecrawl(targetUrl);
-    return { raw, attributes: extractProductAttributes(raw) };
+    const attributes = extractProductAttributes(raw);
+    assertValidProductAttributes(attributes);
+    return { raw, attributes };
   } catch (error) {
     primaryError =
       error instanceof ScraperError
@@ -33,7 +35,9 @@ export async function scrapeProductUrl(
 
   try {
     const raw = await scrapeWithPlaywright(targetUrl);
-    return { raw, attributes: extractProductAttributes(raw) };
+    const attributes = extractProductAttributes(raw);
+    assertValidProductAttributes(attributes);
+    return { raw, attributes };
   } catch (fallbackError) {
     const fallback =
       fallbackError instanceof ScraperError

@@ -13,20 +13,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { BRAND_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import {
   BarChart3,
+  Flame,
   History,
   LogOut,
   Menu,
   Search,
-  Shield,
   User,
   X,
 } from "lucide-react";
 
 const NAV_LINKS = [
-  { href: "/", label: "Analyze", icon: Search },
+  { href: "/", label: "Scan", icon: Search },
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
 ] as const;
 
@@ -41,12 +42,12 @@ export function Nav() {
         <Link
           href="/"
           className="flex items-center gap-2 font-semibold tracking-tight"
-          aria-label="BuyPass home"
+          aria-label={`${BRAND_NAME} home`}
         >
           <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
-            <Shield className="size-4" aria-hidden="true" />
+            <Flame className="size-4" aria-hidden="true" />
           </span>
-          <span className="text-base sm:text-lg">BuyPass</span>
+          <span className="text-base sm:text-lg">{BRAND_NAME}</span>
         </Link>
 
         <nav
@@ -85,7 +86,7 @@ export function Nav() {
                   aria-label="Open user menu"
                 >
                   <Avatar className="size-8">
-                    <AvatarFallback className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400">
+                    <AvatarFallback className="bg-primary/15 text-primary">
                       JD
                     </AvatarFallback>
                   </Avatar>
@@ -180,20 +181,6 @@ export function Nav() {
                 </li>
               );
             })}
-            {!isAuthenticated ? (
-              <li className="pt-2">
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    setIsAuthenticated(true);
-                    setMobileOpen(false);
-                  }}
-                >
-                  <User aria-hidden="true" />
-                  Log in
-                </Button>
-              </li>
-            ) : null}
           </ul>
         </nav>
       ) : null}

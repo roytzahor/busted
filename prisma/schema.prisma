@@ -11,6 +11,8 @@ datasource db {
 model ScannedProduct {
   id             String   @id @default(cuid())
   originalUrl    String   @unique
+  scrapeData     Json?
+  aiPrediction   Json?
   aliexpressUrl  String?
   aliexpressData Json?
   lastScrapedAt  DateTime

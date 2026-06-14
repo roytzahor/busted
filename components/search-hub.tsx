@@ -1,18 +1,28 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { AnalysisResults } from "@/components/analysis-results";
 import { AnalysisSkeleton } from "@/components/analysis-skeleton";
+import { AnalysisTabs } from "@/components/analysis-tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { ProductComparisonResult } from "@/lib/mock-data";
 import {
-  mockAnalyzeProduct,
+  analyzeProductUrl,
+  getProductUrlHint,
   validateProductUrl,
-  type MockAnalyzeProgress,
-} from "@/lib/mock-analyze";
+  type AnalyzeProgress,
+} from "@/lib/analyze/client";
+import type { ProductComparisonResult } from "@/lib/mock-data";
+import type { DropshipAnalysisResult } from "@/lib/analyze/map-response";
+import type { AnalyzeDebugInfo } from "@/lib/types/debug";
+import { BRAND_DESCRIPTION, BRAND_HOOK_BUSTED, BRAND_HOOK_RELIEF, BRAND_TAGLINE } from "@/lib/brand";
 import { cn } from "@/lib/utils";
-import { AlertCircle, ArrowRight, Link2, Sparkles } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowRight,
+  Flame,
+  Link2,
+  RefreshCw,
+} from "lucide-react";
 
 type SearchPhase = "idle" | "analyzing" | "complete" | "error";
 
@@ -20,19 +30,27 @@ export function SearchHub() {
   const [url, setUrl] = useState("");
   const [phase, setPhase] = useState<SearchPhase>("idle");
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [urlHint, setUrlHint] = useState<string | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
-  const [progress, setProgress] = useState<MockAnalyzeProgress>({
+  const [progress, setProgress] = useState<AnalyzeProgress>({
     step: "Checking 7-day cache…",
     progress: 0,
   });
-  const [result, setResult] = useState<ProductComparisonResult | null>(null);
+  const [comparison, setComparison] = useState<ProductComparisonResult | null>(null);
+  const [dropshipResult, setDropshipResult] = useState<DropshipAnalysisResult | null>(
+    null,
+  );
+  const [debugInfo, setDebugInfo] = useState<AnalyzeDebugInfo | null>(null);
+  const [forceRefresh, setForceRefresh] = useState(false);
 
   const handleUrlChange = useCallback((value: string) => {
     setUrl(value);
     if (value.trim()) {
       setValidationError(validateProductUrl(value));
+      setUrlHint(getProductUrlHint(value));
     } else {
       setValidationError(null);
+      setUrlHint(null);
     }
   }, []);
 
@@ -45,21 +63,34 @@ export function SearchHub() {
 
     setValidationError(null);
     setAnalysisError(null);
-    setResult(null);
+    setComparison(null);
+    setDropshipResult(null);
+    setDebugInfo(null);
     setPhase("analyzing");
     setProgress({ step: "Checking 7-day cache…", progress: 0 });
 
     try {
-      const comparison = await mockAnalyzeProduct(url, setProgress);
-      setResult(comparison);
+      const result = await analyzeProductUrl(url, {
+        debug: true,
+        forceRefresh,
+        onProgress: setProgress,
+      });
+
+      setComparison(result.comparison);
+      setDropshipResult(result.dropshipAnalysis);
+      setDebugInfo(result.debug);
       setPhase("complete");
     } catch (err) {
+      const errorWithDebug = err as Error & { debug?: AnalyzeDebugInfo };
       setAnalysisError(
         err instanceof Error ? err.message : "Analysis failed. Please try again.",
       );
+      if (errorWithDebug.debug) {
+        setDebugInfo(errorWithDebug.debug);
+      }
       setPhase("error");
     }
-  }, [url]);
+  }, [url, forceRefresh]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -68,26 +99,23 @@ export function SearchHub() {
 
   const isAnalyzing = phase === "analyzing";
   const canSubmit = url.trim().length > 0 && !validationError && !isAnalyzing;
+  const hasResults = phase === "complete" && (comparison !== null || dropshipResult !== null);
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col gap-10 px-4 py-8 sm:py-12 md:gap-14 md:py-16">
+    <div className="mx-auto flex w-full max-w-4xl flex-col gap-10 px-4 py-8 sm:py-12 md:gap-12 md:py-16">
       <section className="space-y-6 text-center">
-        <div className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 mx-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium">
-          <Sparkles className="size-3.5" aria-hidden="true" />
-          Consumer protection, powered by AI
+        <div className="bg-primary/10 text-primary mx-auto inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase">
+          <Flame className="size-3.5" aria-hidden="true" />
+          {BRAND_TAGLINE}
         </div>
 
         <div className="space-y-4">
           <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl md:leading-tight">
-            Stop Paying{" "}
-            <span className="text-emerald-600 dark:text-emerald-400">
-              Dropshipping Markups
-            </span>
+            <span className="text-primary">{BRAND_HOOK_BUSTED}</span>{" "}
+            <span className="text-success">{BRAND_HOOK_RELIEF}</span>
           </h1>
-          <p className="text-muted-foreground mx-auto max-w-xl text-base sm:text-lg">
-            Paste any product link from a dropship store. BuyPass finds the
-            original AliExpress supplier and shows you exactly how much
-            you&apos;re being overcharged.
+          <p className="text-muted-foreground mx-auto max-w-2xl text-base sm:text-lg">
+            {BRAND_DESCRIPTION}
           </p>
         </div>
 
@@ -115,19 +143,31 @@ export function SearchHub() {
               onChange={(event) => handleUrlChange(event.target.value)}
               aria-invalid={validationError ? true : undefined}
               aria-describedby={
-                validationError ? "url-error" : "url-hint"
+                validationError ? "url-error" : urlHint ? "url-hint-warn" : "url-hint"
               }
               className={cn(
                 "h-12 pr-4 pl-10 text-base",
                 validationError && "border-destructive ring-destructive/20",
+                urlHint && !validationError && "border-accent/60",
               )}
               disabled={isAnalyzing}
             />
           </div>
 
           <p id="url-hint" className="text-muted-foreground text-left text-xs">
-            Works with Shopify, WooCommerce, and most product pages.
+            Retail store links work best — Shopify, WooCommerce, independent shops.
+            Results cached 7 days.
           </p>
+
+          {urlHint && !validationError ? (
+            <p
+              id="url-hint-warn"
+              className="text-accent-foreground flex items-start gap-1.5 text-left text-sm"
+            >
+              <Flame className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              {urlHint}
+            </p>
+          ) : null}
 
           {validationError ? (
             <p
@@ -140,16 +180,25 @@ export function SearchHub() {
             </p>
           ) : null}
 
+          <label className="text-muted-foreground flex cursor-pointer items-center justify-center gap-2 text-left text-xs sm:justify-start">
+            <input
+              type="checkbox"
+              checked={forceRefresh}
+              onChange={(event) => setForceRefresh(event.target.checked)}
+              className="accent-primary size-4 rounded border"
+            />
+            <RefreshCw className="size-3.5" aria-hidden="true" />
+            Bypass cache (force re-scrape)
+          </label>
+
           <Button
             type="submit"
             size="lg"
             disabled={!canSubmit}
             className="h-12 w-full text-base"
           >
-            {isAnalyzing ? "Analyzing…" : "Analyze Product"}
-            {!isAnalyzing ? (
-              <ArrowRight aria-hidden="true" />
-            ) : null}
+            {isAnalyzing ? "Scanning…" : "Run Busted Scan"}
+            {!isAnalyzing ? <ArrowRight aria-hidden="true" /> : null}
           </Button>
         </form>
       </section>
@@ -170,8 +219,20 @@ export function SearchHub() {
         </div>
       ) : null}
 
-      {phase === "complete" && result ? (
-        <AnalysisResults result={result} />
+      {phase === "error" && debugInfo ? (
+        <AnalysisTabs
+          comparison={null}
+          dropshipResult={null}
+          debugInfo={debugInfo}
+        />
+      ) : null}
+
+      {hasResults ? (
+        <AnalysisTabs
+          comparison={comparison}
+          dropshipResult={dropshipResult}
+          debugInfo={debugInfo}
+        />
       ) : null}
 
       {phase === "idle" ? (
@@ -182,18 +243,18 @@ export function SearchHub() {
           {[
             {
               step: "1",
-              title: "Paste a link",
-              body: "Drop any dropship product URL into the search bar.",
+              title: "Paste retail link",
+              body: "Use the Shopify or Instagram store where you spotted the product.",
             },
             {
               step: "2",
-              title: "We analyze it",
-              body: "BuyPass scrapes the page and matches the original supplier.",
+              title: "AI finds red flags",
+              body: "Busted scrapes the page and scores dropship likelihood with Gemini.",
             },
             {
               step: "3",
-              title: "Save big",
-              body: "See the real price and buy direct from AliExpress.",
+              title: "Compare & monitor",
+              body: "Switch to Pipeline tab for waterfall timings and live diagnostics.",
             },
           ].map((item) => (
             <article

@@ -11,20 +11,63 @@ interface FirecrawlMetadata {
   ogTitle?: string;
   ogDescription?: string;
   sourceURL?: string;
+  [key: string]: unknown;
+}
+
+interface FirecrawlScrapeData {
+  markdown?: string;
+  metadata?: FirecrawlMetadata;
 }
 
 interface FirecrawlScrapeResponse {
-  success: boolean;
-  data?: {
-    markdown?: string;
-    metadata?: FirecrawlMetadata;
-  };
+  success?: boolean;
+  data?: FirecrawlScrapeData;
   error?: string;
+  message?: string;
 }
 
 function resolveTimeoutMs(): number {
   const parsed = Number(process.env.SCRAPER_TIMEOUT_MS);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_TIMEOUT_MS;
+}
+
+function extractMarkdown(data: FirecrawlScrapeData | undefined): string | null {
+  if (!data) return null;
+
+  if (typeof data.markdown === "string" && data.markdown.trim().length > 0) {
+    return data.markdown;
+  }
+
+  return null;
+}
+
+function extractMetadata(
+  data: FirecrawlScrapeData | undefined,
+  targetUrl: string,
+): RawScrapeResult["metadata"] {
+  const metadata = data?.metadata ?? {};
+
+  const ogImage =
+    typeof metadata.ogImage === "string"
+      ? metadata.ogImage
+      : typeof metadata["og:image"] === "string"
+        ? metadata["og:image"]
+        : undefined;
+
+  return {
+    title:
+      (typeof metadata.ogTitle === "string" ? metadata.ogTitle : undefined) ??
+      (typeof metadata.title === "string" ? metadata.title : undefined),
+    description:
+      (typeof metadata.ogDescription === "string"
+        ? metadata.ogDescription
+        : undefined) ??
+      (typeof metadata.description === "string" ? metadata.description : undefined),
+    ogImage,
+    sourceUrl:
+      (typeof metadata.sourceURL === "string" ? metadata.sourceURL : undefined) ??
+      targetUrl,
+  };
 }
 
 export async function scrapeWithFirecrawl(targetUrl: string): Promise<RawScrapeResult> {
@@ -52,40 +95,46 @@ export async function scrapeWithFirecrawl(targetUrl: string): Promise<RawScrapeR
         url: targetUrl,
         formats: ["markdown"],
         onlyMainContent: true,
+        waitFor: 2000,
       }),
       signal: controller.signal,
     });
 
+    const rawBody = await response.text();
+
     if (!response.ok) {
-      const errorBody = await response.text();
       throw new ScraperError(
         "FIRECRAWL_HTTP_ERROR",
-        `Firecrawl request failed (${response.status}): ${errorBody.slice(0, 200)}`,
+        `Firecrawl request failed (${response.status}): ${rawBody.slice(0, 300)}`,
         response.status >= 500 ? 500 : 422,
       );
     }
 
-    const payload = (await response.json()) as FirecrawlScrapeResponse;
-
-    if (!payload.success || !payload.data?.markdown) {
+    let payload: FirecrawlScrapeResponse;
+    try {
+      payload = JSON.parse(rawBody) as FirecrawlScrapeResponse;
+    } catch {
       throw new ScraperError(
-        "FIRECRAWL_EMPTY_RESPONSE",
-        payload.error ?? "Firecrawl returned no usable markdown content.",
+        "FIRECRAWL_PARSE_ERROR",
+        "Firecrawl returned a non-JSON response.",
         422,
       );
     }
 
-    const metadata = payload.data.metadata ?? {};
+    const markdown = extractMarkdown(payload.data);
+
+    if (payload.success === false || !markdown) {
+      throw new ScraperError(
+        "FIRECRAWL_EMPTY_RESPONSE",
+        payload.error ?? payload.message ?? "Firecrawl returned no usable markdown content.",
+        422,
+      );
+    }
 
     return {
       provider: "firecrawl",
-      markdown: stripScrapedContent(payload.data.markdown),
-      metadata: {
-        title: metadata.ogTitle ?? metadata.title,
-        description: metadata.ogDescription ?? metadata.description,
-        ogImage: metadata.ogImage,
-        sourceUrl: metadata.sourceURL ?? targetUrl,
-      },
+      markdown: stripScrapedContent(markdown),
+      metadata: extractMetadata(payload.data, targetUrl),
     };
   } catch (error) {
     if (error instanceof ScraperError) {
@@ -102,7 +151,7 @@ export async function scrapeWithFirecrawl(targetUrl: string): Promise<RawScrapeR
 
     throw new ScraperError(
       "FIRECRAWL_UNKNOWN_ERROR",
-      "An unexpected error occurred while scraping with Firecrawl.",
+      error instanceof Error ? error.message : "An unexpected Firecrawl error occurred.",
       500,
     );
   } finally {
