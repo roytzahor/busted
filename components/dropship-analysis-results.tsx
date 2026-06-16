@@ -267,7 +267,7 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
                 </p>
                 <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
                   <AlertTriangle className="size-3.5" aria-hidden="true" />
-                  Results cached 7 days — enable Bypass cache to re-scrape.
+                  Results are cached for 14 days.
                 </p>
               </div>
             </CardContent>

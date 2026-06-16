@@ -48,6 +48,26 @@ function toAiJson(data: CachedAiPrediction): Prisma.InputJsonObject {
   };
 }
 
+/**
+ * Backfill AliExpress data onto an existing cached record without touching
+ * scrape/AI data or lastScrapedAt. Used when a cache-HIT record has no
+ * supplier data (was cached before AliExpress keys were configured).
+ */
+export async function patchCachedAliExpressData(params: {
+  originalUrl: string;
+  aliexpressUrl: string;
+  aliexpressData: AliExpressProductData;
+}): Promise<void> {
+  const normalizedUrl = normalizeProductUrl(params.originalUrl);
+  await prisma.scannedProduct.update({
+    where: { originalUrl: normalizedUrl },
+    data: {
+      aliexpressUrl: params.aliexpressUrl,
+      aliexpressData: toAliExpressJson(params.aliexpressData),
+    },
+  });
+}
+
 export async function persistScannedProduct(params: {
   originalUrl: string;
   scrapeData: CachedScrapeData;

@@ -12,7 +12,10 @@ import { findAliExpressSupplier } from "@/lib/aliexpress/find-supplier";
 import { isSupplierSearchEnabled } from "@/lib/aliexpress/supplier-enabled";
 import { AliExpressSearchError } from "@/lib/aliexpress/types";
 import { findValidCachedProduct, normalizeProductUrl } from "@/lib/cache/product-cache";
-import { persistScannedProduct } from "@/lib/cache/persist-product";
+import {
+  patchCachedAliExpressData,
+  persistScannedProduct,
+} from "@/lib/cache/persist-product";
 import {
   extractPriceFromMarkdown,
   extractStoreNameFromUrl,
@@ -177,39 +180,98 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
         const aliexpressData = parseAliExpressData(cached.aliexpressData);
 
         if (scrape && ai) {
-          waterfall.mark("cache", "Cache HIT — scrape + AI restored (< 7 days)", "complete");
-
-          if (!aliexpressData) {
-            waterfall.mark(
-              "supplier",
-              "Supplier search skipped — AliExpress API not configured",
-              "skipped",
-            );
-          } else {
-            waterfall.mark(
-              "supplier",
-              "Supplier data restored from cache",
-              "complete",
-            );
-          }
-
-          waterfall.mark("persist", "Served from database — no live scrape", "skipped");
-
-          const storePrice = resolveStorePrice(ai.prediction, scrape);
+          waterfall.mark("cache", "Cache HIT — scrape + AI restored (< 14 days)", "complete");
 
           const sourceType = detectProductSource(cached.originalUrl);
+          const isSupplierListing = sourceType === "supplier_marketplace";
+          const aiVerdict = ai.prediction?.verdict;
+          const verdictBlocksSupplier =
+            aiVerdict === "not_a_product" || aiVerdict === "insufficient_evidence";
+
+          let resolvedAliexpressData = aliexpressData;
+          let resolvedAliexpressUrl: string | null = cached.aliexpressUrl;
+          let resolvedSupplierStatus: "complete" | "skipped" = aliexpressData
+            ? "complete"
+            : "skipped";
+          let resolvedSupplierSkipReason: string | undefined;
+          let resolvedMatchConfidence: number | undefined;
+          let resolvedMatchQuality: "high" | "medium" | "low" | "none" | undefined;
+          let resolvedMatchReasons: string[] | undefined;
+          let resolvedImageMatchScore: number | undefined;
+          let resolvedImageMatchSameFunction: boolean | undefined;
+          let resolvedImageMatchReasoning: string | undefined;
+
+          if (!aliexpressData && isSupplierSearchEnabled() && !isSupplierListing && !verdictBlocksSupplier) {
+            // Cached record has no AliExpress data (was scanned before keys were configured).
+            // Run supplier search now using the cached scrape + AI attributes.
+            waterfall.mark("supplier", "Cache had no supplier data — running live search…");
+            try {
+              const match = await findAliExpressSupplier({
+                attributes: scrape.attributes,
+                storePriceUsd: scrape.detectedStorePriceUsd,
+                productCategory: ai.prediction?.productCategory,
+                aiKeywords: ai.prediction?.aliexpressKeywords,
+              });
+              resolvedAliexpressData = match.aliexpressData;
+              resolvedAliexpressUrl = match.aliexpressUrl;
+              resolvedSupplierStatus = "complete";
+              resolvedMatchConfidence = match.matchConfidence;
+              resolvedMatchQuality = match.matchQuality;
+              resolvedMatchReasons = match.matchReasons;
+              resolvedImageMatchScore = match.imageMatchScore;
+              resolvedImageMatchSameFunction = match.imageMatchSameFunction;
+              resolvedImageMatchReasoning = match.imageMatchReasoning;
+
+              waterfall.mark(
+                "supplier",
+                `Supplier match: ${match.searchMeta.winnerProductId} (${match.searchMeta.candidateCount} candidates, ${(match.matchConfidence * 100).toFixed(0)}% confidence). Patching cache record.`,
+                "complete",
+              );
+
+              // Patch the DB so future cache hits include the supplier data
+              await patchCachedAliExpressData({
+                originalUrl: normalizedUrl,
+                aliexpressUrl: match.aliexpressUrl,
+                aliexpressData: match.aliexpressData,
+              });
+              waterfall.mark("persist", "AliExpress data patched into cache record.", "complete");
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : "Supplier search failed.";
+              resolvedSupplierSkipReason = msg;
+              waterfall.mark("supplier", `Live supplier search failed: ${msg}`, "error");
+              waterfall.mark("persist", "Served from database — no live scrape", "skipped");
+            }
+          } else if (aliexpressData) {
+            waterfall.mark("supplier", "Supplier data restored from cache", "complete");
+            waterfall.mark("persist", "Served from database — no live scrape", "skipped");
+          } else {
+            const skipReason = isSupplierListing
+              ? "Already on supplier marketplace"
+              : verdictBlocksSupplier
+                ? `AI verdict (${aiVerdict}) — supplier search skipped`
+                : "AliExpress supplier search not enabled";
+            resolvedSupplierSkipReason = skipReason;
+            waterfall.mark("supplier", skipReason, "skipped");
+            waterfall.mark("persist", "Served from database — no live scrape", "skipped");
+          }
+
+          const storePrice = resolveStorePrice(ai.prediction, scrape);
 
           const hitResponse: AnalyzeResponse = {
             status: "success",
             cache: "HIT",
             originalUrl: cached.originalUrl,
-            aliexpressUrl: cached.aliexpressUrl,
-            aliexpressData,
-            supplierStatus: aliexpressData ? "complete" : "skipped",
+            aliexpressUrl: resolvedAliexpressUrl,
+            aliexpressData: resolvedAliexpressData,
+            supplierStatus: resolvedSupplierStatus,
+            supplierSkipReason: resolvedSupplierSkipReason,
+            supplierMatchConfidence: resolvedMatchConfidence,
+            supplierMatchQuality: resolvedMatchQuality,
+            supplierMatchReasons: resolvedMatchReasons,
+            supplierImageMatchScore: resolvedImageMatchScore,
+            supplierImageMatchSameFunction: resolvedImageMatchSameFunction,
+            supplierImageMatchReasoning: resolvedImageMatchReasoning,
             sourceType,
-            supplierSkipReason: aliexpressData
-              ? undefined
-              : "AliExpress Affiliate API keys are not configured in .env",
             dropshipPrediction: ai.prediction,
             lastScrapedAt: cached.lastScrapedAt.toISOString(),
             storeProduct: {
