@@ -16,6 +16,7 @@ import {
 import { BRAND_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import {
+  Activity,
   BarChart3,
   Flame,
   History,
@@ -28,7 +29,7 @@ import {
 
 const NAV_LINKS = [
   { href: "/", label: "Scan", icon: Search },
-  { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
+  { href: "/monitoring", label: "Monitor", icon: Activity },
 ] as const;
 
 export function Nav() {

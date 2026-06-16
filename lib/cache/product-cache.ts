@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { ScannedProduct } from "@prisma/client";
 
-export const CACHE_TTL_DAYS = 7;
+export const CACHE_TTL_DAYS = 14;
 
 export function normalizeProductUrl(rawUrl: string): string {
   const parsed = new URL(rawUrl.trim());

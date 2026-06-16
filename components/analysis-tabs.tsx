@@ -3,13 +3,11 @@
 import { DebugPanel } from "@/components/debug-panel";
 import { AnalysisResults } from "@/components/analysis-results";
 import { DropshipAnalysisResults } from "@/components/dropship-analysis-results";
-import { PipelineWaterfall } from "@/components/pipeline-waterfall";
 import type { DropshipAnalysisResult } from "@/lib/analyze/map-response";
 import type { ProductComparisonResult } from "@/lib/mock-data";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
-import { cn } from "@/lib/utils";
-import { Layers, PackageSearch, Workflow } from "lucide-react";
-import { useState } from "react";
+import { Activity } from "lucide-react";
+import Link from "next/link";
 
 interface AnalysisTabsProps {
   comparison: ProductComparisonResult | null;
@@ -17,88 +15,39 @@ interface AnalysisTabsProps {
   debugInfo: AnalyzeDebugInfo | null;
 }
 
-type TabId = "product" | "pipeline";
-
 export function AnalysisTabs({
   comparison,
   dropshipResult,
   debugInfo,
 }: AnalysisTabsProps) {
-  const [activeTab, setActiveTab] = useState<TabId>("product");
-
-  const tabs: Array<{ id: TabId; label: string; icon: typeof PackageSearch }> = [
-    { id: "product", label: "Product", icon: PackageSearch },
-    { id: "pipeline", label: "Pipeline & Monitor", icon: Workflow },
-  ];
-
   return (
     <section className="animate-in fade-in w-full space-y-4 duration-500">
-      <div
-        role="tablist"
-        aria-label="Analysis views"
-        className="flex w-full rounded-xl border border-white/8 bg-white/[0.04] p-1 backdrop-blur-xl"
-      >
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === id}
-            aria-controls={`panel-${id}`}
-            id={`tab-${id}`}
-            onClick={() => setActiveTab(id)}
-            className={cn(
-              "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200",
-              activeTab === id
-                ? "bg-white/10 text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Icon className="size-4" aria-hidden="true" />
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div
-        id="panel-product"
-        role="tabpanel"
-        aria-labelledby="tab-product"
-        hidden={activeTab !== "product"}
-        className={cn(activeTab !== "product" && "hidden")}
-      >
-        {dropshipResult ? (
-          <DropshipAnalysisResults result={dropshipResult} />
-        ) : null}
-        {comparison ? <AnalysisResults result={comparison} /> : null}
-        {!dropshipResult && !comparison ? (
-          <div className="text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
-            No product results to display.
-          </div>
-        ) : null}
-      </div>
-
-      <div
-        id="panel-pipeline"
-        role="tabpanel"
-        aria-labelledby="tab-pipeline"
-        hidden={activeTab !== "pipeline"}
-        className={cn("space-y-4", activeTab !== "pipeline" && "hidden")}
-      >
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <Layers className="text-primary size-4" aria-hidden="true" />
-          Live pipeline trace &amp; diagnostics
+      {dropshipResult ? (
+        <DropshipAnalysisResults result={dropshipResult} />
+      ) : null}
+      {comparison ? <AnalysisResults result={comparison} /> : null}
+      {!dropshipResult && !comparison ? (
+        <div className="text-muted-foreground rounded-xl border border-dashed p-8 text-center text-sm">
+          No product results to display.
         </div>
+      ) : null}
 
-        {debugInfo?.waterfall && debugInfo.waterfall.length > 0 ? (
-          <PipelineWaterfall entries={debugInfo.waterfall} animate={false} />
-        ) : (
-          <div className="text-muted-foreground rounded-xl border border-dashed p-6 text-center text-sm">
-            Run an analysis to see the pipeline waterfall.
-          </div>
-        )}
+      {/* Debug panel — collapsed by default, visible to power users */}
+      {debugInfo ? (
+        <div className="mt-2">
+          <DebugPanel debug={debugInfo} />
+        </div>
+      ) : null}
 
-        {debugInfo ? <DebugPanel debug={debugInfo} /> : null}
+      {/* Quiet link to full monitoring dashboard */}
+      <div className="flex justify-center pt-2">
+        <Link
+          href="/monitoring"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground"
+        >
+          <Activity className="size-3" aria-hidden="true" />
+          View pipeline trace &amp; service health
+        </Link>
       </div>
     </section>
   );

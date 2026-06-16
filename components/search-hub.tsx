@@ -27,7 +27,6 @@ import {
   Clock,
   Flame,
   Link2,
-  RefreshCw,
   Shield,
   Zap,
 } from "lucide-react";
@@ -35,33 +34,33 @@ import {
 type SearchPhase = "idle" | "analyzing" | "complete" | "error";
 
 const STATS = [
-  { icon: Zap, label: "Avg scan", value: "~5s" },
+  { icon: Zap, label: "Avg scan", value: "~20s" },
   { icon: Shield, label: "Detection", value: "AI-powered" },
-  { icon: Clock, label: "Cache", value: "7 days" },
+  { icon: Clock, label: "Cache", value: "14 days" },
 ];
 
 const HOW_IT_WORKS = [
   {
     step: "01",
     icon: Link2,
-    title: "Paste any retail link",
-    body: "Drop a Shopify, WooCommerce, or Instagram store link. We detect the platform automatically.",
+    title: "Paste any product link",
+    body: "Drop a link from any online store — Shopify, TikTok Shop, or an independent brand. We handle the rest.",
     colorClass: "text-primary",
     glowClass: "bg-primary/12",
   },
   {
     step: "02",
     icon: Flame,
-    title: "AI spots the red flags",
-    body: "Busted scrapes the page and scores dropship likelihood with Gemini AI in seconds.",
+    title: "See if they're marking it up",
+    body: "Our AI reads the product page and scores how likely it is you're paying a dropship premium.",
     colorClass: "text-destructive",
     glowClass: "bg-destructive/12",
   },
   {
     step: "03",
     icon: Shield,
-    title: "Buy direct & save",
-    body: "We surface the original AliExpress supplier so you can skip the markup entirely.",
+    title: "Find it cheaper, instantly",
+    body: "We find the same product at the source so you can buy direct and keep the difference.",
     colorClass: "text-success",
     glowClass: "bg-success/12",
   },
@@ -80,8 +79,6 @@ export function SearchHub() {
   const [comparison, setComparison] = useState<ProductComparisonResult | null>(null);
   const [dropshipResult, setDropshipResult] = useState<DropshipAnalysisResult | null>(null);
   const [debugInfo, setDebugInfo] = useState<AnalyzeDebugInfo | null>(null);
-  const [forceRefresh, setForceRefresh] = useState(false);
-
   const handleUrlChange = useCallback((value: string) => {
     setUrl(value);
     if (value.trim()) {
@@ -109,7 +106,6 @@ export function SearchHub() {
     try {
       const result = await analyzeProductUrl(url, {
         debug: true,
-        forceRefresh,
         onProgress: setProgress,
       });
       setComparison(result.comparison);
@@ -124,7 +120,7 @@ export function SearchHub() {
       if (errorWithDebug.debug) setDebugInfo(errorWithDebug.debug);
       setPhase("error");
     }
-  }, [url, forceRefresh]);
+  }, [url]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -226,7 +222,7 @@ export function SearchHub() {
               </p>
             ) : (
               <p id="url-hint" className="text-left text-xs text-muted-foreground">
-                Shopify, WooCommerce, independent shops — results cached 7 days.
+                Any product link works — repeat lookups are instant thanks to 14-day caching.
               </p>
             )}
 
@@ -240,17 +236,6 @@ export function SearchHub() {
                 {validationError}
               </p>
             ) : null}
-
-            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-              <input
-                type="checkbox"
-                checked={forceRefresh}
-                onChange={(e) => setForceRefresh(e.target.checked)}
-                className="accent-primary size-4 rounded border-white/20"
-              />
-              <RefreshCw className="size-3.5" aria-hidden="true" />
-              Bypass cache — force re-scrape
-            </label>
 
             <Button
               type="submit"
