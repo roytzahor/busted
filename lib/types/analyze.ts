@@ -24,6 +24,8 @@ export interface AnalyzeRequestBody {
   forceRefresh?: boolean;
 }
 
+export type SupplierMatchQuality = "high" | "medium" | "low" | "none";
+
 interface AnalyzeSuccessBase {
   status: "success";
   originalUrl: string;
@@ -31,6 +33,12 @@ interface AnalyzeSuccessBase {
   aliexpressData: AliExpressProductData | null;
   supplierStatus: SupplierStatus;
   supplierSkipReason?: string;
+  supplierMatchConfidence?: number;
+  supplierMatchQuality?: SupplierMatchQuality;
+  supplierMatchReasons?: string[];
+  supplierImageMatchScore?: number;
+  supplierImageMatchSameFunction?: boolean;
+  supplierImageMatchReasoning?: string;
   sourceType: ProductSourceType;
   dropshipPrediction: DropshipPrediction | null;
   lastScrapedAt: string;

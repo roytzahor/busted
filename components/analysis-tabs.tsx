@@ -36,7 +36,7 @@ export function AnalysisTabs({
       <div
         role="tablist"
         aria-label="Analysis views"
-        className="bg-muted/50 flex w-full rounded-xl border p-1"
+        className="flex w-full rounded-xl border border-white/8 bg-white/[0.04] p-1 backdrop-blur-xl"
       >
         {tabs.map(({ id, label, icon: Icon }) => (
           <button
@@ -48,9 +48,9 @@ export function AnalysisTabs({
             id={`tab-${id}`}
             onClick={() => setActiveTab(id)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+              "flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-200",
               activeTab === id
-                ? "bg-background text-foreground shadow-sm"
+                ? "bg-white/10 text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",
             )}
           >

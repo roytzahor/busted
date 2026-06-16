@@ -1,0 +1,11 @@
+{
+  "url": "https://example-blog.com/posts/why-dropshipping-is-bad",
+  "category": "not_a_product",
+  "expectedVerdict": "not_a_product",
+  "confidenceMin": 0.7,
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Blog post — system must refuse to predict dropship and skip supplier search"
+  },
+  "notes": "Synthetic fixture. Hand-crafted scrape mimics a blog page with no product attributes."
+}

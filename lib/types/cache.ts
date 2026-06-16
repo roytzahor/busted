@@ -1,6 +1,22 @@
 import { Prisma } from "@prisma/client";
-import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
+import type {
+  DropshipPrediction,
+  DropshipVerdict,
+} from "@/lib/ai/dropship-verifier";
 import type { ScrapedProductAttributes } from "@/lib/scraping/types";
+
+function parseVerdict(value: unknown, isLikelyDropship: boolean): DropshipVerdict {
+  if (
+    value === "dropship" ||
+    value === "legit" ||
+    value === "insufficient_evidence" ||
+    value === "not_a_product"
+  ) {
+    return value;
+  }
+  // Legacy cached predictions: derive from boolean
+  return isLikelyDropship ? "dropship" : "legit";
+}
 
 export interface CachedScrapeData {
   provider: string;
@@ -87,12 +103,23 @@ export function parseCachedAiPrediction(
   if (predictionRaw && typeof predictionRaw === "object" && !Array.isArray(predictionRaw)) {
     const p = predictionRaw as Record<string, unknown>;
     if (typeof p.isLikelyDropship === "boolean" && typeof p.confidence === "number") {
+      const verdict = parseVerdict(p.verdict, p.isLikelyDropship);
       prediction = {
-        isLikelyDropship: p.isLikelyDropship,
+        verdict,
+        isLikelyDropship: verdict === "dropship",
         confidence: p.confidence,
         productCategory:
           typeof p.productCategory === "string" ? p.productCategory : "Unknown",
         reasoning: typeof p.reasoning === "string" ? p.reasoning : "",
+        reasoningSignals: Array.isArray(p.reasoningSignals)
+          ? p.reasoningSignals.filter((s): s is string => typeof s === "string")
+          : [],
+        missingSignals: Array.isArray(p.missingSignals)
+          ? p.missingSignals.filter((s): s is string => typeof s === "string")
+          : [],
+        aliexpressKeywords: Array.isArray(p.aliexpressKeywords)
+          ? p.aliexpressKeywords.filter((s): s is string => typeof s === "string")
+          : [],
         redFlags: Array.isArray(p.redFlags)
           ? p.redFlags.filter((flag): flag is string => typeof flag === "string")
           : [],

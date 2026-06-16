@@ -325,25 +325,47 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
     let supplierStatus: "complete" | "skipped" = "skipped";
     let supplierSkipReason: string | undefined =
       "AliExpress Affiliate API keys are not configured in .env";
+    let supplierMatchConfidence: number | undefined;
+    let supplierMatchQuality: "high" | "medium" | "low" | "none" | undefined;
+    let supplierMatchReasons: string[] | undefined;
+    let supplierImageMatchScore: number | undefined;
+    let supplierImageMatchSameFunction: boolean | undefined;
+    let supplierImageMatchReasoning: string | undefined;
     let supplierDebug: AnalyzeDebugInfo["supplier"] | undefined;
 
-    if (isSupplierSearchEnabled() && !isSupplierListing) {
+    const verdict = aiResult.prediction?.verdict;
+    const skipSupplierDueToVerdict =
+      verdict === "not_a_product" || verdict === "insufficient_evidence";
+
+    if (isSupplierSearchEnabled() && !isSupplierListing && !skipSupplierDueToVerdict) {
       pipelineSteps.push("Searching AliExpress for matching supplier");
 
       try {
         const match = await findAliExpressSupplier({
           attributes: scrapeResult.attributes,
           storePriceUsd,
+          productCategory: aiResult.prediction?.productCategory ?? undefined,
+          aiKeywords: aiResult.prediction?.aliexpressKeywords ?? undefined,
         });
 
         aliexpressUrl = match.aliexpressUrl;
         aliexpressData = match.aliexpressData;
         supplierStatus = "complete";
         supplierSkipReason = undefined;
+        supplierMatchConfidence = match.matchConfidence;
+        supplierMatchQuality = match.matchQuality;
+        supplierMatchReasons = match.matchReasons;
+        supplierImageMatchScore = match.imageMatchScore;
+        supplierImageMatchSameFunction = match.imageMatchSameFunction;
+        supplierImageMatchReasoning = match.imageMatchReasoning;
 
+        const imgNote =
+          typeof match.imageMatchScore === "number"
+            ? ` · img-AI ${(match.imageMatchScore * 100).toFixed(0)}%${match.imageMatchSameFunction === false ? " (different function!)" : ""}`
+            : "";
         waterfall.mark(
           "supplier",
-          `Supplier match: ${match.searchMeta.winnerProductId} (${match.searchMeta.candidateCount} candidates). Affiliate ${match.searchMeta.affiliateLinkValidated ? "validated" : "fallback"}.`,
+          `Supplier match: ${match.searchMeta.winnerProductId} (${match.searchMeta.candidateCount} candidates). Match ${(match.matchConfidence * 100).toFixed(0)}% (${match.matchQuality})${imgNote}. Affiliate ${match.searchMeta.affiliateLinkValidated ? "validated" : "fallback"}.`,
         );
 
         pipelineSteps.push(
@@ -362,8 +384,16 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
         };
       } catch (error) {
         if (error instanceof AliExpressSearchError) {
-          waterfall.mark("supplier", error.message, "error");
-          pipelineSteps.push(`Supplier search failed: ${error.message}`);
+          const isSoftSkip =
+            error.code === "ALIEXPRESS_NO_CONFIDENT_MATCH" ||
+            error.code === "ALIEXPRESS_NO_RESULTS";
+          waterfall.mark("supplier", error.message, isSoftSkip ? "skipped" : "error");
+          pipelineSteps.push(
+            isSoftSkip ? `No supplier match: ${error.message}` : `Supplier search failed: ${error.message}`,
+          );
+          if (isSoftSkip) {
+            supplierSkipReason = error.message;
+          }
         } else {
           throw error;
         }
@@ -376,6 +406,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
         "skipped",
       );
       pipelineSteps.push("Supplier search skipped — URL is already an AliExpress listing");
+    } else if (skipSupplierDueToVerdict) {
+      const verdictLabel = verdict === "not_a_product" ? "not a product page" : "insufficient evidence";
+      supplierSkipReason = `AI verdict (${verdictLabel}) — no supplier search performed.`;
+      waterfall.mark(
+        "supplier",
+        `Supplier search skipped — AI verdict is "${verdict}".`,
+        "skipped",
+      );
+      pipelineSteps.push(`Supplier search skipped — AI verdict: ${verdict}`);
     } else {
       waterfall.mark(
         "supplier",
@@ -407,6 +446,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
       aliexpressData,
       supplierStatus,
       supplierSkipReason,
+      supplierMatchConfidence,
+      supplierMatchQuality,
+      supplierMatchReasons,
+      supplierImageMatchScore,
+      supplierImageMatchSameFunction,
+      supplierImageMatchReasoning,
       sourceType,
       dropshipPrediction: aiResult.prediction,
       lastScrapedAt: persisted.lastScrapedAt.toISOString(),

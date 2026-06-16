@@ -1,0 +1,11 @@
+{
+  "url": "https://www.allbirds.com/products/mens-tree-runners",
+  "category": "legit_brand",
+  "expectedVerdict": "legit",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Established DTC brand — no AliExpress equivalent should be confidently matched"
+  },
+  "notes": "Synthetic fixture. Real legit-brand product."
+}

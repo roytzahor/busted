@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body
         className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
       >
@@ -34,8 +34,8 @@ export default function RootLayout({
           <main id="main-content" className="flex-1">
             {children}
           </main>
-          <footer className="border-t py-6">
-            <div className="text-muted-foreground mx-auto max-w-6xl px-4 text-center text-xs sm:px-6 sm:text-sm">
+          <footer className="mt-auto border-t border-white/8 py-6">
+            <div className="mx-auto max-w-6xl px-4 text-center text-xs text-muted-foreground sm:px-6 sm:text-sm">
               <p>
                 {BRAND_NAME} — {BRAND_TAGLINE} Spot the fire, skip the markup.
               </p>

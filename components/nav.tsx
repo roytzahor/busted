@@ -37,17 +37,19 @@ export function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+    <header className="sticky top-0 z-50 border-b border-white/8 bg-background/60 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
         <Link
           href="/"
           className="flex items-center gap-2 font-semibold tracking-tight"
           aria-label={`${BRAND_NAME} home`}
         >
-          <span className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-lg">
-            <Flame className="size-4" aria-hidden="true" />
+          <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-amber-500/80 shadow-md shadow-primary/30">
+            <Flame className="size-4 text-primary-foreground" aria-hidden="true" />
           </span>
-          <span className="text-base sm:text-lg">{BRAND_NAME}</span>
+          <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-base font-bold tracking-tight text-transparent sm:text-lg">
+            {BRAND_NAME}
+          </span>
         </Link>
 
         <nav

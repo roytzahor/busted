@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "firecrawl",
+    "markdown": "# Men's Tree Runners by Allbirds\n\n$98\n\nOur lightest, most breathable everyday sneaker. Made with eucalyptus tree fiber. Machine washable.\n\n## Sustainability\nWe're certified B-Corp and carbon-neutral. Materials traced back to source.\n\n## Free shipping & 30-day trial\nReturns are easy and free in the US.\n\n## Reviews (4.7 stars, 12,431 reviews)",
+    "metadata": {
+      "title": "Men's Tree Runners — Sustainable Sneakers | Allbirds",
+      "description": "Our lightest, most breathable everyday sneaker. Made with eucalyptus tree fiber.",
+      "ogImage": "https://cdn.allbirds.com/image/upload/v1612345678/tree-runners-mens.jpg",
+      "sourceUrl": "https://www.allbirds.com/products/mens-tree-runners"
+    }
+  },
+  "attributes": {
+    "title": "Men's Tree Runners — Sustainable Sneakers | Allbirds",
+    "description": "Our lightest, most breathable everyday sneaker. Made with eucalyptus tree fiber. Machine washable. Certified B-Corp and carbon-neutral.",
+    "mainImageUrl": "https://cdn.allbirds.com/image/upload/v1612345678/tree-runners-mens.jpg",
+    "sourceUrl": "https://www.allbirds.com/products/mens-tree-runners",
+    "provider": "firecrawl"
+  },
+  "detectedStorePriceUsd": 98,
+  "storeName": "allbirds.com"
+}

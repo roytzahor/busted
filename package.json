@@ -13,7 +13,10 @@
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "eval": "tsx --env-file=.env scripts/eval/run-fixtures.ts",
+    "eval:capture": "tsx --env-file=.env scripts/eval/capture-fixture.ts",
+    "eval:list": "tsx scripts/eval/list-fixtures.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -39,6 +42,7 @@
     "eslint-config-next": "^15.3.3",
     "prisma": "^6.9.0",
     "tailwindcss": "^4.1.8",
+    "tsx": "^4.22.4",
     "typescript": "^5.8.3"
   }
 }

@@ -1,0 +1,23 @@
+{
+  "prediction": {
+    "verdict": "not_a_product",
+    "isLikelyDropship": false,
+    "confidence": 0.95,
+    "productCategory": "Blog article",
+    "reasoning": "The scraped page is a blog article about dropshipping, not a purchasable product. No price, no product image, title reads as an article headline.",
+    "reasoningSignals": [
+      "Title reads as an article headline, not a product name",
+      "No price detected in scrape",
+      "No product image (mainImageUrl is null)"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"not_a_product\",\"confidence\":0.95}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

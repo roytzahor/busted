@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
   Bot,
+  HelpCircle,
   Package,
   ShieldAlert,
   Store,
@@ -25,11 +26,40 @@ function formatUsd(value: number): string {
   }).format(value);
 }
 
+const VERDICT_COPY: Record<
+  string,
+  { label: string; tone: string; tagline: string }
+> = {
+  dropship: {
+    label: "They’re busted — markup detected",
+    tone: "bg-primary/15 text-primary",
+    tagline: "Scrape and AI verification complete. Check the Pipeline tab for timing details.",
+  },
+  legit: {
+    label: "Looks legit — no markup signals",
+    tone: "bg-success/15 text-success",
+    tagline: "This appears to be an established brand selling its own product. No AliExpress alternative needed.",
+  },
+  insufficient_evidence: {
+    label: "Not enough info to judge",
+    tone: "bg-muted text-muted-foreground",
+    tagline: "We couldn’t tell from this page alone. Try a direct product link instead of a homepage or listing.",
+  },
+  not_a_product: {
+    label: "Not a product page",
+    tone: "bg-muted text-muted-foreground",
+    tagline: "This looks like a blog post, category page, or other non-product URL. Paste a specific product URL to scan it.",
+  },
+};
+
 export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps) {
   const { storeProduct, dropshipPrediction, cache, supplierSkipReason, sourceType } =
     result;
   const prediction = dropshipPrediction;
   const isSupplierListing = sourceType === "supplier_marketplace";
+  const verdict = prediction.verdict ?? (prediction.isLikelyDropship ? "dropship" : "legit");
+  const verdictCopy = VERDICT_COPY[verdict] ?? VERDICT_COPY.legit;
+  const isWeakVerdict = verdict === "insufficient_evidence" || verdict === "not_a_product";
 
   return (
     <section
@@ -40,18 +70,10 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
         <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
           {isSupplierListing ? (
             <Badge className="bg-success/15 text-success">
-              Already at supplier — you're good
+              Already at supplier — you&apos;re good
             </Badge>
           ) : (
-            <Badge
-              className={cn(
-                prediction.isLikelyDropship
-                  ? "bg-primary/15 text-primary"
-                  : "bg-muted text-muted-foreground",
-              )}
-            >
-              {prediction.isLikelyDropship ? "You're busted — markup detected" : "Unclear verdict"}
-            </Badge>
+            <Badge className={cn(verdictCopy.tone)}>{verdictCopy.label}</Badge>
           )}
           <Badge variant="outline">
             {Math.round(prediction.confidence * 100)}% confidence
@@ -64,12 +86,14 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
         <h2 id="dropship-heading" className="text-xl font-bold tracking-tight sm:text-2xl">
           {isSupplierListing
             ? "Supplier listing — not a dropship scan target"
-            : `Analysis — ${storeProduct.title}`}
+            : verdict === "not_a_product"
+              ? "This page isn’t a product"
+              : verdict === "insufficient_evidence"
+                ? "Not enough info on this page"
+                : `Analysis — ${storeProduct.title}`}
         </h2>
         <p className="text-muted-foreground text-sm sm:text-base">
-          {isSupplierListing
-            ? prediction.reasoning
-            : "Scrape and AI verification complete. Check the Pipeline tab for timing details."}
+          {isSupplierListing ? prediction.reasoning : verdictCopy.tagline}
         </p>
       </div>
 
@@ -176,6 +200,40 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
                 <Separator />
 
                 <p className="text-sm leading-relaxed">{prediction.reasoning}</p>
+
+                {prediction.reasoningSignals && prediction.reasoningSignals.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Evidence used
+                    </p>
+                    <ul className="space-y-1 text-xs leading-relaxed">
+                      {prediction.reasoningSignals.map((signal) => (
+                        <li key={signal} className="flex items-start gap-1.5">
+                          <span className="mt-1 size-1 shrink-0 rounded-full bg-muted-foreground/60" aria-hidden="true" />
+                          {signal}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {prediction.missingSignals && prediction.missingSignals.length > 0 ? (
+                  <div className="space-y-2">
+                    <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <HelpCircle className="size-3.5" aria-hidden="true" />
+                      What we couldn’t find
+                    </p>
+                    <ul className="flex flex-wrap gap-1.5">
+                      {prediction.missingSignals.map((signal) => (
+                        <li key={signal}>
+                          <Badge variant="outline" className="text-xs text-muted-foreground">
+                            {signal}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
 
                 {prediction.redFlags.length > 0 ? (
                   <div className="space-y-2">

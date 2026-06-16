@@ -22,9 +22,17 @@ export class AliExpressSearchError extends Error {
   }
 }
 
+export type SupplierMatchQuality = "high" | "medium" | "low" | "none";
+
 export interface SupplierMatchResult {
   aliexpressUrl: string;
   aliexpressData: import("@/lib/types/analyze").AliExpressProductData;
+  matchConfidence: number;
+  matchQuality: SupplierMatchQuality;
+  matchReasons: string[];
+  imageMatchScore?: number;
+  imageMatchSameFunction?: boolean;
+  imageMatchReasoning?: string;
   searchMeta: {
     keywords: string;
     provider: "aliexpress_api" | "firecrawl_scrape";

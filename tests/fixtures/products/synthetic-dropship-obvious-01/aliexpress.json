@@ -1,0 +1,39 @@
+{
+  "keywords": "galaxy led star projector bluetooth",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005006544343921",
+      "title": "Galaxy LED Star Projector Night Light Bluetooth Speaker 8 Color Modes",
+      "priceUsd": 12.5,
+      "productUrl": "https://www.aliexpress.com/item/1005006544343921.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/galaxy-projector-12345.jpg",
+      "orderCount": 8432,
+      "sellerRating": 4.8,
+      "shippingDays": 14,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006544343922",
+      "title": "Star Galaxy Projector LED Light USB Remote Control",
+      "priceUsd": 8.99,
+      "productUrl": "https://www.aliexpress.com/item/1005006544343922.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/galaxy-projector-67890.jpg",
+      "orderCount": 5210,
+      "sellerRating": 4.7,
+      "shippingDays": 18,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006544343923",
+      "title": "Mini Galaxy Star Projector Night Light",
+      "priceUsd": 6.25,
+      "productUrl": "https://www.aliexpress.com/item/1005006544343923.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/galaxy-projector-mini-001.jpg",
+      "orderCount": 12100,
+      "sellerRating": 4.6,
+      "shippingDays": 21,
+      "promotionLink": null
+    }
+  ]
+}

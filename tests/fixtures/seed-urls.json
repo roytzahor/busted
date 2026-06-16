@@ -1,0 +1,65 @@
+{
+  "_comment": "Seed list of ~50 URLs across 5 categories. Run `npm run eval:capture <category>/<slug> <url>` to capture each one. Replace placeholders marked TODO with real examples from your own observation.",
+  "_categories": {
+    "dropship_obvious": "Shopify/WooCommerce stores with telltale signs: white-label boxes, urgency timers, generic copy, single-product stores",
+    "dropship_subtle": "Subtler stores: looks legit at first glance but uses dropship suppliers, slow shipping",
+    "legit_brand": "Established brands with real inventory + design + fulfillment",
+    "not_a_product": "About pages, blog posts, category pages, 404s — system should refuse to predict",
+    "aliexpress_itself": "Already-at-supplier URLs"
+  },
+  "dropship_obvious": [
+    { "slug": "TODO-shopify-watch-01", "url": "https://example-store.com/products/luxury-watch", "notes": "TODO: replace with a known dropship Shopify URL you've found" },
+    { "slug": "TODO-shopify-led-light-01", "url": "https://example-store.com/products/galaxy-projector", "notes": "TODO: replace" },
+    { "slug": "TODO-shopify-pet-toy-01", "url": "https://example-store.com/products/pet-toy", "notes": "TODO: replace" },
+    { "slug": "TODO-shopify-kitchen-gadget-01", "url": "https://example-store.com/products/onion-chopper", "notes": "TODO: replace" },
+    { "slug": "TODO-shopify-beauty-tool-01", "url": "https://example-store.com/products/face-massager", "notes": "TODO: replace" },
+    { "slug": "TODO-shopify-car-accessory-01", "url": "https://example-store.com/products/wireless-charger-car", "notes": "TODO: replace" },
+    { "slug": "TODO-shopify-fitness-band-01", "url": "https://example-store.com/products/posture-corrector", "notes": "TODO: replace" },
+    { "slug": "TODO-shopify-toy-01", "url": "https://example-store.com/products/fidget-spinner-led", "notes": "TODO: replace" },
+    { "slug": "TODO-shopify-gardening-01", "url": "https://example-store.com/products/self-watering-pot", "notes": "TODO: replace" },
+    { "slug": "TODO-shopify-jewelry-01", "url": "https://example-store.com/products/birthstone-necklace", "notes": "TODO: replace" }
+  ],
+  "dropship_subtle": [
+    { "slug": "TODO-subtle-fashion-01", "url": "https://example-store.com/products/dress-01", "notes": "TODO: a borderline case — looks branded but ships from China" },
+    { "slug": "TODO-subtle-home-decor-01", "url": "https://example-store.com/products/wall-art", "notes": "TODO" },
+    { "slug": "TODO-subtle-electronics-01", "url": "https://example-store.com/products/bluetooth-speaker", "notes": "TODO" },
+    { "slug": "TODO-subtle-outdoor-01", "url": "https://example-store.com/products/camping-light", "notes": "TODO" },
+    { "slug": "TODO-subtle-baby-01", "url": "https://example-store.com/products/baby-monitor", "notes": "TODO" },
+    { "slug": "TODO-subtle-watch-01", "url": "https://example-store.com/products/minimalist-watch", "notes": "TODO" },
+    { "slug": "TODO-subtle-bag-01", "url": "https://example-store.com/products/laptop-bag", "notes": "TODO" },
+    { "slug": "TODO-subtle-sunglasses-01", "url": "https://example-store.com/products/polarized-sunglasses", "notes": "TODO" },
+    { "slug": "TODO-subtle-skincare-01", "url": "https://example-store.com/products/anti-aging-serum", "notes": "TODO" },
+    { "slug": "TODO-subtle-stationery-01", "url": "https://example-store.com/products/notebook-set", "notes": "TODO" }
+  ],
+  "legit_brand": [
+    { "slug": "nike-pegasus-41", "url": "https://www.nike.com/t/pegasus-41-mens-road-running-shoes-jLn1cR", "notes": "Established athletic brand" },
+    { "slug": "allbirds-tree-runner", "url": "https://www.allbirds.com/products/mens-tree-runners", "notes": "DTC sustainable brand" },
+    { "slug": "warby-parker-haskell", "url": "https://www.warbyparker.com/eyeglasses/men/haskell/whiskey-tortoise", "notes": "DTC eyewear" },
+    { "slug": "lululemon-align-pant", "url": "https://shop.lululemon.com/p/womens-leggings/Align-Pant-2/_/prod9170010", "notes": "Premium athleisure" },
+    { "slug": "apple-airpods-pro", "url": "https://www.apple.com/shop/buy-airpods/airpods-pro", "notes": "First-party product" },
+    { "slug": "patagonia-better-sweater", "url": "https://www.patagonia.com/product/mens-better-sweater-fleece-jacket/25528.html", "notes": "Outdoor brand" },
+    { "slug": "bose-quietcomfort-ultra", "url": "https://www.bose.com/p/headphones/bose-quietcomfort-ultra-headphones/QCUH-HEADPHONEARN.html", "notes": "Established audio brand" },
+    { "slug": "uniqlo-airism-tshirt", "url": "https://www.uniqlo.com/us/en/products/E422990-000/00", "notes": "Global retail brand" },
+    { "slug": "everlane-cashmere", "url": "https://www.everlane.com/products/womens-cashmere-crew-light-grey", "notes": "DTC brand" },
+    { "slug": "rei-trail-25-pack", "url": "https://www.rei.com/product/170880/rei-co-op-trail-25-pack", "notes": "Co-op retailer" }
+  ],
+  "not_a_product": [
+    { "slug": "nike-homepage", "url": "https://www.nike.com/", "notes": "Brand homepage — no product" },
+    { "slug": "shopify-blog-post", "url": "https://www.shopify.com/blog", "notes": "Blog index" },
+    { "slug": "amazon-category-page", "url": "https://www.amazon.com/s?k=running+shoes", "notes": "Search results page, not a product" },
+    { "slug": "nike-about-page", "url": "https://about.nike.com/", "notes": "Brand about page" },
+    { "slug": "github-404", "url": "https://github.com/this-page-does-not-exist-12345", "notes": "404 page" },
+    { "slug": "wikipedia-article", "url": "https://en.wikipedia.org/wiki/Dropshipping", "notes": "Wikipedia article" },
+    { "slug": "youtube-video", "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ", "notes": "Video page" },
+    { "slug": "medium-blog", "url": "https://medium.com/tag/ecommerce", "notes": "Blog tag page" },
+    { "slug": "etsy-category", "url": "https://www.etsy.com/c/jewelry", "notes": "Marketplace category page" },
+    { "slug": "shopify-store-front-page", "url": "https://www.allbirds.com/", "notes": "Store homepage — not a product" }
+  ],
+  "aliexpress_itself": [
+    { "slug": "aliexpress-watch", "url": "https://www.aliexpress.com/item/1005006544343921.html", "notes": "Already at supplier" },
+    { "slug": "aliexpress-led-strip", "url": "https://www.aliexpress.com/item/1005004566421233.html", "notes": "Already at supplier" },
+    { "slug": "aliexpress-phone-case", "url": "https://www.aliexpress.com/item/1005006789012345.html", "notes": "Already at supplier" },
+    { "slug": "aliexpress-kitchen-gadget", "url": "https://www.aliexpress.com/item/1005005123456789.html", "notes": "Already at supplier" },
+    { "slug": "aliexpress-jewelry", "url": "https://www.aliexpress.com/item/1005004987654321.html", "notes": "Already at supplier" }
+  ]
+}

@@ -89,32 +89,32 @@
 }
 
 .dark {
-  --background: oklch(0.16 0.025 45);
+  --background: oklch(0.15 0.03 52);
   --foreground: oklch(0.97 0.01 55);
-  --card: oklch(0.21 0.03 45);
+  --card: oklch(0.20 0.03 50);
   --card-foreground: oklch(0.97 0.01 55);
-  --popover: oklch(0.21 0.03 45);
+  --popover: oklch(0.20 0.03 50);
   --popover-foreground: oklch(0.97 0.01 55);
   --primary: oklch(0.72 0.17 50);
   --primary-foreground: oklch(0.18 0.03 45);
   --secondary: oklch(0.28 0.04 55);
   --secondary-foreground: oklch(0.95 0.02 55);
-  --muted: oklch(0.28 0.03 50);
-  --muted-foreground: oklch(0.7 0.04 55);
+  --muted: oklch(0.28 0.03 52);
+  --muted-foreground: oklch(0.72 0.04 55);
   --accent: oklch(0.32 0.06 75);
   --accent-foreground: oklch(0.95 0.03 85);
   --destructive: oklch(0.65 0.2 25);
   --success: oklch(0.68 0.14 155);
   --success-foreground: oklch(0.16 0.03 155);
-  --border: oklch(1 0.02 55 / 12%);
-  --input: oklch(1 0.02 55 / 16%);
+  --border: oklch(1 0.02 55 / 10%);
+  --input: oklch(1 0.02 55 / 14%);
   --ring: oklch(0.65 0.14 45);
   --chart-1: oklch(0.65 0.2 25);
   --chart-2: oklch(0.72 0.17 50);
   --chart-3: oklch(0.78 0.12 85);
   --chart-4: oklch(0.68 0.14 155);
   --chart-5: oklch(0.58 0.1 155);
-  --sidebar: oklch(0.19 0.03 45);
+  --sidebar: oklch(0.22 0.03 50);
   --sidebar-foreground: oklch(0.97 0.01 55);
   --sidebar-primary: oklch(0.72 0.17 50);
   --sidebar-primary-foreground: oklch(0.18 0.03 45);
@@ -133,5 +133,63 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism card */
+  .glass {
+    background: oklch(1 0 0 / 0.04);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid oklch(1 0 0 / 0.08);
+  }
+
+  /* Slightly more opaque glass for interactive elements */
+  .glass-md {
+    background: oklch(1 0 0 / 0.07);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid oklch(1 0 0 / 0.12);
+  }
+
+  /* Glow effect behind primary CTA */
+  .glow-primary {
+    box-shadow: 0 0 40px -8px var(--color-primary);
+  }
+
+  .glow-success {
+    box-shadow: 0 0 40px -8px var(--color-success);
+  }
+}
+
+/* Dot grid texture on dark backgrounds */
+.dark body {
+  background-image: radial-gradient(oklch(1 0 0 / 0.045) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Live indicator dot */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+@layer utilities {
+  .animate-live {
+    animation: live-pulse 1.8s ease-in-out infinite;
+  }
+
+  /* Stronger glow for hero CTAs */
+  .glow-primary-xl {
+    box-shadow: 0 0 80px -8px oklch(0.72 0.17 50 / 0.45);
+  }
+  .glow-success-xl {
+    box-shadow: 0 0 80px -8px oklch(0.68 0.14 155 / 0.4);
+  }
+
+  /* Top-edge shine for glass cards (add as first child div) */
+  .shine-top {
+    background: linear-gradient(90deg, transparent, oklch(1 0 0 / 0.18), transparent);
   }
 }

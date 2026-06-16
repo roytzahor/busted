@@ -15,6 +15,8 @@ export interface SupplierProduct {
   affiliateUrl: string;
 }
 
+export type SupplierMatchQuality = "high" | "medium" | "low" | "none";
+
 export interface ProductComparisonResult {
   originalUrl: string;
   cache: "HIT" | "MISS";
@@ -22,6 +24,12 @@ export interface ProductComparisonResult {
   supplierProduct: SupplierProduct;
   savingsUsd: number;
   savingsPercent: number;
+  matchConfidence?: number;
+  matchQuality?: SupplierMatchQuality;
+  matchReasons?: string[];
+  imageMatchScore?: number;
+  imageMatchSameFunction?: boolean;
+  imageMatchReasoning?: string;
 }
 
 export interface ScanHistoryItem {

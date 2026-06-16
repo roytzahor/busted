@@ -1,0 +1,23 @@
+{
+  "prediction": {
+    "verdict": "legit",
+    "isLikelyDropship": false,
+    "confidence": 0.92,
+    "productCategory": "Sustainable sneakers",
+    "reasoning": "Recognized DTC brand (Allbirds) with proprietary materials and brand identity. Price consistent with their retail. No dropship markup signals.",
+    "reasoningSignals": [
+      "Known DTC brand 'Allbirds' in title",
+      "Proprietary material (eucalyptus tree fiber)",
+      "B-Corp certification mentioned"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": 98,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"legit\",\"confidence\":0.92}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

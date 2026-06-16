@@ -1,0 +1,31 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.88,
+    "productCategory": "LED Galaxy Projector",
+    "reasoning": "Generic gadget with urgency timer marketing, vague brand, and 2-4 week shipping from overseas — all classic dropship signals. Price is heavily marked up vs. typical $5-15 supplier cost.",
+    "reasoningSignals": [
+      "Urgency timer ('50% OFF Today', 'sale ends soon')",
+      "2-4 week delivery suggests overseas drop-shipping",
+      "Generic product category widely sold on AliExpress",
+      "No brand identity visible in scrape"
+    ],
+    "missingSignals": [
+      "No brand About page text",
+      "No manufacturer name"
+    ],
+    "redFlags": [
+      "Urgency timer",
+      "Overseas shipping",
+      "Generic branding"
+    ],
+    "estimatedStorePriceUsd": 79.99,
+    "estimatedSupplierPriceUsd": 12,
+    "estimatedMarkupPercent": 567
+  },
+  "rawResponse": "{\"verdict\":\"dropship\",\"confidence\":0.88}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}
