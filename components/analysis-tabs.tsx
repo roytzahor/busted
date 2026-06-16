@@ -1,6 +1,5 @@
 "use client";
 
-import { DebugPanel } from "@/components/debug-panel";
 import { AnalysisResults } from "@/components/analysis-results";
 import { DropshipAnalysisResults } from "@/components/dropship-analysis-results";
 import type { DropshipAnalysisResult } from "@/lib/analyze/map-response";
@@ -18,7 +17,6 @@ interface AnalysisTabsProps {
 export function AnalysisTabs({
   comparison,
   dropshipResult,
-  debugInfo,
 }: AnalysisTabsProps) {
   return (
     <section className="animate-in fade-in w-full space-y-4 duration-500">
@@ -32,21 +30,13 @@ export function AnalysisTabs({
         </div>
       ) : null}
 
-      {/* Debug panel — collapsed by default, visible to power users */}
-      {debugInfo ? (
-        <div className="mt-2">
-          <DebugPanel debug={debugInfo} />
-        </div>
-      ) : null}
-
-      {/* Quiet link to full monitoring dashboard */}
       <div className="flex justify-center pt-2">
         <Link
           href="/monitoring"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/60 transition-colors hover:text-muted-foreground"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/50 transition-colors hover:text-muted-foreground"
         >
           <Activity className="size-3" aria-hidden="true" />
-          View pipeline trace &amp; service health
+          View pipeline trace &amp; behind-the-scenes
         </Link>
       </div>
     </section>

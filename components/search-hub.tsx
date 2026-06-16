@@ -102,7 +102,7 @@ export function SearchHub() {
     setDropshipResult(null);
     setDebugInfo(null);
     setPhase("analyzing");
-    setProgress({ step: "Checking 7-day cache…", progress: 0 });
+    setProgress({ step: "Checking cache…", progress: 0 });
     try {
       const result = await analyzeProductUrl(url, {
         debug: true,
@@ -112,6 +112,14 @@ export function SearchHub() {
       setDropshipResult(result.dropshipAnalysis);
       setDebugInfo(result.debug);
       setPhase("complete");
+      // Persist debug info to localStorage so /monitoring can display it
+      if (result.debug) {
+        try {
+          localStorage.setItem("busted_last_scan_debug", JSON.stringify(result.debug));
+          localStorage.setItem("busted_last_scan_url", url);
+          localStorage.setItem("busted_last_scan_at", new Date().toISOString());
+        } catch { /* storage full or unavailable */ }
+      }
     } catch (err) {
       const errorWithDebug = err as Error & { debug?: AnalyzeDebugInfo };
       setAnalysisError(
