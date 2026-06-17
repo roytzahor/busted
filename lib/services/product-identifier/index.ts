@@ -10,10 +10,30 @@
  * to today's behavior — title-derived keywords for search.
  */
 
-import { identifyProduct, isIdentifierEnabled } from "@/lib/ai/product-identifier";
+import { createHash } from "node:crypto";
+import {
+  IDENTIFIER_PROMPT_VERSION,
+  identifyProduct,
+  isIdentifierEnabled,
+} from "@/lib/ai/product-identifier";
 import type { ScrapedProductAttributes } from "@/lib/scraping/types";
 import { runService } from "@/lib/services/run";
+import { cacheOrRun } from "@/lib/services/stage-cache";
 import { err, ok, type Result, type ProductIdentity } from "@/lib/services/types";
+
+function inputHash(attributes: ScrapedProductAttributes, markdown: string): string {
+  // Hash the fields that meaningfully affect the identity output.
+  // Markdown is hashed not stored — keeps key small.
+  return createHash("sha256")
+    .update(attributes.title)
+    .update("|")
+    .update(attributes.description.slice(0, 800))
+    .update("|")
+    .update(attributes.mainImageUrl ?? "no-image")
+    .update("|")
+    .update(markdown.slice(0, 1500))
+    .digest("hex");
+}
 
 export interface ProductIdentifierInput {
   attributes: ScrapedProductAttributes;
@@ -39,12 +59,26 @@ export async function identify(
       hasImage: input.attributes.mainImageUrl !== null,
     });
 
-    const result = await identifyProduct({
-      title: input.attributes.title,
-      description: input.attributes.description,
-      imageUrl: input.attributes.mainImageUrl,
-      markdownExcerpt: input.markdown,
-    });
+    // Stage cache: keyed on hash of input + prompt version. If a prior scan
+    // of this exact title+image produced an identity, reuse it. Stage cache
+    // is a no-op unless STAGE_CACHE_ENABLED=true (Phase 6 default ON in prod).
+    const hash = inputHash(input.attributes, input.markdown);
+    const { payload: result, cacheHit } = await cacheOrRun(
+      "identify",
+      IDENTIFIER_PROMPT_VERSION,
+      hash,
+      () =>
+        identifyProduct({
+          title: input.attributes.title,
+          description: input.attributes.description,
+          imageUrl: input.attributes.mainImageUrl,
+          markdownExcerpt: input.markdown,
+        }),
+    );
+
+    if (cacheHit) {
+      emit("identify:cache-hit", "Identity restored from stage cache");
+    }
 
     if (!result.identity) {
       // Failure is recoverable — orchestrator continues with null identity

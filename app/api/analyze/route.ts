@@ -553,6 +553,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
         ? {
             debug: {
               scrape: buildDebugScrape(normalizedUrl, scrapeData),
+              serviceEvents,
               ai: {
                 provider: aiResult.provider,
                 model: aiResult.model,

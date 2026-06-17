@@ -38,11 +38,29 @@ export interface PipelineWaterfallEntry {
   status: "complete" | "skipped" | "error" | "pending";
 }
 
+/**
+ * Per-service event emitted by the orchestrator. Mirror of ServiceEvent
+ * from lib/services/types.ts — duplicated here so debug types stay
+ * frontend-safe and don't drag in service internals.
+ */
+export interface AnalyzeDebugServiceEvent {
+  service: string;
+  stage: string;
+  status: "ok" | "skip" | "error" | "degraded";
+  latencyMs: number;
+  cacheStatus: "HIT" | "MISS" | "BYPASS";
+  message?: string;
+  meta?: Record<string, unknown>;
+  at: string;
+}
+
 export interface AnalyzeDebugInfo {
   scrape: AnalyzeDebugScrape;
   ai: AnalyzeDebugAi;
   supplier?: AnalyzeDebugSupplier;
   waterfall?: PipelineWaterfallEntry[];
+  /** Per-service event timeline (Phase 1+ services). */
+  serviceEvents?: AnalyzeDebugServiceEvent[];
   pipeline: {
     cacheStatus: "HIT" | "MISS";
     steps: string[];

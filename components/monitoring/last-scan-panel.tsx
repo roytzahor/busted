@@ -1,11 +1,12 @@
 "use client";
 
 import { DebugPanel } from "@/components/debug-panel";
+import { EventTimeline } from "@/components/monitoring/event-timeline";
 import { PipelineWaterfall } from "@/components/pipeline-waterfall";
 import { Badge } from "@/components/ui/badge";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
 import { cn } from "@/lib/utils";
-import { Clock, ExternalLink, ScanSearch } from "lucide-react";
+import { Clock, ExternalLink, GitBranch, ScanSearch } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -109,6 +110,19 @@ export function LastScanPanel() {
           </a>
         </div>
       </div>
+
+      {/* Per-service event timeline (Phase 6) */}
+      {debug.serviceEvents && debug.serviceEvents.length > 0 ? (
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <GitBranch className="size-4 text-primary" aria-hidden="true" />
+            <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+              Service Timeline
+            </h3>
+          </div>
+          <EventTimeline events={debug.serviceEvents} />
+        </div>
+      ) : null}
 
       {/* Pipeline waterfall */}
       {debug.waterfall && debug.waterfall.length > 0 ? (
