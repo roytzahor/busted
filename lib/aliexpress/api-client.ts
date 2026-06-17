@@ -192,6 +192,60 @@ export async function searchAliExpressProducts(
   return rankAliExpressCandidates(candidates);
 }
 
+/**
+ * Image-based candidate search via AliExpress `smartmatch` endpoint.
+ *
+ * Takes a hosted image URL (the scraped product image) and asks AliExpress
+ * to return visually similar products from their catalog. This catches
+ * cases where text keywords miss the right product entirely.
+ *
+ * The endpoint requires API tier access — returns null gracefully on any
+ * failure (HTTP error, auth tier mismatch, no results, etc.) so the
+ * orchestrator can fall back to keyword arms only.
+ *
+ * Phase 5 — best-effort, never breaks the pipeline.
+ */
+export async function searchAliExpressBySmartMatch(
+  imageUrl: string,
+): Promise<AliExpressProductCandidate[] | null> {
+  const config = getAffiliateConfig();
+  if (!config) return null;
+
+  try {
+    const response = await callAffiliateApi(
+      "aliexpress.affiliate.product.smartmatch",
+      {
+        product_id: "0",
+        site: "aliexpress",
+        device: "PC",
+        country: config.shipToCountry,
+        target_currency: "USD",
+        target_language: "EN",
+        tracking_id: config.trackingId,
+        app_signature: imageUrl,
+        fields:
+          "product_id,product_title,product_detail_url,product_main_image_url,promotion_link,sale_price,target_sale_price,lastest_volume,evaluate_rate,ship_to_days",
+      },
+    );
+
+    const queryResponse = response.aliexpress_affiliate_product_smartmatch_response as
+      | Record<string, unknown>
+      | undefined;
+    const respResult = queryResponse?.resp_result as Record<string, unknown> | undefined;
+    const respCode = respResult?.resp_code;
+    if (respCode !== undefined && Number(respCode) !== 200) return null;
+
+    const result = respResult?.result as Record<string, unknown> | undefined;
+    const products = normalizeProducts(result?.products);
+    const candidates = products
+      .map(mapApiProduct)
+      .filter((candidate): candidate is AliExpressProductCandidate => candidate !== null);
+    return candidates.length > 0 ? rankAliExpressCandidates(candidates) : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function generateAliExpressAffiliateLink(
   sourceUrl: string,
 ): Promise<string | null> {

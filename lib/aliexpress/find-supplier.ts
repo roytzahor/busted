@@ -7,8 +7,13 @@ import {
 import type { ProductIdentity } from "@/lib/services/types";
 import {
   isAliExpressApiConfigured,
+  searchAliExpressBySmartMatch,
   searchAliExpressProducts,
 } from "@/lib/aliexpress/api-client";
+import {
+  RERANK_KEEP_THRESHOLD,
+  rerankCandidatesByImage,
+} from "@/lib/ai/image-rerank";
 import {
   buildCategoryKeywords,
   extractSearchKeywords,
@@ -202,6 +207,23 @@ export async function findAliExpressSupplier(params: {
     if (categoryResults.length > 0) keywordsUsed.push(categoryKeywords);
   }
 
+  // Phase 5: smartmatch arm — image-based AliExpress search.
+  // Best-effort: requires API tier access, returns null on any failure.
+  // Worth trying because it catches visually-similar products that text
+  // keywords miss entirely. Only attempted when API is configured AND we
+  // have a hostable source image URL.
+  if (
+    provider === "aliexpress_api" &&
+    params.attributes.mainImageUrl &&
+    candidates.length < 30
+  ) {
+    const smartResults = await searchAliExpressBySmartMatch(params.attributes.mainImageUrl);
+    if (smartResults && smartResults.length > 0) {
+      candidates = mergeAndDeduplicateCandidates(candidates, smartResults);
+      keywordsUsed.push(`smartmatch:image (${smartResults.length} candidates)`);
+    }
+  }
+
   if (candidates.length === 0) {
     throw new AliExpressSearchError(
       "ALIEXPRESS_NO_RESULTS",
@@ -211,7 +233,9 @@ export async function findAliExpressSupplier(params: {
   }
 
   // Score top N candidates by text match confidence.
-  const TOP_N = Math.min(8, candidates.length);
+  // Phase 5: bumped from 8 → 12 to give the batch image rerank a wider pool
+  // (rerank itself caps at 12 candidates in one Gemini call).
+  const TOP_N = Math.min(12, candidates.length);
   const scored = candidates.slice(0, TOP_N).map((candidate) => ({
     candidate,
     confidence: computeMatchConfidence(params.attributes, params.storePriceUsd, candidate),
@@ -244,7 +268,57 @@ export async function findAliExpressSupplier(params: {
     }
   }
 
-  // Image-based verification on top 3 candidates.
+  // Phase 5 Stage 2 — Cheap batch image rerank (single Gemini call).
+  // Sends source image + top 12 candidate thumbnails in one prompt to
+  // rate each on same-product + same-function. Lets us cull to the top 3-4
+  // BEFORE running the more detailed per-candidate image AI verification.
+  //
+  // Without this, we'd either run deep image AI on too many candidates
+  // (wasteful) or miss good candidates by running on too few.
+  if (
+    isImageMatchEnabled() &&
+    params.attributes.mainImageUrl !== null &&
+    scored.length > 3 &&
+    scored[0].confidence.score < TEXT_SCORE_SKIP_IMAGE_THRESHOLD
+  ) {
+    const rerankResult = await rerankCandidatesByImage({
+      sourceTitle: params.attributes.title,
+      sourceImageUrl: params.attributes.mainImageUrl,
+      candidates: scored.map(({ candidate }) => ({
+        id: candidate.productId,
+        title: candidate.title,
+        imageUrl: candidate.imageUrl,
+      })),
+    });
+
+    if (rerankResult && rerankResult.ratings.length > 0 && !rerankResult.error) {
+      const ratingById = new Map(rerankResult.ratings.map((r) => [r.candidateId, r]));
+      // Keep candidates rated >= threshold by the rerank model. If too few
+      // pass, keep the top 4 by rating to preserve choice for the deep stage.
+      const ranked = scored
+        .map((entry) => ({
+          entry,
+          rating: ratingById.get(entry.candidate.productId)?.rating ?? 0,
+        }))
+        .sort((a, b) => b.rating - a.rating);
+
+      const passing = ranked.filter((r) => r.rating >= RERANK_KEEP_THRESHOLD);
+      const culled = (passing.length >= 2 ? passing : ranked.slice(0, 4)).map((r) => r.entry);
+
+      // Push rerank reasons into the top candidate's match confidence reasons
+      // so the user sees them in the "verify before buying" warning panel.
+      const topRating = ratingById.get(culled[0]?.candidate.productId ?? "");
+      if (topRating && culled[0]) {
+        culled[0].confidence.reasons.push(
+          `Image rerank: ${topRating.rating}/10 — ${topRating.reason}`,
+        );
+      }
+
+      scored.splice(0, scored.length, ...culled);
+    }
+  }
+
+  // Image-based verification on top 3 candidates (deep, per-candidate).
   const shouldRunImageMatch =
     isImageMatchEnabled() &&
     params.attributes.mainImageUrl !== null &&
