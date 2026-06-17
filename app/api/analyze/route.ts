@@ -20,9 +20,10 @@ import {
 } from "@/lib/scraping/detect-source";
 import { ScraperError } from "@/lib/scraping/types";
 import { verify as verdictService } from "@/lib/services/dropship-verdict";
+import { identify as identifierService } from "@/lib/services/product-identifier";
 import { scrape as scraperService } from "@/lib/services/scraper";
 import { findSupplier as supplierService } from "@/lib/services/supplier-match";
-import type { ServiceEvent } from "@/lib/services/types";
+import type { ProductIdentity, ServiceEvent } from "@/lib/services/types";
 import type { CachedAiPrediction, CachedScrapeData } from "@/lib/types/cache";
 import {
   parseCachedAiPrediction,
@@ -339,9 +340,33 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
       };
     }
 
+    // ── ProductIdentifierService (Phase 3 — wired, output not yet consumed) ──
+    const sourceType: ProductSourceType = detectProductSource(normalizedUrl);
+    let identity: ProductIdentity | null = null;
+    if (sourceType !== "supplier_marketplace") {
+      const identifierRes = await identifierService({
+        attributes: scrapeOut.attributes,
+        markdown: scrapeOut.markdown,
+      });
+      serviceEvents.push(...identifierRes.events);
+      if (identifierRes.ok) {
+        identity = identifierRes.value.identity;
+        if (identity) {
+          waterfall.mark(
+            "ai",
+            `Identified: "${identity.canonicalName}" (${identity.source}, conf ${Math.round(identity.confidence * 100)}%)`,
+          );
+          pipelineSteps.push(
+            `Identifier: ${identity.canonicalName} [${identity.searchKeywords.primary.slice(0, 3).join(", ")}]`,
+          );
+        }
+      } else {
+        pipelineSteps.push(`Identifier unavailable: ${identifierRes.error.message}`);
+      }
+    }
+
     // ── DropshipVerdictService ───────────────────────────────────────
     pipelineSteps.push("Running AI dropship verification");
-    const sourceType: ProductSourceType = detectProductSource(normalizedUrl);
 
     const verdictRes = await verdictService({
       url: normalizedUrl,
