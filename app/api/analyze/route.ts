@@ -5,6 +5,8 @@ import {
   resolveErrorCode,
   resolveHttpStatus,
 } from "@/lib/api/error-utils";
+import { checkRateLimit, resolveClientIp } from "@/lib/api/rate-limit";
+import { isValidProductUrl } from "@/lib/api/validate-url";
 import { PipelineWaterfall } from "@/lib/analyze/pipeline-waterfall";
 import { findAliExpressSupplier } from "@/lib/aliexpress/find-supplier";
 import { isSupplierSearchEnabled } from "@/lib/aliexpress/supplier-enabled";
@@ -51,17 +53,9 @@ export async function GET(): Promise<NextResponse> {
   });
 }
 
-function isValidHttpUrl(value: string): boolean {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 function shouldIncludeDebug(requested: boolean | undefined): boolean {
-  return requested === true || process.env.NODE_ENV === "development";
+  // Debug info is only available in development — never expose pipeline internals in production.
+  return process.env.NODE_ENV === "development" && requested === true;
 }
 
 function buildDebugScrape(
@@ -145,6 +139,29 @@ function resolveStorePrice(
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeResponse>> {
+  // Rate limiting — 10 requests per IP per minute
+  const ip = resolveClientIp(request);
+  const rateLimit = checkRateLimit(ip);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        status: "error",
+        cache: "MISS",
+        originalUrl: "",
+        message: "Too many requests. Please wait a moment before scanning again.",
+        code: "RATE_LIMITED",
+        aliexpressData: null,
+      } satisfies AnalyzeResponse,
+      {
+        status: 429,
+        headers: {
+          "X-Cache": "MISS",
+          "Retry-After": String(Math.ceil((rateLimit.resetAt - Date.now()) / 1000)),
+        },
+      },
+    );
+  }
+
   let normalizedUrl = "";
   let partialDebug: AnalyzeDebugInfo | undefined;
   const waterfall = new PipelineWaterfall();
@@ -157,13 +174,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
     };
     const includeDebug = shouldIncludeDebug(body.debug);
 
-    if (!body.url || typeof body.url !== "string" || !isValidHttpUrl(body.url)) {
-      return errorResponse(
-        body.url ?? "",
-        "A valid HTTP or HTTPS product URL is required.",
-        "INVALID_URL",
-        400,
-      );
+    if (!body.url || typeof body.url !== "string") {
+      return errorResponse("", "A valid HTTP or HTTPS product URL is required.", "INVALID_URL", 400);
+    }
+
+    const urlCheck = isValidProductUrl(body.url);
+    if (!urlCheck.ok) {
+      return errorResponse(body.url, urlCheck.reason, "INVALID_URL", 400);
     }
 
     normalizedUrl = normalizeProductUrl(body.url);

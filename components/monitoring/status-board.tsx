@@ -88,10 +88,18 @@ function StatusBadge({ status }: { status: ProbeStatus }) {
   );
 }
 
+function monitoringHeaders(): HeadersInit {
+  const secret = process.env.NEXT_PUBLIC_MONITORING_SECRET;
+  return {
+    "Content-Type": "application/json",
+    ...(secret ? { "x-monitoring-secret": secret } : {}),
+  };
+}
+
 async function probeService(service: ServiceId): Promise<ServiceState> {
   const res = await fetch("/api/monitoring", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: monitoringHeaders(),
     body: JSON.stringify({ service }),
   });
   if (!res.ok) {
