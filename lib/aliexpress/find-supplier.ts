@@ -4,6 +4,7 @@ import {
   compareProductImagesWithAI,
   isImageMatchEnabled,
 } from "@/lib/ai/image-match";
+import type { ProductIdentity } from "@/lib/services/types";
 import {
   isAliExpressApiConfigured,
   searchAliExpressProducts,
@@ -112,20 +113,51 @@ export async function findAliExpressSupplier(params: {
   storePriceUsd: number | null;
   productCategory?: string;
   aiKeywords?: string[];
+  /**
+   * Phase 4: vision-grounded canonical identity. When present, its
+   * stratified keywords (primary + visualTerms) take priority over
+   * title-derived and verdict-derived keywords. When null, falls back
+   * to today's behavior (title + aiKeywords).
+   */
+  identity?: ProductIdentity | null;
 }): Promise<SupplierMatchResult> {
   const titleKeywords = extractSearchKeywords(params.attributes.title);
   const thin = isThinTitle(params.attributes.title);
 
-  // AI-generated functional keywords (from DropshipPrediction.aliexpressKeywords).
-  // These describe what the product DOES rather than what it's named — e.g.
-  // "bottle cap launcher" instead of "capblast". Use the first two as separate
-  // searches and merge the pools for maximum coverage.
-  const aiKeywords = params.aiKeywords?.filter((k) => k.trim().length > 3) ?? [];
+  // Phase 4 keyword precedence:
+  //   1. identity.searchKeywords.primary (vision-grounded canonical)
+  //   2. identity.searchKeywords.visualTerms (vision-grounded visual)
+  //   3. params.aiKeywords (text-only from verdict step — legacy)
+  //   4. title-derived (extractSearchKeywords)
+  //   5. category fallback
+  // Identity keywords come first because they're produced by Gemini Vision
+  // looking at the actual product image — they fix the "CapBlast" class of
+  // failures where text-only keyword generation returns the wrong product.
+  const identityPrimary = params.identity?.searchKeywords.primary
+    ?.filter((k) => k.trim().length > 3) ?? [];
+  const identityVisual = params.identity?.searchKeywords.visualTerms
+    ?.filter((k) => k.trim().length > 3) ?? [];
+  const legacyAi = params.aiKeywords?.filter((k) => k.trim().length > 3) ?? [];
 
-  // Derive category keywords as a further fallback.
+  // Merge identity + legacy AI keywords, deduplicating by lowercase.
+  // Identity always wins ordering — its first item is the most specific.
+  const seenKw = new Set<string>();
+  const aiKeywords: string[] = [];
+  for (const kw of [...identityPrimary, ...identityVisual, ...legacyAi]) {
+    const norm = kw.toLowerCase();
+    if (!seenKw.has(norm)) {
+      seenKw.add(norm);
+      aiKeywords.push(kw);
+    }
+  }
+
+  // Derive category keywords as a further fallback. Prefer identity's
+  // category if available, then fall back to verdict's productCategory.
+  const categorySource =
+    params.identity?.category ?? params.productCategory ?? null;
   const categoryKeywords =
-    params.productCategory && (thin || aiKeywords.length === 0)
-      ? buildCategoryKeywords(params.attributes.title, params.productCategory)
+    categorySource && (thin || aiKeywords.length === 0)
+      ? buildCategoryKeywords(params.attributes.title, categorySource)
       : null;
 
   if (!titleKeywords.trim() && aiKeywords.length === 0 && !categoryKeywords) {

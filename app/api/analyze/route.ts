@@ -438,12 +438,17 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
     let supplierDebug: AnalyzeDebugInfo["supplier"] | undefined;
 
     // ── SupplierMatchService ──────────────────────────────────────────
-    pipelineSteps.push("Searching AliExpress for matching supplier");
+    pipelineSteps.push(
+      identity
+        ? `Searching AliExpress (identity: ${identity.canonicalName})`
+        : "Searching AliExpress for matching supplier",
+    );
     const supplierRes = await supplierService({
       attributes: scrapeOut.attributes,
       storePriceUsd,
       prediction: aiResult.prediction,
       isSupplierListing,
+      identity,
     });
     serviceEvents.push(...supplierRes.events);
 

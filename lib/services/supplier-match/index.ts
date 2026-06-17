@@ -19,13 +19,15 @@ import {
 import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
 import type { ScrapedProductAttributes } from "@/lib/scraping/types";
 import { runService } from "@/lib/services/run";
-import { err, ok, type Result } from "@/lib/services/types";
+import { err, ok, type ProductIdentity, type Result } from "@/lib/services/types";
 
 export interface SupplierMatchInput {
   attributes: ScrapedProductAttributes;
   storePriceUsd: number | null;
   prediction: DropshipPrediction | null;
   isSupplierListing: boolean;
+  /** Phase 4: vision-grounded identity. When present, its keywords win. */
+  identity?: ProductIdentity | null;
 }
 
 export type SupplierMatchOutput =
@@ -64,13 +66,16 @@ export async function findSupplier(
       });
     }
 
-    emit("find:start", "Running supplier search");
+    emit("find:start", "Running supplier search", {
+      keywordSource: input.identity ? "vision-grounded-identity" : "text-only-verdict",
+    });
     try {
       const match = await findAliExpressSupplier({
         attributes: input.attributes,
         storePriceUsd: input.storePriceUsd,
         productCategory: input.prediction?.productCategory,
         aiKeywords: input.prediction?.aliexpressKeywords,
+        identity: input.identity ?? null,
       });
 
       emit("find:done", `Match: ${match.searchMeta.winnerProductId} (${(match.matchConfidence * 100).toFixed(0)}% confidence)`, {
