@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-/// Cached product analysis — 7-day TTL enforced at query time.
+/// Cached product analysis — 14-day TTL enforced at query time.
 model ScannedProduct {
   id             String   @id @default(cuid())
   originalUrl    String   @unique
@@ -15,6 +15,8 @@ model ScannedProduct {
   aiPrediction   Json?
   aliexpressUrl  String?
   aliexpressData Json?
+  /// Per-service event timeline emitted during the scan.
+  events         Json?
   lastScrapedAt  DateTime
   createdAt      DateTime @default(now())
 
@@ -22,6 +24,19 @@ model ScannedProduct {
 
   @@index([originalUrl])
   @@index([lastScrapedAt])
+}
+
+/// Per-service stage cache — lets us re-run individual pipeline stages
+/// (identifier, verdict, search, match) without re-scraping. Keyed by
+/// sha256(stage + promptVersion + inputHash).
+model StageCache {
+  key       String   @id
+  stage     String
+  payload   Json
+  createdAt DateTime @default(now())
+  ttl       Int      @default(1209600)
+
+  @@index([stage, createdAt])
 }
 
 /// Authenticated user for LTV tracking and search history.
