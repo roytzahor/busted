@@ -6,8 +6,6 @@ import {
   resolveHttpStatus,
 } from "@/lib/api/error-utils";
 import { PipelineWaterfall } from "@/lib/analyze/pipeline-waterfall";
-import { buildSupplierMarketplacePrediction } from "@/lib/ai/supplier-marketplace-analysis";
-import { verifyDropshipLikelihood } from "@/lib/ai/dropship-verifier";
 import { findAliExpressSupplier } from "@/lib/aliexpress/find-supplier";
 import { isSupplierSearchEnabled } from "@/lib/aliexpress/supplier-enabled";
 import { AliExpressSearchError } from "@/lib/aliexpress/types";
@@ -17,15 +15,14 @@ import {
   persistScannedProduct,
 } from "@/lib/cache/persist-product";
 import {
-  extractPriceFromMarkdown,
-  extractStoreNameFromUrl,
-} from "@/lib/scraping/extract-price";
-import {
   detectProductSource,
   getSupplierMarketplaceLabel,
 } from "@/lib/scraping/detect-source";
-import { scrapeProductUrl } from "@/lib/scraping/router";
 import { ScraperError } from "@/lib/scraping/types";
+import { verify as verdictService } from "@/lib/services/dropship-verdict";
+import { scrape as scraperService } from "@/lib/services/scraper";
+import { findSupplier as supplierService } from "@/lib/services/supplier-match";
+import type { ServiceEvent } from "@/lib/services/types";
 import type { CachedAiPrediction, CachedScrapeData } from "@/lib/types/cache";
 import {
   parseCachedAiPrediction,
@@ -295,24 +292,36 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
 
     waterfall.mark("cache", "Cache MISS — starting live scrape", "complete");
     const pipelineSteps = ["Cache lookup", "Cache miss — starting scrape"];
+    const serviceEvents: ServiceEvent[] = [];
 
-    const scrapeResult = await scrapeProductUrl(normalizedUrl);
-    pipelineSteps.push(`Scraped via ${scrapeResult.raw.provider}`);
+    // ── ScraperService ────────────────────────────────────────────────
+    const scrapeRes = await scraperService({ url: normalizedUrl });
+    serviceEvents.push(...scrapeRes.events);
+
+    if (!scrapeRes.ok) {
+      throw new ScraperError(
+        scrapeRes.error.code,
+        scrapeRes.error.message,
+        scrapeRes.error.recoverable ? 422 : 500,
+      );
+    }
+
+    const scrapeOut = scrapeRes.value;
+    const storePriceUsd = scrapeOut.detectedStorePriceUsd;
+    const storeName = scrapeOut.storeName;
+    pipelineSteps.push(`Scraped via ${scrapeOut.provider}`);
     waterfall.mark(
       "scrape",
-      `Firecrawl returned Markdown (${scrapeResult.raw.markdown.length.toLocaleString()} chars). Title & price extracted.`,
+      `Firecrawl returned Markdown (${scrapeOut.markdown.length.toLocaleString()} chars). Title & price extracted.`,
     );
 
-    const storePriceUsd = extractPriceFromMarkdown(scrapeResult.raw.markdown);
-    const storeName = extractStoreNameFromUrl(normalizedUrl);
-
     const scrapeData: CachedScrapeData = {
-      provider: scrapeResult.raw.provider,
-      attributes: scrapeResult.attributes,
+      provider: scrapeOut.provider,
+      attributes: scrapeOut.attributes,
       detectedStorePriceUsd: storePriceUsd,
       storeName,
-      markdownLength: scrapeResult.raw.markdown.length,
-      markdownPreview: scrapeResult.raw.markdown.slice(0, MARKDOWN_PREVIEW_CHARS),
+      markdownLength: scrapeOut.markdown.length,
+      markdownPreview: scrapeOut.markdown.slice(0, MARKDOWN_PREVIEW_CHARS),
     };
 
     if (includeDebug) {
@@ -330,30 +339,38 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
       };
     }
 
+    // ── DropshipVerdictService ───────────────────────────────────────
     pipelineSteps.push("Running AI dropship verification");
     const sourceType: ProductSourceType = detectProductSource(normalizedUrl);
-    const isSupplierListing = sourceType === "supplier_marketplace";
 
-    const aiResult = isSupplierListing
-      ? (() => {
-          const prediction = buildSupplierMarketplacePrediction(
-            normalizedUrl,
-            scrapeResult.attributes,
-            storePriceUsd,
-          );
-          return {
-            prediction,
-            provider: "rules",
-            model: "supplier-marketplace-detector",
-            rawResponse: JSON.stringify(prediction, null, 2),
-            error: null,
-          };
-        })()
-      : await verifyDropshipLikelihood({
-          attributes: scrapeResult.attributes,
-          markdownExcerpt: scrapeResult.raw.markdown,
-          storePriceUsd,
-        });
+    const verdictRes = await verdictService({
+      url: normalizedUrl,
+      attributes: scrapeOut.attributes,
+      markdown: scrapeOut.markdown,
+      storePriceUsd,
+    });
+    serviceEvents.push(...verdictRes.events);
+
+    // Verdict failure is recoverable — we proceed with null prediction.
+    const verdictOut = verdictRes.ok
+      ? verdictRes.value
+      : {
+          prediction: null,
+          provider: "google",
+          model: process.env.GOOGLE_AI_MODEL ?? "gemini-3.5-flash",
+          rawResponse: "",
+          error: verdictRes.error.message,
+          isSupplierListing: sourceType === "supplier_marketplace",
+        };
+
+    const isSupplierListing = verdictOut.isSupplierListing;
+    const aiResult = {
+      prediction: verdictOut.prediction,
+      provider: verdictOut.provider,
+      model: verdictOut.model,
+      rawResponse: verdictOut.rawResponse,
+      error: verdictOut.error,
+    };
 
     waterfall.mark(
       "ai",
@@ -395,95 +412,72 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
     let supplierImageMatchReasoning: string | undefined;
     let supplierDebug: AnalyzeDebugInfo["supplier"] | undefined;
 
-    const verdict = aiResult.prediction?.verdict;
-    const skipSupplierDueToVerdict =
-      verdict === "not_a_product" || verdict === "insufficient_evidence";
+    // ── SupplierMatchService ──────────────────────────────────────────
+    pipelineSteps.push("Searching AliExpress for matching supplier");
+    const supplierRes = await supplierService({
+      attributes: scrapeOut.attributes,
+      storePriceUsd,
+      prediction: aiResult.prediction,
+      isSupplierListing,
+    });
+    serviceEvents.push(...supplierRes.events);
 
-    if (isSupplierSearchEnabled() && !isSupplierListing && !skipSupplierDueToVerdict) {
-      pipelineSteps.push("Searching AliExpress for matching supplier");
+    if (!supplierRes.ok) {
+      // Hard failure (non-recoverable supplier error) — bail
+      throw new AliExpressSearchError(
+        supplierRes.error.code,
+        supplierRes.error.message,
+        supplierRes.error.recoverable ? 422 : 500,
+      );
+    }
 
-      try {
-        const match = await findAliExpressSupplier({
-          attributes: scrapeResult.attributes,
-          storePriceUsd,
-          productCategory: aiResult.prediction?.productCategory ?? undefined,
-          aiKeywords: aiResult.prediction?.aliexpressKeywords ?? undefined,
-        });
+    const supplierOut = supplierRes.value;
+    if (supplierOut.kind === "matched") {
+      const match = supplierOut.match;
+      aliexpressUrl = match.aliexpressUrl;
+      aliexpressData = match.aliexpressData;
+      supplierStatus = "complete";
+      supplierSkipReason = undefined;
+      supplierMatchConfidence = match.matchConfidence;
+      supplierMatchQuality = match.matchQuality;
+      supplierMatchReasons = match.matchReasons;
+      supplierImageMatchScore = match.imageMatchScore;
+      supplierImageMatchSameFunction = match.imageMatchSameFunction;
+      supplierImageMatchReasoning = match.imageMatchReasoning;
 
-        aliexpressUrl = match.aliexpressUrl;
-        aliexpressData = match.aliexpressData;
-        supplierStatus = "complete";
-        supplierSkipReason = undefined;
-        supplierMatchConfidence = match.matchConfidence;
-        supplierMatchQuality = match.matchQuality;
-        supplierMatchReasons = match.matchReasons;
-        supplierImageMatchScore = match.imageMatchScore;
-        supplierImageMatchSameFunction = match.imageMatchSameFunction;
-        supplierImageMatchReasoning = match.imageMatchReasoning;
-
-        const imgNote =
-          typeof match.imageMatchScore === "number"
-            ? ` · img-AI ${(match.imageMatchScore * 100).toFixed(0)}%${match.imageMatchSameFunction === false ? " (different function!)" : ""}`
-            : "";
-        waterfall.mark(
-          "supplier",
-          `Supplier match: ${match.searchMeta.winnerProductId} (${match.searchMeta.candidateCount} candidates). Match ${(match.matchConfidence * 100).toFixed(0)}% (${match.matchQuality})${imgNote}. Affiliate ${match.searchMeta.affiliateLinkValidated ? "validated" : "fallback"}.`,
-        );
-
-        pipelineSteps.push(
-          `Supplier match: ${match.searchMeta.winnerProductId} (${match.searchMeta.candidateCount} candidates)`,
-        );
-
-        supplierDebug = {
-          keywords: match.searchMeta.keywords,
-          provider: match.searchMeta.provider,
-          candidateCount: match.searchMeta.candidateCount,
-          winnerProductId: match.searchMeta.winnerProductId,
-          winnerTitle: match.aliexpressData.title,
-          winnerPriceUsd: match.aliexpressData.priceUsd,
-          affiliateProvider: match.searchMeta.affiliateProvider,
-          affiliateLinkValidated: match.searchMeta.affiliateLinkValidated,
-        };
-      } catch (error) {
-        if (error instanceof AliExpressSearchError) {
-          const isSoftSkip =
-            error.code === "ALIEXPRESS_NO_CONFIDENT_MATCH" ||
-            error.code === "ALIEXPRESS_NO_RESULTS";
-          waterfall.mark("supplier", error.message, isSoftSkip ? "skipped" : "error");
-          pipelineSteps.push(
-            isSoftSkip ? `No supplier match: ${error.message}` : `Supplier search failed: ${error.message}`,
-          );
-          if (isSoftSkip) {
-            supplierSkipReason = error.message;
-          }
-        } else {
-          throw error;
-        }
-      }
-    } else if (isSupplierListing) {
-      aliexpressUrl = normalizedUrl;
+      const imgNote =
+        typeof match.imageMatchScore === "number"
+          ? ` · img-AI ${(match.imageMatchScore * 100).toFixed(0)}%${match.imageMatchSameFunction === false ? " (different function!)" : ""}`
+          : "";
       waterfall.mark(
         "supplier",
-        "Already on supplier marketplace — search skipped.",
-        "skipped",
+        `Supplier match: ${match.searchMeta.winnerProductId} (${match.searchMeta.candidateCount} candidates). Match ${(match.matchConfidence * 100).toFixed(0)}% (${match.matchQuality})${imgNote}. Affiliate ${match.searchMeta.affiliateLinkValidated ? "validated" : "fallback"}.`,
       );
-      pipelineSteps.push("Supplier search skipped — URL is already an AliExpress listing");
-    } else if (skipSupplierDueToVerdict) {
-      const verdictLabel = verdict === "not_a_product" ? "not a product page" : "insufficient evidence";
-      supplierSkipReason = `AI verdict (${verdictLabel}) — no supplier search performed.`;
-      waterfall.mark(
-        "supplier",
-        `Supplier search skipped — AI verdict is "${verdict}".`,
-        "skipped",
+      pipelineSteps.push(
+        `Supplier match: ${match.searchMeta.winnerProductId} (${match.searchMeta.candidateCount} candidates)`,
       );
-      pipelineSteps.push(`Supplier search skipped — AI verdict: ${verdict}`);
+      supplierDebug = {
+        keywords: match.searchMeta.keywords,
+        provider: match.searchMeta.provider,
+        candidateCount: match.searchMeta.candidateCount,
+        winnerProductId: match.searchMeta.winnerProductId,
+        winnerTitle: match.aliexpressData.title,
+        winnerPriceUsd: match.aliexpressData.priceUsd,
+        affiliateProvider: match.searchMeta.affiliateProvider,
+        affiliateLinkValidated: match.searchMeta.affiliateLinkValidated,
+      };
+    } else if (supplierOut.kind === "no_match") {
+      supplierSkipReason = supplierOut.reason;
+      waterfall.mark("supplier", supplierOut.reason, "skipped");
+      pipelineSteps.push(`No supplier match: ${supplierOut.reason}`);
     } else {
-      waterfall.mark(
-        "supplier",
-        "Supplier search skipped — configure ALIEXPRESS_APP_KEY in .env to enable",
-        "skipped",
-      );
-      pipelineSteps.push("Supplier search skipped — AliExpress API not configured");
+      // kind === "skipped" — reason already populated by SupplierMatchService
+      supplierSkipReason = supplierOut.reason;
+      if (isSupplierListing) {
+        aliexpressUrl = normalizedUrl;
+      }
+      waterfall.mark("supplier", supplierOut.reason, "skipped");
+      pipelineSteps.push(`Supplier search skipped — ${supplierOut.reason}`);
     }
 
     const persisted = await persistScannedProduct({
@@ -492,6 +486,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
       aiPrediction,
       aliexpressUrl,
       aliexpressData,
+      events: serviceEvents,
     });
 
     waterfall.mark("persist", "Scrape + AI prediction written to database.", "complete");
@@ -517,11 +512,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
       sourceType,
       dropshipPrediction: aiResult.prediction,
       lastScrapedAt: persisted.lastScrapedAt.toISOString(),
-      scrapeProvider: scrapeResult.raw.provider,
+      scrapeProvider: scrapeOut.provider,
       storeProduct: {
-        title: scrapeResult.attributes.title,
+        title: scrapeOut.attributes.title,
         priceUsd: storePrice,
-        imageUrl: scrapeResult.attributes.mainImageUrl,
+        imageUrl: scrapeOut.attributes.mainImageUrl,
         storeName,
       },
       ...(includeDebug

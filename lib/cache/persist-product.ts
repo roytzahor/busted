@@ -74,9 +74,13 @@ export async function persistScannedProduct(params: {
   aiPrediction: CachedAiPrediction;
   aliexpressUrl?: string | null;
   aliexpressData?: AliExpressProductData | null;
+  events?: ReadonlyArray<unknown>;
 }): Promise<ScannedProduct> {
   const normalizedUrl = normalizeProductUrl(params.originalUrl);
   const now = new Date();
+  const eventsJson = params.events
+    ? (params.events as unknown as Prisma.InputJsonValue)
+    : undefined;
 
   return prisma.scannedProduct.upsert({
     where: { originalUrl: normalizedUrl },
@@ -88,6 +92,7 @@ export async function persistScannedProduct(params: {
       aliexpressData: params.aliexpressData
         ? toAliExpressJson(params.aliexpressData)
         : Prisma.JsonNull,
+      ...(eventsJson !== undefined ? { events: eventsJson } : {}),
       lastScrapedAt: now,
     },
     update: {
@@ -101,6 +106,7 @@ export async function persistScannedProduct(params: {
               : Prisma.JsonNull,
           }
         : {}),
+      ...(eventsJson !== undefined ? { events: eventsJson } : {}),
       lastScrapedAt: now,
     },
   });
