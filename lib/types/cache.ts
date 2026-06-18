@@ -3,7 +3,23 @@ import type {
   DropshipPrediction,
   DropshipVerdict,
 } from "@/lib/ai/dropship-verifier";
-import type { ScrapedProductAttributes } from "@/lib/scraping/types";
+import type {
+  ScrapedProductAttributes,
+  ScrapedProductVariant,
+} from "@/lib/scraping/types";
+
+function parseCachedVariant(value: unknown): ScrapedProductVariant | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const v = value as Record<string, unknown>;
+  const out: ScrapedProductVariant = {
+    ...(typeof v.color === "string" ? { color: v.color } : {}),
+    ...(typeof v.size === "string" ? { size: v.size } : {}),
+    ...(typeof v.capacity === "string" ? { capacity: v.capacity } : {}),
+    ...(typeof v.material === "string" ? { material: v.material } : {}),
+    ...(typeof v.selectedSku === "string" ? { selectedSku: v.selectedSku } : {}),
+  };
+  return Object.keys(out).length > 0 ? out : undefined;
+}
 
 function parseVerdict(value: unknown, isLikelyDropship: boolean): DropshipVerdict {
   if (
@@ -60,6 +76,8 @@ export function parseCachedScrapeData(
     return null;
   }
 
+  const cachedVariant = parseCachedVariant(attrs.variant);
+
   return {
     provider: record.provider,
     attributes: {
@@ -72,6 +90,7 @@ export function parseCachedScrapeData(
         attrs.provider === "firecrawl" || attrs.provider === "playwright"
           ? attrs.provider
           : "firecrawl",
+      ...(cachedVariant ? { variant: cachedVariant } : {}),
     },
     detectedStorePriceUsd:
       typeof record.detectedStorePriceUsd === "number"

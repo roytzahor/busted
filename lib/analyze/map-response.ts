@@ -70,6 +70,15 @@ export function mapAnalyzeResponseToComparison(
           sellerRating: supplier.sellerRating ?? 4.8,
           shippingDays: supplier.shippingDays ?? 14,
           affiliateUrl: supplier.affiliateUrl ?? response.aliexpressUrl ?? "#",
+          ...(supplier.matchedVariant
+            ? {
+                variantLabel: supplier.matchedVariant.label,
+                totalCostUsd: supplier.matchedVariant.totalCostUsd,
+                shippingCostUsd: supplier.matchedVariant.shippingCostUsd ?? undefined,
+                warehouseCountry: supplier.matchedVariant.warehouseCountry,
+              }
+            : {}),
+          ...(supplier.variantWarning ? { variantWarning: true } : {}),
         },
         savingsUsd,
         savingsPercent,

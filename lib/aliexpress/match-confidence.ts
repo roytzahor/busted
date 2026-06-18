@@ -13,6 +13,9 @@ export interface MatchConfidence {
   imageMatchScore?: number;
   imageMatchSameFunction?: boolean;
   imageMatchReasoning?: string;
+  variantScore?: number;
+  variantHardMismatch?: boolean;
+  variantMatchReasons?: string[];
 }
 
 const STOP_WORDS = new Set([
@@ -140,6 +143,83 @@ export function computeMatchConfidence(
 
 export const MATCH_CONFIDENCE_MIN = 0.4;
 export const IMAGE_MATCH_MIN = 0.5;
+
+/**
+ * When source has variant info but no SKU on the candidate satisfies it
+ * (e.g. wrong size/capacity), clamp the score to this ceiling. Same idea
+ * as the `sameFunction=false` clamp in foldImageMatchIntoConfidence.
+ */
+export const VARIANT_HARD_MISMATCH_CEILING = 0.45;
+
+export interface VariantFolding {
+  score: number;
+  hardMismatch: boolean;
+  reasons: string[];
+}
+
+/**
+ * Fold a variant match score into an existing confidence. Called after
+ * (or instead of) the image fold depending on what signals were available.
+ *
+ * Weight scheme — variant adds a new dimension so we redistribute:
+ *   - Image present:  title 25% · image 50% · variant 25%
+ *   - No image:       title 50% · price 25% · trust 0% · variant 25%
+ *
+ * Trust drops to zero in the no-image-with-variant case because variant
+ * matching already proves the listing covers the right SKU; seller volume
+ * matters less than getting the right product.
+ */
+export function foldVariantIntoConfidence(
+  base: MatchConfidence,
+  variant: VariantFolding,
+): MatchConfidence {
+  const titleScore = base.titleOverlap;
+  let priceScore = 0;
+  if (base.priceVerdict === "plausible_markup" && base.priceRatio !== null) {
+    if (base.priceRatio >= 3 && base.priceRatio <= 15) priceScore = 1;
+    else if (base.priceRatio >= 1.5 && base.priceRatio < 3) priceScore = 0.6;
+    else if (base.priceRatio > 15 && base.priceRatio <= 50) priceScore = 0.5;
+    else priceScore = 0.4;
+  } else if (base.priceVerdict === "no_markup") priceScore = 0.2;
+  else if (base.priceVerdict === "absurd") priceScore = 0;
+  else priceScore = 0.5;
+
+  const hasImage = typeof base.imageMatchScore === "number";
+
+  let folded: number;
+  if (hasImage) {
+    // Pull image weight down from 55% → 50%, give variant 25%, title 25%.
+    folded =
+      (base.imageMatchScore ?? 0) * 0.5 +
+      titleScore * 0.25 +
+      variant.score * 0.25;
+  } else {
+    folded = titleScore * 0.5 + priceScore * 0.25 + variant.score * 0.25;
+  }
+
+  if (variant.hardMismatch) {
+    folded = Math.min(folded, VARIANT_HARD_MISMATCH_CEILING);
+  }
+
+  const reasons = [...base.reasons];
+  if (variant.reasons.length > 0) {
+    reasons.push(`Variant: ${variant.reasons.join(", ")}`);
+  }
+  if (variant.hardMismatch) {
+    reasons.push("No matching SKU on candidate — score clamped");
+  }
+
+  return {
+    ...base,
+    score: Math.max(0, Math.min(1, folded)),
+    quality:
+      folded >= 0.65 ? "high" : folded >= 0.4 ? "medium" : folded >= 0.2 ? "low" : "none",
+    reasons,
+    variantScore: variant.score,
+    variantHardMismatch: variant.hardMismatch,
+    variantMatchReasons: variant.reasons,
+  };
+}
 
 export interface ImageMatchFolding {
   score: number;

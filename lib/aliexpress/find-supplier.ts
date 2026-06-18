@@ -24,7 +24,10 @@ import {
   MATCH_CONFIDENCE_MIN,
   computeMatchConfidence,
   foldImageMatchIntoConfidence,
+  foldVariantIntoConfidence,
 } from "@/lib/aliexpress/match-confidence";
+import { matchVariantToSku, type VariantMatchResult } from "@/lib/aliexpress/match-variant";
+import { fetchAliExpressProductDetail } from "@/lib/aliexpress/sku";
 import { searchAliExpressViaScrape } from "@/lib/aliexpress/search-scrape-fallback";
 import {
   AliExpressSearchError,
@@ -372,6 +375,46 @@ export async function findAliExpressSupplier(params: {
     scored.sort((a, b) => b.confidence.score - a.confidence.score);
   }
 
+  // Variant resolution — fetch SKU detail for the top 3 candidates and pick
+  // the SKU that best matches the source variant. Only runs when:
+  //   - the source page exposed a variant signal (color/size/capacity/material)
+  //   - the AliExpress API is configured (SKU fetch needs auth)
+  //   - we have at least one candidate to consider
+  //
+  // The variant score is folded into the confidence. Hard mismatches (source
+  // wants 256 GB but only 64/128 are offered) trigger a soft-clamp to 0.45.
+  const variantResults = new Map<string, VariantMatchResult>();
+  const sourceVariant = params.attributes.variant;
+  if (
+    sourceVariant &&
+    provider === "aliexpress_api" &&
+    scored.length > 0
+  ) {
+    const topForVariants = scored.slice(0, Math.min(3, scored.length));
+    const detailResults = await Promise.all(
+      topForVariants.map((entry) =>
+        fetchAliExpressProductDetail(entry.candidate.productId),
+      ),
+    );
+
+    for (let i = 0; i < topForVariants.length; i += 1) {
+      const entry = topForVariants[i];
+      const detail = detailResults[i];
+      const variantMatch = matchVariantToSku(sourceVariant, detail);
+      variantResults.set(entry.candidate.productId, variantMatch);
+
+      if (variantMatch.matchedSku || variantMatch.hardMismatch) {
+        entry.confidence = foldVariantIntoConfidence(entry.confidence, {
+          score: variantMatch.variantConfidence,
+          hardMismatch: variantMatch.hardMismatch,
+          reasons: variantMatch.matchReasons,
+        });
+      }
+    }
+
+    scored.sort((a, b) => b.confidence.score - a.confidence.score);
+  }
+
   const best = scored[0];
 
   if (best.confidence.score < MATCH_CONFIDENCE_MIN) {
@@ -384,8 +427,18 @@ export async function findAliExpressSupplier(params: {
 
   const winner = best.candidate;
 
+  const winnerVariantMatch = variantResults.get(winner.productId);
+  const matchedSku = winnerVariantMatch?.matchedSku ?? null;
+
+  // Build the product URL with variant + warehouse pre-selected when available
+  const productUrlWithVariant = buildProductUrlWithVariant(
+    winner.productUrl,
+    matchedSku?.skuId ?? null,
+    matchedSku?.warehouseCountry ?? null,
+  );
+
   const { affiliateUrl, provider: affiliateProvider } = await convertToAffiliateLink({
-    productUrl: winner.productUrl,
+    productUrl: productUrlWithVariant,
     existingPromotionLink: winner.promotionLink,
   });
 
@@ -397,21 +450,48 @@ export async function findAliExpressSupplier(params: {
     );
   }
 
-  const resolvedAffiliateUrl = affiliateLinkValidated ? affiliateUrl : winner.productUrl;
+  const resolvedAffiliateUrl = affiliateLinkValidated
+    ? affiliateUrl
+    : productUrlWithVariant;
+
+  // Variant-aware price: prefer the matched SKU's price + shipping over the
+  // candidate's lowest-variant list price (which may not reflect the actual
+  // variant the user wants to buy).
+  const finalPriceUsd = matchedSku?.priceUsd ?? winner.priceUsd;
+
+  const variantLabel = matchedSku
+    ? buildVariantLabel(matchedSku.attrs, matchedSku.warehouseCountry)
+    : null;
 
   const aliexpressData: AliExpressProductData = {
     title: winner.title,
-    priceUsd: winner.priceUsd,
+    priceUsd: finalPriceUsd,
     originalPriceUsd: params.storePriceUsd ?? undefined,
     imageUrl: winner.imageUrl ?? params.attributes.mainImageUrl ?? undefined,
     orderCount: winner.orderCount,
     sellerRating: winner.sellerRating,
-    shippingDays: winner.shippingDays ?? undefined,
+    shippingDays: matchedSku?.shippingDays ?? winner.shippingDays ?? undefined,
     affiliateUrl: resolvedAffiliateUrl,
+    ...(matchedSku && variantLabel
+      ? {
+          matchedVariant: {
+            skuId: matchedSku.skuId,
+            label: variantLabel,
+            priceUsd: matchedSku.priceUsd,
+            warehouseCountry: matchedSku.warehouseCountry,
+            shippingCostUsd: matchedSku.shippingCostUsd,
+            totalCostUsd:
+              matchedSku.shippingCostUsd !== null
+                ? matchedSku.priceUsd + matchedSku.shippingCostUsd
+                : matchedSku.priceUsd,
+          },
+        }
+      : {}),
+    ...(winnerVariantMatch?.hardMismatch ? { variantWarning: true } : {}),
   };
 
   return {
-    aliexpressUrl: winner.productUrl,
+    aliexpressUrl: productUrlWithVariant,
     aliexpressData,
     matchConfidence: best.confidence.score,
     matchQuality: best.confidence.quality,
@@ -419,6 +499,9 @@ export async function findAliExpressSupplier(params: {
     imageMatchScore: best.confidence.imageMatchScore,
     imageMatchSameFunction: best.confidence.imageMatchSameFunction,
     imageMatchReasoning: best.confidence.imageMatchReasoning,
+    variantMatchScore: best.confidence.variantScore,
+    variantHardMismatch: best.confidence.variantHardMismatch,
+    variantMatchReasons: best.confidence.variantMatchReasons,
     searchMeta: {
       keywords: keywordsUsed.join(" / "),
       provider,
@@ -426,6 +509,38 @@ export async function findAliExpressSupplier(params: {
       winnerProductId: winner.productId,
       affiliateLinkValidated,
       affiliateProvider,
+      ...(matchedSku ? { variantMatched: true, variantSkuId: matchedSku.skuId } : {}),
     },
   };
+}
+
+function buildVariantLabel(
+  attrs: Record<string, string>,
+  warehouseCountry: string | null,
+): string {
+  const parts: string[] = [];
+  if (attrs.color) parts.push(attrs.color);
+  if (attrs.size) parts.push(attrs.size);
+  if (attrs.capacity) parts.push(attrs.capacity);
+  if (attrs.material) parts.push(attrs.material);
+  if (warehouseCountry && warehouseCountry !== "CN") {
+    parts.push(`${warehouseCountry} Warehouse`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : "Selected variant";
+}
+
+function buildProductUrlWithVariant(
+  productUrl: string,
+  skuId: string | null,
+  warehouseCountry: string | null,
+): string {
+  if (!skuId && !warehouseCountry) return productUrl;
+  try {
+    const url = new URL(productUrl);
+    if (skuId) url.searchParams.set("sku_id", skuId);
+    if (warehouseCountry) url.searchParams.set("shipFromCountry", warehouseCountry);
+    return url.toString();
+  } catch {
+    return productUrl;
+  }
 }

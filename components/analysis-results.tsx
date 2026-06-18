@@ -6,14 +6,17 @@ import { Separator } from "@/components/ui/separator";
 import type { ProductComparisonResult } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import {
+  AlertTriangle,
   ArrowDownRight,
   ExternalLink,
   Eye,
   Package,
+  Palette,
   ShieldCheck,
   Star,
   TrendingDown,
   Truck,
+  Warehouse,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -157,6 +160,11 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
           orderCount={supplierProduct.orderCount}
           sellerRating={supplierProduct.sellerRating}
           shippingDays={supplierProduct.shippingDays}
+          variantLabel={supplierProduct.variantLabel}
+          totalCostUsd={supplierProduct.totalCostUsd}
+          shippingCostUsd={supplierProduct.shippingCostUsd}
+          warehouseCountry={supplierProduct.warehouseCountry ?? null}
+          variantWarning={supplierProduct.variantWarning}
         />
       </div>
 
@@ -246,6 +254,11 @@ interface ProductCardProps {
   orderCount?: number;
   sellerRating?: number;
   shippingDays?: number;
+  variantLabel?: string;
+  totalCostUsd?: number;
+  shippingCostUsd?: number;
+  warehouseCountry?: string | null;
+  variantWarning?: boolean;
 }
 
 function ProductCard({
@@ -258,6 +271,11 @@ function ProductCard({
   orderCount,
   sellerRating,
   shippingDays,
+  variantLabel,
+  totalCostUsd,
+  shippingCostUsd,
+  warehouseCountry,
+  variantWarning,
 }: ProductCardProps) {
   const isStore = variant === "store";
 
@@ -311,6 +329,24 @@ function ProductCard({
         {storeName ? (
           <p className="text-xs text-muted-foreground">Sold by {storeName}</p>
         ) : null}
+
+        {/* Variant chip — supplier only, when we matched a SKU */}
+        {!isStore && variantLabel ? (
+          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-md border border-success/30 bg-success/10 px-2 py-1 text-xs font-medium text-success"
+              title="Variant pre-selected — affiliate link opens this SKU directly"
+            >
+              {warehouseCountry && warehouseCountry !== "CN" ? (
+                <Warehouse className="size-3" aria-hidden="true" />
+              ) : (
+                <Palette className="size-3" aria-hidden="true" />
+              )}
+              {variantLabel}
+            </span>
+          </div>
+        ) : null}
+
         <p
           className={cn(
             "text-3xl font-black tabular-nums sm:text-4xl",
@@ -319,7 +355,33 @@ function ProductCard({
         >
           {formatUsd(price)}
         </p>
+
+        {/* Total with shipping — only when shipping cost is known */}
+        {!isStore &&
+        typeof shippingCostUsd === "number" &&
+        shippingCostUsd > 0 &&
+        typeof totalCostUsd === "number" ? (
+          <p className="text-xs text-muted-foreground">
+            Total with shipping:{" "}
+            <span className="font-semibold tabular-nums text-foreground">
+              {formatUsd(totalCostUsd)}
+            </span>{" "}
+            <span className="text-muted-foreground/70">
+              (+{formatUsd(shippingCostUsd)} ship)
+            </span>
+          </p>
+        ) : null}
       </div>
+
+      {/* Variant warning — supplier only, listing has multiple options but no match */}
+      {!isStore && variantWarning ? (
+        <div className="relative z-10 flex items-start gap-2 rounded-lg border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-200">
+          <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+          <span>
+            Listing has multiple options — verify the correct variant before buying.
+          </span>
+        </div>
+      ) : null}
 
       {/* Trust badges (supplier only) */}
       {!isStore && orderCount !== undefined && sellerRating !== undefined ? (

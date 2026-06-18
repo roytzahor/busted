@@ -13,6 +13,14 @@ export interface SupplierProduct {
   sellerRating: number;
   shippingDays: number;
   affiliateUrl: string;
+  /** Pre-selected variant label, e.g. "Black · 256 GB · US Warehouse". */
+  variantLabel?: string;
+  /** Total cost (variant price + shipping) when shipping cost is known. */
+  totalCostUsd?: number;
+  shippingCostUsd?: number;
+  warehouseCountry?: string | null;
+  /** True when listing has variants but no SKU matched the source variant. */
+  variantWarning?: boolean;
 }
 
 export type SupplierMatchQuality = "high" | "medium" | "low" | "none";

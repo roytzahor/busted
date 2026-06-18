@@ -13,12 +13,21 @@ export interface RawScrapeResult {
   metadata: ScrapeMetadata;
 }
 
+export interface ScrapedProductVariant {
+  color?: string;
+  size?: string;
+  capacity?: string;
+  material?: string;
+  selectedSku?: string;
+}
+
 export interface ScrapedProductAttributes {
   title: string;
   description: string;
   mainImageUrl: string | null;
   sourceUrl: string;
   provider: ScrapeProvider;
+  variant?: ScrapedProductVariant;
 }
 
 export class ScraperError extends Error {

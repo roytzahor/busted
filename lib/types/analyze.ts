@@ -12,6 +12,17 @@ export interface AliExpressProductData {
   sellerRating?: number;
   shippingDays?: number;
   affiliateUrl?: string;
+  /** Variant info when a SKU match was found on the AliExpress listing. */
+  matchedVariant?: {
+    skuId: string;
+    label: string; // e.g. "Black · 256 GB"
+    priceUsd: number;
+    warehouseCountry: string | null;
+    shippingCostUsd: number | null;
+    totalCostUsd: number;
+  };
+  /** True when the AliExpress listing has variants but none matched the source. */
+  variantWarning?: boolean;
 }
 
 export type AnalyzeCacheStatus = "HIT" | "MISS";
@@ -88,6 +99,33 @@ export function parseAliExpressData(
     return null;
   }
 
+  const matchedVariantRaw = record.matchedVariant;
+  let matchedVariant: AliExpressProductData["matchedVariant"];
+  if (
+    matchedVariantRaw &&
+    typeof matchedVariantRaw === "object" &&
+    !Array.isArray(matchedVariantRaw)
+  ) {
+    const mv = matchedVariantRaw as Record<string, unknown>;
+    if (
+      typeof mv.skuId === "string" &&
+      typeof mv.label === "string" &&
+      typeof mv.priceUsd === "number" &&
+      typeof mv.totalCostUsd === "number"
+    ) {
+      matchedVariant = {
+        skuId: mv.skuId,
+        label: mv.label,
+        priceUsd: mv.priceUsd,
+        warehouseCountry:
+          typeof mv.warehouseCountry === "string" ? mv.warehouseCountry : null,
+        shippingCostUsd:
+          typeof mv.shippingCostUsd === "number" ? mv.shippingCostUsd : null,
+        totalCostUsd: mv.totalCostUsd,
+      };
+    }
+  }
+
   return {
     title: record.title,
     priceUsd: record.priceUsd,
@@ -104,5 +142,7 @@ export function parseAliExpressData(
       typeof record.shippingDays === "number" ? record.shippingDays : undefined,
     affiliateUrl:
       typeof record.affiliateUrl === "string" ? record.affiliateUrl : undefined,
+    ...(matchedVariant ? { matchedVariant } : {}),
+    ...(record.variantWarning === true ? { variantWarning: true } : {}),
   };
 }

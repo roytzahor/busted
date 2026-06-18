@@ -33,6 +33,9 @@ export interface SupplierMatchResult {
   imageMatchScore?: number;
   imageMatchSameFunction?: boolean;
   imageMatchReasoning?: string;
+  variantMatchScore?: number;
+  variantHardMismatch?: boolean;
+  variantMatchReasons?: string[];
   searchMeta: {
     keywords: string;
     provider: "aliexpress_api" | "firecrawl_scrape";
@@ -40,5 +43,7 @@ export interface SupplierMatchResult {
     winnerProductId: string;
     affiliateLinkValidated: boolean;
     affiliateProvider: "aliexpress_api" | "admitad" | "direct";
+    variantMatched?: boolean;
+    variantSkuId?: string;
   };
 }

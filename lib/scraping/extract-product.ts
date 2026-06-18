@@ -1,3 +1,4 @@
+import { extractVariantSignals } from "@/lib/scraping/extract-variant";
 import { ScraperError, type RawScrapeResult, type ScrapedProductAttributes } from "@/lib/scraping/types";
 
 const INVALID_TITLE_PATTERNS = [
@@ -48,12 +49,19 @@ export function extractProductAttributes(
     extractFirstImageUrl(scrape.markdown) ||
     null;
 
+  const variant = extractVariantSignals(
+    scrape.markdown,
+    scrape.metadata.sourceUrl,
+    title,
+  );
+
   return {
     title,
     description,
     mainImageUrl,
     sourceUrl: scrape.metadata.sourceUrl,
     provider: scrape.provider,
+    ...(variant ? { variant } : {}),
   };
 }
 
