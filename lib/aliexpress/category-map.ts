@@ -98,6 +98,22 @@ export interface CategoryVocabEntry {
    * example.
    */
   variantAxisMappings?: AxisMapping[];
+  /**
+   * AliExpress product ID to use as a probe in the monthly category-ID
+   * verification job (`npm run verify:categories` / GHA cron).
+   *
+   * Pick a stable, high-volume factory listing — NOT a brand-name or
+   * frequently-delisted product. Find the ID in the product URL:
+   *   https://www.aliexpress.com/item/<PRODUCT_ID>.html
+   *
+   * The verification script fetches this product via `productdetail.get`,
+   * reads back `first_level_category_id` and `second_level_category_id`,
+   * and asserts that at least one value appears in `categoryIds`.
+   * A mismatch means AliExpress re-treed the subcategory — update `categoryIds`.
+   *
+   * Leave undefined to skip verification for this vertical (generates a warning).
+   */
+  verificationProductId?: string;
 }
 
 /* ─── The seed table ─────────────────────────────────────────────────── */
@@ -133,6 +149,9 @@ export const CATEGORY_MAP: Record<string, CategoryVocabEntry> = {
     priceFloorRatio: 1 / 25, // $50 case → $2 min
     priceCeilRatio: 1 / 1.2, // $50 case → $41.66 max
     defaultSort: "LAST_VOLUME_DESC",
+    // To populate: search AE for "TPU shockproof phone case clear", open a
+    // high-volume factory listing, copy the product ID from the URL.
+    verificationProductId: undefined,
     verifiedAt: "2026-06-19",
     notes:
       "200000142 is stable since pre-2020. iPhone-specific subcategories live " +
@@ -174,6 +193,9 @@ export const CATEGORY_MAP: Record<string, CategoryVocabEntry> = {
     priceFloorRatio: 1 / 25,
     priceCeilRatio: 1 / 1.2,
     defaultSort: "LAST_VOLUME_DESC",
+    // To populate: search AE for "shower steamer aromatherapy tablets",
+    // open a high-volume listing, copy the product ID.
+    verificationProductId: undefined,
     variantAxisMappings: [
       {
         fromAxis: "color",
@@ -245,6 +267,9 @@ export const CATEGORY_MAP: Record<string, CategoryVocabEntry> = {
     priceFloorRatio: 1 / 30, // slippers are extreme-margin products — 30× markup common
     priceCeilRatio: 1 / 1.2,
     defaultSort: "LAST_VOLUME_DESC",
+    // To populate: search AE for "EVA pillow slides cloud slippers",
+    // open a high-volume factory listing, copy the product ID.
+    verificationProductId: undefined,
     verifiedAt: "2026-06-19",
     notes:
       "Include gender subcategories — AE's slipper-search ranking weighs " +
@@ -284,6 +309,9 @@ export const CATEGORY_MAP: Record<string, CategoryVocabEntry> = {
     priceFloorRatio: 1 / 50, // jewelry has the widest markup spread (10–50×)
     priceCeilRatio: 1 / 1.2,
     defaultSort: "LAST_VOLUME_DESC",
+    // To populate: search AE for "S925 sterling silver necklace pendant",
+    // open a high-volume factory listing, copy the product ID.
+    verificationProductId: undefined,
     verifiedAt: "2026-06-19",
     notes:
       "Most viral 'baby name necklace' / 'birthstone' dropship listings on AE " +
@@ -326,6 +354,9 @@ export const CATEGORY_MAP: Record<string, CategoryVocabEntry> = {
     priceFloorRatio: 1 / 20,
     priceCeilRatio: 1 / 1.3, // apparel has tighter retail-to-supplier spread than jewelry
     defaultSort: "LAST_VOLUME_DESC",
+    // To populate: search AE for "cotton oversized t-shirt unisex blank",
+    // open a high-volume factory listing, copy the product ID.
+    verificationProductId: undefined,
     verifiedAt: "2026-06-19",
     notes:
       "Apparel is the toughest category to disambiguate because dropship " +

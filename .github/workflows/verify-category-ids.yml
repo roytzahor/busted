@@ -1,0 +1,93 @@
+name: Verify AliExpress Category IDs
+
+# Runs on the 1st of each month at 09:00 UTC.
+# Also triggerable manually from the Actions tab.
+on:
+  schedule:
+    - cron: "0 9 1 * *"
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: "Print full API responses on mismatch"
+        required: false
+        default: "false"
+        type: boolean
+
+jobs:
+  verify:
+    name: Category-ID probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run category verification
+        env:
+          ALIEXPRESS_APP_KEY: ${{ secrets.ALIEXPRESS_APP_KEY }}
+          ALIEXPRESS_APP_SECRET: ${{ secrets.ALIEXPRESS_APP_SECRET }}
+          ALIEXPRESS_TRACKING_ID: ${{ secrets.ALIEXPRESS_TRACKING_ID }}
+          ALIEXPRESS_SHIP_TO_COUNTRY: US
+        run: |
+          if [ "${{ inputs.verbose }}" = "true" ]; then
+            npm run verify:categories -- --verbose
+          else
+            npm run verify:categories
+          fi
+
+      # On failure, open an issue so the team gets a GitHub notification
+      # even if email notifications are disabled.
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `[Monthly] AliExpress category-ID mismatch detected — ${new Date().toISOString().slice(0, 7)}`;
+            const body = [
+              '## AliExpress category-ID verification failed',
+              '',
+              'The monthly verification job detected that one or more category IDs in',
+              '`lib/aliexpress/category-map.ts` no longer match the live AliExpress catalog.',
+              '',
+              '**This usually means AliExpress re-treed a subcategory.**',
+              '',
+              '### Steps to fix',
+              '1. Run `npm run verify:categories -- --verbose` locally with valid AE credentials.',
+              '2. Note which vertical failed and what category IDs were returned.',
+              '3. Update `categoryIds` in `CATEGORY_MAP` to include the returned IDs.',
+              '4. Update `verifiedAt` to today\'s date.',
+              '5. Re-run to confirm PASS.',
+              '6. Commit and merge.',
+              '',
+              `Triggered by run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
+            ].join('\n');
+
+            // Avoid duplicate issues in the same month
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'aliexpress-category',
+            });
+            const thisMonth = new Date().toISOString().slice(0, 7);
+            const duplicate = existing.data.some((issue) => issue.title.includes(thisMonth));
+
+            if (!duplicate) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['aliexpress-category', 'maintenance'],
+              });
+            }

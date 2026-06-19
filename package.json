@@ -16,7 +16,8 @@
     "postinstall": "prisma generate",
     "eval": "tsx --env-file=.env scripts/eval/run-fixtures.ts",
     "eval:capture": "tsx --env-file=.env scripts/eval/capture-fixture.ts",
-    "eval:list": "tsx scripts/eval/list-fixtures.ts"
+    "eval:list": "tsx scripts/eval/list-fixtures.ts",
+    "verify:categories": "tsx --env-file=.env scripts/verify-category-ids.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
