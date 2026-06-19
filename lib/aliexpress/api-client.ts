@@ -195,55 +195,107 @@ export async function searchAliExpressProducts(
 /**
  * Image-based candidate search via AliExpress `smartmatch` endpoint.
  *
- * Takes a hosted image URL (the scraped product image) and asks AliExpress
- * to return visually similar products from their catalog. This catches
- * cases where text keywords miss the right product entirely.
+ * Two-arm dispatch:
+ *   1. If `opts.cleanedBase64` is provided (the Gemini-Vision preprocessed
+ *      output — tightly cropped, brand-inpainted, white-background), we
+ *      send the bytes inline via `image_base64` + `image_format`. This is
+ *      the preferred path because the cleaned asset removes the brand-text
+ *      anchor that pollutes raw consumer photos.
+ *   2. Otherwise we send `image_url` and let AliExpress fetch the URL
+ *      itself. Cheaper but ~40% of Shopify CDN URLs fail server-side here.
  *
- * The endpoint requires API tier access — returns null gracefully on any
- * failure (HTTP error, auth tier mismatch, no results, etc.) so the
- * orchestrator can fall back to keyword arms only.
+ * The `app_signature: imageUrl` mis-binding that lived here before was a
+ * silent failure — `app_signature` is the partner-auth field, not the
+ * image input. Every smartmatch call returned empty and we fell back to
+ * keyword arms without anyone noticing.
  *
- * Phase 5 — best-effort, never breaks the pipeline.
+ * Locale + category narrowing (`opts.shipToCountry`, `opts.targetCurrency`,
+ * `opts.categoryIds`) flow through to the MTOP payload so an IL-targeted
+ * funnel surfaces IL-warehouse prices instead of US-default.
+ *
+ * Returns null on any failure — never breaks the pipeline.
  */
+export interface SmartMatchOptions {
+  /**
+   * Preprocessed image bytes (base64) from `preprocessForSmartMatch`.
+   * When provided, takes precedence over the URL-only path.
+   */
+  cleanedBase64?: string;
+  cleanedFormat?: "jpg" | "png" | "webp";
+  /** Override env-default for the buyer's country. */
+  shipToCountry?: string;
+  /** Override env-default for the price-display currency. */
+  targetCurrency?: string;
+  /** Comma-joined AE category IDs to narrow the search. */
+  categoryIds?: string;
+}
+
 export async function searchAliExpressBySmartMatch(
   imageUrl: string,
+  opts: SmartMatchOptions = {},
 ): Promise<AliExpressProductCandidate[] | null> {
   const config = getAffiliateConfig();
   if (!config) return null;
 
+  const country = opts.shipToCountry ?? config.shipToCountry;
+  const currency = opts.targetCurrency ?? "USD";
+
+  const baseBusinessParams: Record<string, string> = {
+    product_id: "0",
+    site: "aliexpress",
+    device: "PC",
+    country,
+    target_currency: currency,
+    target_language: "EN",
+    tracking_id: config.trackingId,
+    fields:
+      "product_id,product_title,product_detail_url,product_main_image_url,promotion_link,sale_price,target_sale_price,target_sale_price_currency,lastest_volume,evaluate_rate,ship_to_days",
+    ...(opts.categoryIds ? { category_ids: opts.categoryIds } : {}),
+  };
+
+  // Arm A: cleaned base64 (preferred). Falls back to Arm B on failure.
+  if (opts.cleanedBase64) {
+    try {
+      const result = await dispatchSmartMatchCall(baseBusinessParams, {
+        image_base64: opts.cleanedBase64,
+        image_format: opts.cleanedFormat ?? "jpg",
+      });
+      if (result && result.length > 0) return result;
+    } catch {
+      /* fall through to URL arm */
+    }
+  }
+
+  // Arm B: raw URL — let AE fetch.
   try {
-    const response = await callAffiliateApi(
-      "aliexpress.affiliate.product.smartmatch",
-      {
-        product_id: "0",
-        site: "aliexpress",
-        device: "PC",
-        country: config.shipToCountry,
-        target_currency: "USD",
-        target_language: "EN",
-        tracking_id: config.trackingId,
-        app_signature: imageUrl,
-        fields:
-          "product_id,product_title,product_detail_url,product_main_image_url,promotion_link,sale_price,target_sale_price,lastest_volume,evaluate_rate,ship_to_days",
-      },
-    );
-
-    const queryResponse = response.aliexpress_affiliate_product_smartmatch_response as
-      | Record<string, unknown>
-      | undefined;
-    const respResult = queryResponse?.resp_result as Record<string, unknown> | undefined;
-    const respCode = respResult?.resp_code;
-    if (respCode !== undefined && Number(respCode) !== 200) return null;
-
-    const result = respResult?.result as Record<string, unknown> | undefined;
-    const products = normalizeProducts(result?.products);
-    const candidates = products
-      .map(mapApiProduct)
-      .filter((candidate): candidate is AliExpressProductCandidate => candidate !== null);
-    return candidates.length > 0 ? rankAliExpressCandidates(candidates) : null;
+    return await dispatchSmartMatchCall(baseBusinessParams, { image_url: imageUrl });
   } catch {
     return null;
   }
+}
+
+async function dispatchSmartMatchCall(
+  baseParams: Record<string, string>,
+  imageBinding: { image_url: string } | { image_base64: string; image_format: string },
+): Promise<AliExpressProductCandidate[] | null> {
+  const response = await callAffiliateApi(
+    "aliexpress.affiliate.product.smartmatch",
+    { ...baseParams, ...imageBinding },
+  );
+
+  const queryResponse = response.aliexpress_affiliate_product_smartmatch_response as
+    | Record<string, unknown>
+    | undefined;
+  const respResult = queryResponse?.resp_result as Record<string, unknown> | undefined;
+  const respCode = respResult?.resp_code;
+  if (respCode !== undefined && Number(respCode) !== 200) return null;
+
+  const result = respResult?.result as Record<string, unknown> | undefined;
+  const products = normalizeProducts(result?.products);
+  const candidates = products
+    .map(mapApiProduct)
+    .filter((candidate): candidate is AliExpressProductCandidate => candidate !== null);
+  return candidates.length > 0 ? rankAliExpressCandidates(candidates) : null;
 }
 
 export async function generateAliExpressAffiliateLink(

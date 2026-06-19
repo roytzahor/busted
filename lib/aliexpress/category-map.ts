@@ -1,0 +1,373 @@
+/**
+ * Static, manually-verified mapping from generic product categories (the
+ * strings our verifier emits) to AliExpress Open Platform category IDs +
+ * supplier-grade keyword arms + negative filters.
+ *
+ * Why static: option (B) crowdsourcing and (C) per-call Gemini lookup were
+ * both rejected for this layer. The category taxonomy is the load-bearing
+ * filter on every search — it must be deterministic and audit-able.
+ *
+ * Maintenance contract:
+ *   - Each entry carries `verifiedAt` (ISO date) — last time the IDs were
+ *     cross-checked against AE's category tree console.
+ *   - Re-verify each entry every 90 days. AliExpress occasionally re-trees
+ *     subcategories without ID changes, but new family branches do appear.
+ *   - When verifying, paste a known winner URL into
+ *     `https://api-sg.aliexpress.com/sync` with method
+ *     `aliexpress.affiliate.productdetail.get` and confirm the `first_level_category_id`
+ *     and `second_level_category_id` values match what we have here.
+ *
+ * AE category-ID structure (for the curious): 6-9 digit integers. The first
+ * 3-4 digits historically encode the L1 root family (322 = Shoes,
+ * 509 = Phones, 66 = Beauty). Trailing digits sub-narrow. Some L2+ IDs are
+ * 9-digit "200000xxx" / "100000xxx" blocks added after 2018.
+ */
+
+export type SortStrategy =
+  | "LAST_VOLUME_DESC" // bulk-orders sort — bias toward proven dropship inventory
+  | "SALE_PRICE_ASC" // raw price ladder — useful when source is ultra-cheap
+  | "LAST_VOLUME_ASC"
+  | "SALE_PRICE_DESC";
+
+export interface CategoryVocabEntry {
+  /** Canonical key (the lookup name). */
+  vertical: string;
+  /** Human-friendly L1 family label — for logging / debug only. */
+  parentFamily: string;
+  /**
+   * Comma-joinable AE category IDs. We send multiple when the family spans
+   * adjacent leaves (e.g. men's + women's slippers, bath salts + soap).
+   * AliExpress accepts comma-separated lists in the `category_ids` param.
+   */
+  categoryIds: string[];
+  /**
+   * Multi-arm keyword queries — caller fans these out in parallel and
+   * merges the candidate pools.
+   */
+  queries: string[];
+  /**
+   * Title-contains substring patterns (case-insensitive) that immediately
+   * reject a candidate. Applied AFTER the API returns, BEFORE confidence
+   * scoring.
+   */
+  negativeKeywords: string[];
+  /**
+   * Multiplier on the source store retail price → AE `min_sale_price`.
+   * A typical dropship markup is 3–15×, so floor at 1/25 of retail.
+   */
+  priceFloorRatio: number;
+  /**
+   * Multiplier on the source store retail price → AE `max_sale_price`.
+   * Ceiling at 1/1.2 of retail so we never surface re-sellers as "the supplier".
+   */
+  priceCeilRatio: number;
+  defaultSort: SortStrategy;
+  /** ISO date this entry was last manually verified against AE's console. */
+  verifiedAt: string;
+  /** Free-form maintenance notes — quirks discovered during verification. */
+  notes?: string;
+}
+
+/* ─── The seed table ─────────────────────────────────────────────────── */
+
+export const CATEGORY_MAP: Record<string, CategoryVocabEntry> = {
+  "phone cases": {
+    vertical: "phone cases",
+    parentFamily: "Phones & Telecommunications",
+    // 200000142 = Mobile Phone Cases & Covers (the canonical leaf).
+    // Adding 200001619 = Phone Bumpers & Protectors as adjacent catch.
+    categoryIds: ["200000142", "200001619"],
+    queries: [
+      "TPU shockproof phone case clear",
+      "silicone liquid phone case shockproof",
+      "magsafe magnetic phone case clear",
+      "phone case bumper TPU PC",
+    ],
+    negativeKeywords: [
+      // Wrong product family
+      "screen protector", "tempered glass", "screen guard", "privacy filter",
+      "charger", "cable", "adapter", "earphone", "earbud", "airpods case",
+      // Accessories that share keywords
+      "stand", "holder", "mount", "tripod", "grip", "pop socket", "popsocket",
+      "ring holder", "lanyard", "strap only", "phone strap",
+      "cleaner", "cleaning kit", "wipes", "spray",
+      // Lookalikes
+      "wallet", "card holder", "purse", "crossbody",
+      // Bulk / wholesale signals (we want 1, not pallets)
+      "wholesale lot", "100 pcs", "50 pieces", "carton",
+      // Re-listing noise
+      "tiktok", "as seen on", "viral 2026",
+    ],
+    priceFloorRatio: 1 / 25, // $50 case → $2 min
+    priceCeilRatio: 1 / 1.2, // $50 case → $41.66 max
+    defaultSort: "LAST_VOLUME_DESC",
+    verifiedAt: "2026-06-19",
+    notes:
+      "200000142 is stable since pre-2020. iPhone-specific subcategories live " +
+      "deeper but are too narrow to use as a default filter.",
+  },
+
+  "shower steamer": {
+    vertical: "shower steamer",
+    parentFamily: "Beauty & Health",
+    // 200000801 = Bath Salts (closest leaf — AE doesn't have a dedicated
+    // "shower steamer" node as of last verification).
+    // 200000803 = Soap; some shower-steamer factories cross-list here.
+    // 200000813 = Massage & Relaxation; adjacent catch.
+    categoryIds: ["200000801", "200000803", "200000813"],
+    queries: [
+      "shower steamer aromatherapy tablets",
+      "eucalyptus menthol shower steamer",
+      "essential oil shower bomb tablets",
+      "shower steamer",
+    ],
+    negativeKeywords: [
+      // Wrong product family — bath bombs are for tubs not showers
+      "bath bomb", "bath soak", "tub bomb", "bath fizzer",
+      "soap bar", "shampoo", "conditioner", "body wash", "shower gel",
+      "scrub", "exfoliant", "loofah", "sponge",
+      "candle", "incense", "diffuser", "reed", "wax melt", "wax cube", "wax tart",
+      "essential oil bottle", "essential oil 100ml",
+      // Shower accessories (not the consumable)
+      "shower head", "shower curtain", "shower hose", "shower mat",
+      "shower caddy", "shower shelf",
+      // Aftermarket
+      "refill", "concentrate", "syrup",
+      // Cube lookalikes
+      "ice cube", "ice tray", "silicone mold", "molds for", "rubik", "rubiks",
+      "stress ball", "stress cube",
+      // Marketing fluff
+      "tiktok", "viral", "as seen", "trending 2026",
+    ],
+    priceFloorRatio: 1 / 25,
+    priceCeilRatio: 1 / 1.2,
+    defaultSort: "LAST_VOLUME_DESC",
+    verifiedAt: "2026-06-19",
+    notes:
+      "AE has no dedicated shower-steamer node. Factories listed under " +
+      "Bath Salts (200000801) or occasionally under Soap (200000803). " +
+      "Re-check quarterly — a dedicated leaf could appear.",
+  },
+
+  slippers: {
+    vertical: "slippers",
+    parentFamily: "Shoes",
+    // 200000871 = Slippers (main leaf, stable for 5+ years).
+    // 200000919 = Men's Slippers, 200000920 = Women's Slippers — these
+    // exist as gender-narrowed children; including both removes the
+    // gender-bias that the parent leaf has.
+    categoryIds: ["200000871", "200000919", "200000920"],
+    queries: [
+      "EVA pillow slides cloud slippers",
+      "plantar fasciitis EVA foam slippers arch support",
+      "thick EVA foam slides non-slip TPR",
+      "EVA cloud slides",
+    ],
+    negativeKeywords: [
+      // Replacement / aftermarket parts
+      "insole", "inserts", "replacement", "refill", "pad only", "cushion only",
+      // Cleaning / care
+      "cleaner", "spray", "shoe polish", "shoe brush", "deodoriz", "freshener",
+      // Storage / accessories
+      "shoe bag", "shoe rack", "travel bag", "storage bag", "shoe horn", "shoehorn",
+      // Lookalikes / costume / decor
+      "keychain", "miniature", "doll", "figurine", "plush", "ornament", "pendant",
+      "phone case", "phone holder", "airpods case",
+      // Wrong shoe families
+      "boot", "boots", "sneaker", "running shoe", "high heel", "sock", "socks",
+      // Marketing noise
+      "trending 2026", "tiktok viral", "as seen on", "instagram famous",
+      // Wholesale lots
+      "wholesale lot", "bulk 10 pairs", "carton of",
+    ],
+    priceFloorRatio: 1 / 30, // slippers are extreme-margin products — 30× markup common
+    priceCeilRatio: 1 / 1.2,
+    defaultSort: "LAST_VOLUME_DESC",
+    verifiedAt: "2026-06-19",
+    notes:
+      "Include gender subcategories — AE's slipper-search ranking weighs " +
+      "gender match heavily and the parent leaf 200000871 sometimes returns " +
+      "unisex bath sandals only.",
+  },
+
+  necklace: {
+    vertical: "necklace",
+    parentFamily: "Jewelry & Accessories",
+    // 200000226 = Necklaces & Pendants (parent leaf, stable).
+    // 200002034 = Pendant Necklaces (most common dropship subcat).
+    // 200002033 = Chain Necklaces.
+    categoryIds: ["200000226", "200002034", "200002033"],
+    queries: [
+      "S925 sterling silver necklace pendant",
+      "stainless steel necklace pendant gold plated",
+      "925 silver chain necklace dainty",
+      "cubic zirconia pendant necklace minimalist",
+    ],
+    negativeKeywords: [
+      // Wrong jewelry families
+      "earring", "earrings", "bracelet", "ring", "anklet", "brooch",
+      "watch", "smartwatch",
+      // Accessories / aftermarket
+      "necklace holder", "necklace stand", "jewelry box", "display case",
+      "polishing cloth", "cleaner", "anti tarnish",
+      "extender", "clasp", "jump ring", "findings", "DIY",
+      // Costume / replica giveaways
+      "cosplay", "halloween", "fancy dress", "costume jewelry only",
+      "kid", "kids", "child", "toy",
+      // Mismatch product types
+      "phone charm", "keychain", "keyring", "lanyard",
+      // Bulk wholesaler signals
+      "wholesale lot", "100 pcs mixed", "bulk lot",
+    ],
+    priceFloorRatio: 1 / 50, // jewelry has the widest markup spread (10–50×)
+    priceCeilRatio: 1 / 1.2,
+    defaultSort: "LAST_VOLUME_DESC",
+    verifiedAt: "2026-06-19",
+    notes:
+      "Most viral 'baby name necklace' / 'birthstone' dropship listings on AE " +
+      "are tagged 200002034 (Pendant Necklaces). Also re-list under " +
+      "'Customized Necklaces' (no stable ID) — keyword fallback covers this.",
+  },
+
+  "apparel sizes": {
+    vertical: "apparel sizes",
+    parentFamily: "Men's & Women's Clothing",
+    // 100003109 = Women's Clothing (root)
+    // 100003070 = Men's Clothing (root)
+    // 200000345 = Women's T-Shirts (most-common dropship leaf)
+    // 200000343 = Women's Hoodies & Sweatshirts (second-most common)
+    categoryIds: ["100003109", "100003070", "200000345", "200000343"],
+    queries: [
+      "cotton oversized t-shirt unisex blank",
+      "loose fit cotton hoodie pullover",
+      "streetwear graphic tee unisex 100% cotton",
+      "vintage washed t-shirt heavyweight cotton",
+    ],
+    negativeKeywords: [
+      // Accessories / aftermarket
+      "hanger", "hangers", "drying rack", "garment bag", "storage bag",
+      "iron", "steamer", "lint roller", "detergent", "stain remover",
+      "size chart", "measuring tape", "tailor", "sewing",
+      // Wrong garment families that re-list under unisex/clothing keywords
+      "swimsuit", "swimwear", "bikini", "underwear", "boxer", "panty",
+      "sock", "socks", "tights", "leggings only", "pantyhose",
+      "shoe", "shoes", "boot", "sneaker", "sandal",
+      "hat", "cap", "scarf only", "glove", "belt",
+      "bag", "backpack", "purse", "wallet",
+      // Kid / pet redirects (when source is adult apparel)
+      "doll clothes", "pet clothes", "dog hoodie", "cat costume",
+      // Bulk / sample signals
+      "wholesale lot", "10 pcs mixed sizes", "carton of",
+      // Counterfeit / replica indicators
+      "replica", "1:1 quality", "AAA quality",
+    ],
+    priceFloorRatio: 1 / 20,
+    priceCeilRatio: 1 / 1.3, // apparel has tighter retail-to-supplier spread than jewelry
+    defaultSort: "LAST_VOLUME_DESC",
+    verifiedAt: "2026-06-19",
+    notes:
+      "Apparel is the toughest category to disambiguate because dropship " +
+      "stores often re-photograph the same generic factory shirt. The price " +
+      "ceiling is tighter (1/1.3) because legitimate brand apparel and " +
+      "white-label apparel overlap in the AE catalog above that band.",
+  },
+};
+
+/* ─── Resolver ───────────────────────────────────────────────────────── */
+
+/**
+ * Synonym lookup — maps free-form `productCategory` strings emitted by the
+ * verdict step to the canonical vertical key in CATEGORY_MAP.
+ *
+ * Keep this list tight. Adding too many synonyms turns the resolver into a
+ * fuzzy classifier and we lose deterministic routing.
+ */
+const VERTICAL_SYNONYMS: Array<{ patterns: RegExp[]; vertical: string }> = [
+  {
+    patterns: [/phone case/i, /mobile case/i, /smartphone case/i, /iphone case/i, /android case/i],
+    vertical: "phone cases",
+  },
+  {
+    patterns: [/shower steamer/i, /shower tablet/i, /aroma tablet/i, /aromatherapy shower/i, /shower bomb/i],
+    vertical: "shower steamer",
+  },
+  {
+    patterns: [/slipper/i, /slides?$/i, /pillow slide/i, /cloud slide/i, /house shoe/i, /home shoe/i],
+    vertical: "slippers",
+  },
+  {
+    patterns: [/necklace/i, /pendant/i, /chain.*neck/i, /choker/i],
+    vertical: "necklace",
+  },
+  {
+    patterns: [
+      /t-?shirt/i,
+      /\bshirt\b/i,
+      /hoodie/i,
+      /sweatshirt/i,
+      /apparel/i,
+      /clothing/i,
+      /\btee\b/i,
+      /pullover/i,
+      /sweater/i,
+      /jacket/i,
+      /pants/i,
+      /trousers/i,
+      /dress\b/i,
+    ],
+    vertical: "apparel sizes",
+  },
+];
+
+/**
+ * Resolve a category vocab entry from a free-form productCategory string.
+ * Returns null when no synonym matches — caller should fall back to title-
+ * derived keywords + no category filter.
+ */
+export function resolveCategoryVocab(
+  productCategory: string | null | undefined,
+): CategoryVocabEntry | null {
+  if (!productCategory) return null;
+  const input = productCategory.trim();
+  if (!input) return null;
+
+  // Direct lookup first (case-insensitive)
+  const directKey = input.toLowerCase();
+  if (CATEGORY_MAP[directKey]) return CATEGORY_MAP[directKey];
+
+  // Synonym scan
+  for (const { patterns, vertical } of VERTICAL_SYNONYMS) {
+    if (patterns.some((p) => p.test(input))) {
+      const entry = CATEGORY_MAP[vertical];
+      if (entry) return entry;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Convenience accessor — list all verified vertical keys. Useful for logging
+ * and for surfacing coverage gaps when a new dropship vertical appears in
+ * production traffic.
+ */
+export function listSupportedVerticals(): string[] {
+  return Object.keys(CATEGORY_MAP);
+}
+
+/**
+ * Filter candidates by a vertical's negative keywords. Applied AFTER the
+ * AliExpress API returns, BEFORE confidence scoring — strips the obvious
+ * noise (replacement parts, accessories, wrong-category lookalikes) before
+ * we burn Gemini Vision tokens scoring them.
+ */
+export function filterByNegativeKeywords<T extends { title: string }>(
+  candidates: T[],
+  negativeKeywords: string[],
+): T[] {
+  const lowered = negativeKeywords.map((k) => k.toLowerCase());
+  return candidates.filter((c) => {
+    const lowerTitle = c.title.toLowerCase();
+    return !lowered.some((neg) => lowerTitle.includes(neg));
+  });
+}

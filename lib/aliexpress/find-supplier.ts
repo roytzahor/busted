@@ -30,6 +30,15 @@ import { matchVariantToSku, type VariantMatchResult } from "@/lib/aliexpress/mat
 import { fetchAliExpressProductDetail } from "@/lib/aliexpress/sku";
 import { searchAliExpressViaScrape } from "@/lib/aliexpress/search-scrape-fallback";
 import {
+  filterByNegativeKeywords,
+  resolveCategoryVocab,
+} from "@/lib/aliexpress/category-map";
+import { resolveLocaleFromSourceUrl } from "@/lib/aliexpress/locale";
+import {
+  PreprocessError,
+  preprocessForSmartMatch,
+} from "@/lib/ai/preprocess-image";
+import {
   AliExpressSearchError,
   type SupplierMatchResult,
 } from "@/lib/aliexpress/types";
@@ -210,20 +219,85 @@ export async function findAliExpressSupplier(params: {
     if (categoryResults.length > 0) keywordsUsed.push(categoryKeywords);
   }
 
+  // Resolve locale + category vocab once for the smartmatch + filter steps.
+  // Locale is derived from the source-store TLD (co.il → IL/ILS) so the
+  // AliExpress prices we surface match the buyer's actual warehouse, not
+  // env-default-US. Category vocab pulls verified AE category IDs and
+  // negative-keyword filters from the static seed table.
+  const locale = resolveLocaleFromSourceUrl(params.attributes.sourceUrl);
+  const categoryVocab = resolveCategoryVocab(
+    params.identity?.category ?? params.productCategory ?? null,
+  );
+
   // Phase 5: smartmatch arm — image-based AliExpress search.
   // Best-effort: requires API tier access, returns null on any failure.
   // Worth trying because it catches visually-similar products that text
   // keywords miss entirely. Only attempted when API is configured AND we
   // have a hostable source image URL.
+  //
+  // Phase 7 upgrade: we run the source image through Gemini Vision
+  // preprocess first (tight crop, white BG, brand-text inpaint) and ship
+  // the cleaned bytes via `image_base64`. This removes the brand-wordmark
+  // anchor that pollutes raw consumer photos and the white-BG normalisation
+  // aligns our hash to the catalog distribution.
+  //
+  // Locale + categoryIds flow through so the IL-targeted funnel returns
+  // IL-warehouse prices.
   if (
     provider === "aliexpress_api" &&
     params.attributes.mainImageUrl &&
     candidates.length < 30
   ) {
-    const smartResults = await searchAliExpressBySmartMatch(params.attributes.mainImageUrl);
+    const mainImageUrl = params.attributes.mainImageUrl;
+    const categoryForPrompt =
+      categoryVocab?.vertical ??
+      params.identity?.category ??
+      params.productCategory ??
+      "product";
+
+    let cleanedBase64: string | undefined;
+    let cleanedFormat: "jpg" | "png" | "webp" | undefined;
+    try {
+      const cleaned = await preprocessForSmartMatch(mainImageUrl, categoryForPrompt);
+      cleanedBase64 = cleaned.base64;
+      cleanedFormat = cleaned.format;
+    } catch (err) {
+      // Preprocess is best-effort — keep going with the raw URL.
+      if (err instanceof PreprocessError) {
+        console.warn(
+          `[smartmatch] preprocess skipped (${err.code}): ${err.message}`,
+        );
+      } else {
+        console.warn("[smartmatch] preprocess failed:", err);
+      }
+    }
+
+    const smartResults = await searchAliExpressBySmartMatch(mainImageUrl, {
+      cleanedBase64,
+      cleanedFormat,
+      shipToCountry: locale.shipToCountry,
+      targetCurrency: locale.targetCurrency,
+      categoryIds: categoryVocab?.categoryIds.join(","),
+    });
     if (smartResults && smartResults.length > 0) {
       candidates = mergeAndDeduplicateCandidates(candidates, smartResults);
-      keywordsUsed.push(`smartmatch:image (${smartResults.length} candidates)`);
+      keywordsUsed.push(
+        `smartmatch:image${cleanedBase64 ? " (cleaned)" : ""} (${smartResults.length} candidates)`,
+      );
+    }
+  }
+
+  // Category-specific negative filter — applied after all candidate pools
+  // are merged but before scoring. Strips obvious noise (replacement parts,
+  // accessories, wrong-family lookalikes) so we don't burn Gemini Vision
+  // tokens on garbage in the rerank stage.
+  if (categoryVocab && candidates.length > 0) {
+    const before = candidates.length;
+    candidates = filterByNegativeKeywords(candidates, categoryVocab.negativeKeywords);
+    if (candidates.length < before) {
+      keywordsUsed.push(
+        `negative-filter:${categoryVocab.vertical} (-${before - candidates.length})`,
+      );
     }
   }
 

@@ -53,6 +53,34 @@ model User {
   @@index([email])
 }
 
+/// Cached output of Gemini Vision image preprocessing (crop, background
+/// normalisation, brand-text inpaint). Keyed by sha256(sourceImageUrl + "|" +
+/// productCategory) so cache invalidates if either input changes.
+///
+/// Cleaned image is stored as raw bytes — typical JPEG ≈ 50–100 KB.
+/// 30-day TTL enforced at query time (see lib/ai/preprocess-cache.ts).
+model PreprocessedImage {
+  id              String   @id @default(cuid())
+  /// sha256 hex digest used as the lookup key (NOT the source URL — keeps
+  /// keys uniform length and free of unicode oddities from Shopify CDNs).
+  cacheKey        String   @unique
+  sourceImageUrl  String
+  productCategory String
+  processedImage  Bytes
+  format          String   @default("jpg")
+  width           Int
+  height          Int
+  /// Bytes-on-disk for the processed payload. Useful for cost monitoring.
+  payloadBytes    Int
+  hits            Int      @default(0)
+  createdAt       DateTime @default(now())
+  lastHitAt       DateTime @default(now())
+
+  @@index([cacheKey])
+  @@index([createdAt])
+  @@index([productCategory])
+}
+
 /// Per-user search log linked to cached product records.
 model SearchHistory {
   id               String   @id @default(cuid())
