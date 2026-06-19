@@ -1,3 +1,4 @@
+import { CacheStats } from "@/components/monitoring/cache-stats";
 import { LastScanPanel } from "@/components/monitoring/last-scan-panel";
 import { StatusBoard } from "@/components/monitoring/status-board";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,11 @@ export default function MonitoringPage() {
 
       {/* Service status cards */}
       <StatusBoard />
+
+      <Separator className="my-10 border-white/8" />
+
+      {/* Cache performance overview */}
+      <CacheStats />
 
       <Separator className="my-10 border-white/8" />
 

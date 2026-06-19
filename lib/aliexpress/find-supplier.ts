@@ -421,14 +421,16 @@ export async function findAliExpressSupplier(params: {
     ...(categoryVocab?.negativeKeywords ?? []),
     ...materialNegatives,
   ];
+  let negativeKeywordsFiltered = 0;
   if (effectiveNegatives.length > 0 && candidates.length > 0) {
     const before = candidates.length;
     candidates = filterByNegativeKeywords(candidates, effectiveNegatives);
+    negativeKeywordsFiltered = before - candidates.length;
     if (candidates.length < before) {
       const label = categoryVocab
         ? `negative-filter:${categoryVocab.vertical}`
         : "negative-filter:material";
-      keywordsUsed.push(`${label} (-${before - candidates.length})`);
+      keywordsUsed.push(`${label} (-${negativeKeywordsFiltered})`);
     }
   }
 
@@ -764,6 +766,19 @@ export async function findAliExpressSupplier(params: {
         : {}),
       smartmatchArm: smartmatchArm === null ? undefined : smartmatchArm,
       smartmatchCandidateCount,
+      // Sprint 9 Stage 14 — locale + category + vision signals for /monitoring.
+      shipToCountry: locale.shipToCountry,
+      targetCurrency: locale.targetCurrency,
+      ...(categoryVocab
+        ? {
+            categoryVertical: categoryVocab.vertical,
+            categoryIds: categoryVocab.categoryIds.join(","),
+          }
+        : {}),
+      ...(negativeKeywordsFiltered > 0 ? { negativeKeywordsFiltered } : {}),
+      ...(preprocessOcrTraces.length > 0 ? { ocrTraces: preprocessOcrTraces } : {}),
+      ...(preprocessMaterialTokens.length > 0 ? { materialTokens: preprocessMaterialTokens } : {}),
+      ...(preprocessTechnicalSpecs.length > 0 ? { technicalSpecs: preprocessTechnicalSpecs } : {}),
     },
   };
 }

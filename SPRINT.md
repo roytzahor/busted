@@ -7,6 +7,10 @@
 Tracks stages 4–12 of the AliExpress supplier-matching pipeline upgrade.
 Stages 1–3 (Prisma migration, env var pin, live calmo test) were completed 2026-06-19.
 
+**Sprint 8 — DONE.** Stages 4–12 closed and committed at `d74988e` plus the in-session
+dual-arm fetcher + vision-analysis cache work. Sprint 9 (stages 13–18) starts below the
+Phase 9 section.
+
 ---
 
 ## Status legend
@@ -384,6 +388,278 @@ model SupplierReputation {
 
 ---
 
+## Sprint 9 — Trust, observability & legal hardening (this week)
+
+**Started:** 2026-06-19  
+**Theme:** make the product believable. Mid-scan transparency, a credible disclaimer
+that protects us from "this isn't actually my dropshipper" pushback, and the
+monitoring upgrades we needed since stages 4–12 started shipping rich metadata
+nobody can see.
+
+### Stage 13 — Homepage disclaimer + footer microcopy ✅
+
+**Why:** Detection isn't perfect (legit brands occasionally test as "likely dropship"),
+and the AliExpress match is often a similar product, not the literal same SKU.
+Without explicit warnings on the landing page we expose ourselves to brand-defamation
+claims and refund disputes. Adding a small visible disclaimer is the cheapest legal
+moat we can put up.
+
+**Impact:** Removes any "but you said it was a dropship!" or "this isn't the same
+product I bought!" liability. Sets expectations *before* the user runs a scan.
+
+**Effort:** ~30 LoC across 3 files. ~30 minutes.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `components/search-hub.tsx` | Add an info-icon chip under the URL input — visible in idle state, dims when scanning |
+| `app/layout.tsx` | Replace the single-line tagline footer with a 2-line legal note |
+| `lib/brand.ts` | Add `DISCLAIMER_SHORT` + `DISCLAIMER_LONG` so copy lives in one place |
+
+**Copy spec:**
+
+```
+Short (under the search box):
+  ⓘ  Results are estimates. We may flag legit brands as dropships,
+     and AliExpress matches may be similar items, not exact.
+
+Long (footer):
+  Busted is a price-comparison and education tool. Dropship detection
+  and AliExpress matches are AI-generated estimates — verify product
+  identity, seller reputation, and shipping before purchasing.
+  Not affiliated with the stores or marketplaces we link to.
+```
+
+**Acceptance criteria:**
+- [ ] Disclaimer chip appears immediately under the URL input in idle state
+- [ ] Chip dims (50% opacity) while `phase === "analyzing"` to reduce noise
+- [ ] Footer shows the long version on every page (including `/monitoring`)
+- [ ] Copy is sourced from `lib/brand.ts` constants (no inline strings)
+
+---
+
+### Stage 14 — Surface pipeline metadata in /monitoring ✅
+
+**Why:** Stages 4–12 plus the dual-arm fetcher and vision-analysis cache produce
+~20 new metadata fields per scan (preprocess cache hit, OCR traces, material tokens,
+smartmatch arm, locale, category vocab match, variant axis remapping, fetched-page
+source arm…). All of it sits inside `searchMeta` and `serviceEvents[].meta` and is
+invisible unless you expand the raw JSON `<details>`. The monitoring dashboard
+should *show* this — it's the proof the pipeline is doing intelligent things.
+
+**Impact:** /monitoring becomes a useful debugging surface again. Spot regressions
+in 5 seconds instead of 5 minutes of JSON scrolling.
+
+**Effort:** ~250 LoC across 4 files. ~3 hours.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `lib/types/debug.ts` | Add `AnalyzeDebugPipeline` interface with structured fields (page-cache, vision, smartmatch, variant, locale, category) |
+| `app/api/analyze/route.ts` | Map `searchMeta` + event-meta into the new structured fields |
+| `components/monitoring/pipeline-detail.tsx` (new) | Card grid: "Scrape", "Vision", "SmartMatch", "Variant", "Routing" — each shows the relevant signals |
+| `components/monitoring/last-scan-panel.tsx` | Mount `<PipelineDetail />` above the existing event timeline |
+
+**Visual spec (5 card grid):**
+
+```
+┌──────────────────────┬──────────────────────┐
+│ Scrape               │ Vision               │
+│ source: crawlbase    │ preprocess: cache HIT│
+│ cache: HIT (5d ago)  │ quality: 8.2/10      │
+│ size: 28 KB gzipped  │ ocr: ["A4S", "..."]  │
+│                      │ materials: ["TPU"]   │
+├──────────────────────┼──────────────────────┤
+│ SmartMatch           │ Variant Match        │
+│ arm: base64          │ axis: color→scent    │
+│ candidates: 12       │ purple → lavender    │
+│                      │ confidence: 0.92     │
+├──────────────────────┴──────────────────────┤
+│ Routing                                     │
+│ locale: IL · ILS · ship_to_country=IL       │
+│ category: "shower steamer" → IDs [200…]     │
+│ negative keywords applied: 4                │
+└─────────────────────────────────────────────┘
+```
+
+**Acceptance criteria:**
+- [ ] All 5 cards render with real data on a fresh scan
+- [ ] Cards collapse gracefully when a signal is absent (no broken empty cards)
+- [ ] OCR / material / spec arrays show as chips, not raw JSON
+- [ ] Cache HIT vs MISS uses semantic colour (success vs muted)
+
+---
+
+### Stage 15 — Per-stage latency waterfall with cost ✅
+
+**Why:** The existing waterfall is a vertical text log. It hides the answer to the
+question we ask most often: "where did the 18 seconds go and what did it cost?"
+A horizontal bar chart with a cost column makes bottlenecks and overspend obvious.
+
+**Impact:** Identifies whether Crawlbase, Firecrawl, Gemini Vision, or AE API is
+the latency hog on any given scan. Estimated $/scan visible per stage drives
+decisions about caching, prompt complexity, and arm priority.
+
+**Effort:** ~180 LoC across 3 files. ~2 hours.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `lib/monitoring/cost-model.ts` (new) | `estimateStageCost(serviceName, meta): { usd, breakdown }` — pure function, no I/O |
+| `components/monitoring/latency-cost-waterfall.tsx` (new) | Horizontal stacked bars with cost column |
+| `components/monitoring/last-scan-panel.tsx` | Render the new waterfall above the existing text trace |
+
+**Cost model (initial estimates — refine later from real bills):**
+
+```typescript
+const STAGE_COST_USD = {
+  "crawlbase":         0.001,   // per JS render
+  "firecrawl-scrape":  0.0015,  // per page
+  "gemini-vision":     0.00012, // per call (Gemini 3 Flash image+text)
+  "gemini-flash-text": 0.00005, // per call (text-only verdict/identity)
+  "ae-keyword-search": 0.0,     // free tier within quotas
+  "ae-smartmatch":     0.0,     // free tier
+  "ae-product-detail": 0.0,     // free tier
+  "admitad-link":      0.0,     // affiliate, free
+  "neon-query":        0.0,     // included in hosting
+};
+```
+
+**Acceptance criteria:**
+- [ ] Horizontal bars proportional to actual stage duration
+- [ ] Cost column shows USD with 4 decimal precision (e.g. "$0.0012")
+- [ ] Total row at the bottom: total ms · total $
+- [ ] Bars colour-coded by stage type (scrape blue, AI amber, AE green, cache grey)
+
+---
+
+### Stage 16 — Cache stats overview panel ✅
+
+**Why:** We added three caches in the last sprint (PreprocessedImage, FetchedPage,
+SupplierReputation) plus the pre-existing ScannedProduct and StageCache. Nobody
+knows what the hit rates are. Hit-rate is the single biggest cost lever — if
+PreprocessedImage hits at 5% we're paying ~$0.001 × every-image every scan, if
+it hits at 80% the spend is one-fifth.
+
+**Impact:** Visibility into where caching pays off and where it doesn't. Lets us
+size the Neon DB realistically and spot pathological keys (e.g. URL parameters
+busting the page cache).
+
+**Effort:** ~150 LoC across 3 files. ~2 hours.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `app/api/monitoring/cache/route.ts` (new) | GET endpoint returning `{ table, rows, hits, totalSize, oldestRow, ttlDays }[]` |
+| `components/monitoring/cache-stats.tsx` (new) | Card grid showing each table |
+| `app/monitoring/page.tsx` | Mount `<CacheStats />` between StatusBoard and LastScanPanel |
+
+**Visual:**
+
+```
+┌─────────────────────────────────────────────────┐
+│ Cache Performance · last 30 days                │
+├─────────────────────────────────────────────────┤
+│ ScannedProduct      • 1,204 rows · 18 MB · 14d  │
+│ ▆▆▆▆▆▆▆▇▇▇▇▇▇▇   72% hit · 3,847 hits         │
+├─────────────────────────────────────────────────┤
+│ FetchedPage         • 982 rows  · 26 MB · 14d  │
+│ ▆▆▆▆▆▆▆▆▆▆▆▇▇▇   88% hit · 6,202 hits         │
+├─────────────────────────────────────────────────┤
+│ PreprocessedImage   • 612 rows  · 41 MB · 30d  │
+│ ▆▆▆▆▆▇▇          41% hit · 1,108 hits         │
+├─────────────────────────────────────────────────┤
+│ StageCache          • 8,471 rows · 4 MB  · 14d │
+│ ▆▆▆▆▆▆▆▆▆▆▆▇▇▇▇  91% hit · 24,610 hits        │
+└─────────────────────────────────────────────────┘
+```
+
+**Acceptance criteria:**
+- [ ] Endpoint protected by `x-monitoring-secret` (same as other monitoring routes)
+- [ ] Hit rate computed as `sum(hits) / (sum(hits) + sum(misses))` over the last 30 days
+- [ ] Storage size uses `pg_total_relation_size()` per table
+- [ ] Panel auto-refreshes every 60 s (heavier than service probes — 30 s is wasteful)
+
+---
+
+### Stage 17 — Live animated pipeline view during scan ⬜
+
+**Why:** Today the user stares at a skeleton during a 20-second scan and has no
+idea what's happening. We already emit progress events via `analyzeProductUrl(...,
+{ onProgress })`. Wire those into a real-time stage tracker showing what's running
+*right now*, what's done, what's queued. Doubles as marketing — the pipeline
+*looks* sophisticated because it *is*.
+
+**Impact:** Perceived latency drops sharply (people tolerate 20 s when they can see
+progress). Doubles as social-shareable demo material — TikTok-friendly.
+
+**Effort:** ~300 LoC across 4 files. ~5 hours.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `lib/analyze/client.ts` | Extend `AnalyzeProgress` to include `stage`, `phase`, `meta` (currently only `step` + `progress`) |
+| `app/api/analyze/route.ts` | Emit structured progress events via SSE — one per stage transition |
+| `components/live-pipeline-view.tsx` (new) | Vertical timeline with shimmering active stage, completed stages collapse to a checkmark |
+| `components/search-hub.tsx` | Replace `<AnalysisSkeleton />` with `<LivePipelineView />` when `phase === "analyzing"` |
+
+**Event taxonomy:**
+
+```typescript
+type LiveStage =
+  | "cache-lookup"
+  | "fetch-page"
+  | "extract-product"
+  | "translate-title"      // optional, IL/non-Latin
+  | "preprocess-image"
+  | "identify-product"
+  | "verify-dropship"
+  | "search-aliexpress"
+  | "match-variant"
+  | "rank-candidates"
+  | "validate-affiliate"
+  | "persist-result";
+```
+
+**Acceptance criteria:**
+- [ ] Each stage transitions through `queued → active → done` with a smooth animation
+- [ ] Active stage shows a sub-message (e.g. "fetching via Crawlbase…")
+- [ ] Cache HIT on a stage shows a lightning bolt + skip-to-done in <100 ms
+- [ ] On error, the failing stage turns red with the error message inline
+- [ ] Same component is reusable inside `/monitoring` for replaying the last scan
+
+---
+
+### Stage 18 — Apply pending migration + verifyCategoryProductIds seed ⬜
+
+**Why:** Carried over from Sprint 8. The `20260619124730_add_fetched_page_and_analysis_cache`
+migration file exists in `prisma/migrations/` but hasn't been pushed to Neon.
+Without it, `fetchProductPage()` and the analysis cache writes will throw at
+runtime. Also: `CATEGORY_MAP[*].verificationProductId` is still `undefined` for
+all 5 verticals, so `npm run verify:categories` reports SKIPPED for everything.
+
+**Effort:** 15 minutes + 1 hour to find 5 stable AE product IDs.
+
+**Steps:**
+1. `npx prisma migrate deploy` against Neon prod DB
+2. Identify one stable, high-volume AE product per vertical (shower steamer,
+   slippers, jewelry, phone case, candle) — pick something with `lastest_volume > 1000`
+3. Populate `verificationProductId` in `lib/aliexpress/category-map.ts`
+4. Run `npm run verify:categories` locally — confirm all 5 pass
+5. Trigger the monthly GitHub Actions workflow once manually to validate
+
+**Acceptance criteria:**
+- [ ] `npx prisma migrate status` reports the migration as applied
+- [ ] All 5 entries in `CATEGORY_MAP` have a populated `verificationProductId`
+- [ ] GitHub Actions `verify-category-ids` run is green
+
+---
+
 ## Completed ✅
 
 | Stage | Description | Commit |
@@ -397,6 +673,16 @@ model SupplierReputation {
 | P7 | Build `lib/aliexpress/category-map.ts` (5-vertical seed table) | `44fdb6f` |
 | P6 | Variant-aware matching: `sku.ts`, `match-variant.ts`, `match-confidence.ts` | prev |
 | P5 | SmartMatch two-arm dispatch (base64 preferred, URL fallback) | `44fdb6f` |
+| 12 | JSON-LD structured product extraction | `bac5776` |
+| 11 | Per-store affiliate-link reputation scoring | `4f49057` |
+| 10 | Hebrew/non-Latin title translation pre-pass | `17f89eb` |
+| 9 | Image cleanup quality scorer + light-prompt retry | `436827f` |
+| 8 | Monthly AE category-ID verification job | `3986f6d` |
+| 7 | SmartMatch + preprocess outcome tracking | `4e3486a` |
+| 6 | Category coverage-gap logging | `f52492b` |
+| 5 | Variant-axis remapping (color→scent) | `f52492b` |
+| 4 | Geo-aware keyword arms | `f52492b` |
+| S8.5 | Dual-arm fetcher + 14-day HTML cache + vision-analysis cache | `d74988e` |
 
 ---
 

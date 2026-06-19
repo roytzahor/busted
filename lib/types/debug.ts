@@ -29,6 +29,31 @@ export interface AnalyzeDebugSupplier {
   winnerPriceUsd: number;
   affiliateProvider: "aliexpress_api" | "admitad" | "direct";
   affiliateLinkValidated: boolean;
+  preprocess?: {
+    attempted: boolean;
+    cacheHit?: boolean;
+    durationMs?: number;
+    qualityScore?: number;
+    lightPromptUsed?: boolean;
+  };
+  smartmatch?: {
+    arm?: "base64" | "url" | "skipped";
+    candidateCount?: number;
+  };
+  categoryVocabMiss?: string;
+  // Sprint 9 Stage 14 — structured pipeline signals for /monitoring.
+  routing?: {
+    shipToCountry?: string;
+    targetCurrency?: string;
+    categoryVertical?: string;
+    categoryIds?: string;
+    negativeKeywordsFiltered?: number;
+  };
+  vision?: {
+    ocrTraces?: string[];
+    materialTokens?: string[];
+    technicalSpecs?: string[];
+  };
 }
 
 export interface PipelineWaterfallEntry {

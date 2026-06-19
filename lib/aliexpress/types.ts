@@ -67,5 +67,22 @@ export interface SupplierMatchResult {
     smartmatchArm?: "base64" | "url" | "skipped";
     /** Number of candidates returned by the smartmatch arm (0 when skipped or no results). */
     smartmatchCandidateCount?: number;
+    // Sprint 9 Stage 14 — locale + category + vision context surfaced for /monitoring.
+    /** Resolved buyer locale ship-to country (e.g. "IL", "US"). */
+    shipToCountry?: string;
+    /** Resolved buyer locale target currency (e.g. "ILS", "USD"). */
+    targetCurrency?: string;
+    /** Category vocab vertical name when a match was found (e.g. "shower steamer"). */
+    categoryVertical?: string;
+    /** AE first-level category IDs filtered against (comma-joined). */
+    categoryIds?: string;
+    /** Number of candidates removed by negative-keyword filter (0 when no negatives applied). */
+    negativeKeywordsFiltered?: number;
+    /** OCR traces extracted from the source product image (model numbers, serials, brand text). */
+    ocrTraces?: string[];
+    /** Material tokens extracted from the source image (e.g. "TPU", "ABS", "S925"). */
+    materialTokens?: string[];
+    /** Technical-spec phrases extracted from the source image (e.g. "12000mAh", "USB-C"). */
+    technicalSpecs?: string[];
   };
 }

@@ -19,6 +19,7 @@ import {
   BRAND_HOOK_BUSTED,
   BRAND_HOOK_RELIEF,
   BRAND_TAGLINE,
+  DISCLAIMER_SHORT,
 } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import {
@@ -26,6 +27,7 @@ import {
   ArrowRight,
   Clock,
   Flame,
+  Info,
   Link2,
   Shield,
   Zap,
@@ -262,6 +264,21 @@ export function SearchHub() {
             </Button>
           </form>
         </div>
+
+        {/* Legal disclaimer — visible before scan so expectations are set. */}
+        <p
+          role="note"
+          className={cn(
+            "mx-auto mt-4 flex max-w-xl items-start gap-2 px-2 text-left text-[11px] leading-relaxed text-muted-foreground/70 transition-opacity duration-300 sm:text-xs",
+            isAnalyzing && "opacity-40",
+          )}
+        >
+          <Info
+            className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/60"
+            aria-hidden="true"
+          />
+          <span>{DISCLAIMER_SHORT}</span>
+        </p>
       </section>
 
       {/* ── Progress ──────────────────────────────────────────────── */}

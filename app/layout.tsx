@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Nav } from "@/components/nav";
-import { BRAND_DESCRIPTION, BRAND_NAME, BRAND_TAGLINE } from "@/lib/brand";
+import {
+  BRAND_DESCRIPTION,
+  BRAND_NAME,
+  BRAND_TAGLINE,
+  DISCLAIMER_LONG,
+} from "@/lib/brand";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -35,9 +40,12 @@ export default function RootLayout({
             {children}
           </main>
           <footer className="mt-auto border-t border-white/8 py-6">
-            <div className="mx-auto max-w-6xl px-4 text-center text-xs text-muted-foreground sm:px-6 sm:text-sm">
-              <p>
+            <div className="mx-auto max-w-3xl space-y-2 px-4 text-center text-xs text-muted-foreground sm:px-6">
+              <p className="font-medium text-foreground/70">
                 {BRAND_NAME} — {BRAND_TAGLINE} Spot the fire, skip the markup.
+              </p>
+              <p className="text-[11px] leading-relaxed text-muted-foreground/70 sm:text-xs">
+                {DISCLAIMER_LONG}
               </p>
             </div>
           </footer>

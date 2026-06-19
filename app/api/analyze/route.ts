@@ -535,6 +535,31 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
         ...(match.searchMeta.categoryVocabMiss
           ? { categoryVocabMiss: match.searchMeta.categoryVocabMiss }
           : {}),
+        // Sprint 9 Stage 14 — routing + vision context for the monitoring UI.
+        ...(match.searchMeta.shipToCountry ||
+        match.searchMeta.categoryVertical ||
+        match.searchMeta.negativeKeywordsFiltered !== undefined
+          ? {
+              routing: {
+                shipToCountry: match.searchMeta.shipToCountry,
+                targetCurrency: match.searchMeta.targetCurrency,
+                categoryVertical: match.searchMeta.categoryVertical,
+                categoryIds: match.searchMeta.categoryIds,
+                negativeKeywordsFiltered: match.searchMeta.negativeKeywordsFiltered,
+              },
+            }
+          : {}),
+        ...(match.searchMeta.ocrTraces?.length ||
+        match.searchMeta.materialTokens?.length ||
+        match.searchMeta.technicalSpecs?.length
+          ? {
+              vision: {
+                ocrTraces: match.searchMeta.ocrTraces,
+                materialTokens: match.searchMeta.materialTokens,
+                technicalSpecs: match.searchMeta.technicalSpecs,
+              },
+            }
+          : {}),
       };
     } else if (supplierOut.kind === "no_match") {
       supplierSkipReason = supplierOut.reason;

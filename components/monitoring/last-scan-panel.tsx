@@ -2,6 +2,8 @@
 
 import { DebugPanel } from "@/components/debug-panel";
 import { EventTimeline } from "@/components/monitoring/event-timeline";
+import { LatencyCostWaterfall } from "@/components/monitoring/latency-cost-waterfall";
+import { PipelineDetail } from "@/components/monitoring/pipeline-detail";
 import { PipelineWaterfall } from "@/components/pipeline-waterfall";
 import { Badge } from "@/components/ui/badge";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
@@ -110,6 +112,14 @@ export function LastScanPanel() {
           </a>
         </div>
       </div>
+
+      {/* Sprint 9 Stage 14 — pipeline signal cards */}
+      <PipelineDetail debug={debug} />
+
+      {/* Sprint 9 Stage 15 — latency + cost waterfall */}
+      {debug.serviceEvents && debug.serviceEvents.length > 0 ? (
+        <LatencyCostWaterfall events={debug.serviceEvents} debug={debug} />
+      ) : null}
 
       {/* Per-service event timeline (Phase 6) */}
       {debug.serviceEvents && debug.serviceEvents.length > 0 ? (
