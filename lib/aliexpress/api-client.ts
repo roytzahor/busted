@@ -8,6 +8,7 @@ import {
 } from "@/lib/aliexpress/rank-products";
 import type { AliExpressProductCandidate } from "@/lib/aliexpress/types";
 import { AliExpressSearchError } from "@/lib/aliexpress/types";
+import type { SortStrategy } from "@/lib/aliexpress/category-map";
 
 const DEFAULT_API_URL = "https://api-sg.aliexpress.com/sync";
 
@@ -141,8 +142,24 @@ export function isAliExpressApiConfigured(): boolean {
   return getAffiliateConfig() !== null;
 }
 
+export interface KeywordSearchOptions {
+  /** Override env-default buyer country. Derived from source-store TLD. */
+  shipToCountry?: string;
+  /** Override "USD" — matches the buyer's market currency. */
+  targetCurrency?: string;
+  /** Comma-joined AE category IDs — narrows the search to the right vertical. */
+  categoryIds?: string;
+  /** AE sort order — defaults to LAST_VOLUME_DESC (proven dropship inventory). */
+  sortStrategy?: SortStrategy;
+  /** AE min_sale_price filter — source retail × priceFloorRatio. Omit when unknown. */
+  minSalePrice?: number;
+  /** AE max_sale_price filter — source retail × priceCeilRatio. Omit when unknown. */
+  maxSalePrice?: number;
+}
+
 export async function searchAliExpressProducts(
   keywords: string,
+  opts: KeywordSearchOptions = {},
 ): Promise<AliExpressProductCandidate[]> {
   const config = getAffiliateConfig();
   if (!config) {
@@ -153,19 +170,25 @@ export async function searchAliExpressProducts(
     );
   }
 
-  const response = await callAffiliateApi("aliexpress.affiliate.product.query", {
+  const businessParams: Record<string, string> = {
     keywords,
     page_no: "1",
     page_size: "40",
-    sort: "LAST_VOLUME_DESC",
-    target_currency: "USD",
+    sort: opts.sortStrategy ?? "LAST_VOLUME_DESC",
+    target_currency: opts.targetCurrency ?? "USD",
     target_language: "EN",
     tracking_id: config.trackingId,
-    ship_to_country: config.shipToCountry,
+    ship_to_country: opts.shipToCountry ?? config.shipToCountry,
     delivery_days: config.deliveryDays,
     fields:
       "product_id,product_title,product_detail_url,product_main_image_url,promotion_link,sale_price,target_sale_price,lastest_volume,evaluate_rate,ship_to_days",
-  });
+  };
+
+  if (opts.categoryIds) businessParams.category_ids = opts.categoryIds;
+  if (opts.minSalePrice !== undefined) businessParams.min_sale_price = opts.minSalePrice.toFixed(2);
+  if (opts.maxSalePrice !== undefined) businessParams.max_sale_price = opts.maxSalePrice.toFixed(2);
+
+  const response = await callAffiliateApi("aliexpress.affiliate.product.query", businessParams);
 
   const queryResponse = response.aliexpress_affiliate_product_query_response as
     | Record<string, unknown>

@@ -45,5 +45,7 @@ export interface SupplierMatchResult {
     affiliateProvider: "aliexpress_api" | "admitad" | "direct";
     variantMatched?: boolean;
     variantSkuId?: string;
+    /** Set when no category vocab entry matched — value is the unresolved category string. */
+    categoryVocabMiss?: string;
   };
 }

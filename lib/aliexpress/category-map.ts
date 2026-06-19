@@ -29,6 +29,31 @@ export type SortStrategy =
   | "LAST_VOLUME_ASC"
   | "SALE_PRICE_DESC";
 
+/**
+ * Cross-axis remapping for categories where the retail-facing variant axis
+ * differs from the factory-facing axis on AliExpress.
+ *
+ * Classic case: shower steamers are sold by *color* on the consumer store
+ * ("purple", "orange") but listed by *scent* on AE ("lavender", "citrus").
+ * Without a mapping the variant matcher finds zero shared dimensions and
+ * falls back to `EMPTY_RESULT` — the buyer lands on a random scent.
+ *
+ * The matcher applies these at score time: it projects the source value
+ * through the valueMap onto the toAxis so it can compare against the actual
+ * AE SKU attributes.
+ */
+export interface AxisMapping {
+  /** Canonical source-side axis (the key in `ScrapedProductVariant`). */
+  fromAxis: "color" | "size" | "capacity" | "material";
+  /** Factory-side AE attribute key (arbitrary lowercase string). */
+  toAxis: string;
+  /**
+   * Lowercase source value → target value.
+   * Non-matching source values are passed through unchanged on the fromAxis.
+   */
+  valueMap: Record<string, string>;
+}
+
 export interface CategoryVocabEntry {
   /** Canonical key (the lookup name). */
   vertical: string;
@@ -66,6 +91,13 @@ export interface CategoryVocabEntry {
   verifiedAt: string;
   /** Free-form maintenance notes — quirks discovered during verification. */
   notes?: string;
+  /**
+   * Optional cross-axis remappings for this vertical. Applied by the variant
+   * matcher when the retail variant axis differs from the AE factory axis.
+   * See `AxisMapping` for the shape and the shower-steamer entry for a usage
+   * example.
+   */
+  variantAxisMappings?: AxisMapping[];
 }
 
 /* ─── The seed table ─────────────────────────────────────────────────── */
@@ -142,11 +174,41 @@ export const CATEGORY_MAP: Record<string, CategoryVocabEntry> = {
     priceFloorRatio: 1 / 25,
     priceCeilRatio: 1 / 1.2,
     defaultSort: "LAST_VOLUME_DESC",
+    variantAxisMappings: [
+      {
+        fromAxis: "color",
+        toAxis: "scent",
+        valueMap: {
+          purple:        "lavender",
+          violet:        "lavender",
+          lilac:         "lavender",
+          blue:          "ocean",
+          "light blue":  "ocean",
+          teal:          "eucalyptus",
+          green:         "eucalyptus",
+          "light green": "mint",
+          mint:          "mint",
+          orange:        "citrus",
+          yellow:        "citrus",
+          lemon:         "citrus",
+          red:           "rose",
+          pink:          "rose",
+          "hot pink":    "rose",
+          white:         "vanilla",
+          cream:         "vanilla",
+          beige:         "vanilla",
+          brown:         "coffee",
+          "dark brown":  "coffee",
+        },
+      },
+    ],
     verifiedAt: "2026-06-19",
     notes:
       "AE has no dedicated shower-steamer node. Factories listed under " +
       "Bath Salts (200000801) or occasionally under Soap (200000803). " +
-      "Re-check quarterly — a dedicated leaf could appear.",
+      "Re-check quarterly — a dedicated leaf could appear. " +
+      "Variant axis diverges: retail stores use color, AE factories use scent — " +
+      "handled via variantAxisMappings.",
   },
 
   slippers: {
@@ -320,9 +382,24 @@ const VERTICAL_SYNONYMS: Array<{ patterns: RegExp[]; vertical: string }> = [
 ];
 
 /**
+ * In-memory miss counter. Resets on cold start — purpose is to surface
+ * coverage gaps in Vercel function logs, not to persist across deploys.
+ * Call `getCategoryMissCounts()` from debug endpoints to inspect.
+ */
+const _categoryMisses = new Map<string, number>();
+
+/** Returns a snapshot of productCategory strings that had no vocab entry. */
+export function getCategoryMissCounts(): Record<string, number> {
+  return Object.fromEntries(_categoryMisses);
+}
+
+/**
  * Resolve a category vocab entry from a free-form productCategory string.
  * Returns null when no synonym matches — caller should fall back to title-
  * derived keywords + no category filter.
+ *
+ * Emits a `[category-map]` warning on every miss so production logs surface
+ * coverage gaps without any extra instrumentation.
  */
 export function resolveCategoryVocab(
   productCategory: string | null | undefined,
@@ -342,6 +419,16 @@ export function resolveCategoryVocab(
       if (entry) return entry;
     }
   }
+
+  // Miss — log and track.
+  const prev = _categoryMisses.get(input) ?? 0;
+  _categoryMisses.set(input, prev + 1);
+  console.warn(
+    `[category-map] No vocab entry for "${input}" (miss #${prev + 1}). ` +
+    `Search will run without category filter, price band, or negative keywords. ` +
+    `Add this vertical to CATEGORY_MAP to improve precision. ` +
+    `Supported: ${listSupportedVerticals().join(", ")}.`,
+  );
 
   return null;
 }

@@ -9,6 +9,7 @@ import {
   isAliExpressApiConfigured,
   searchAliExpressBySmartMatch,
   searchAliExpressProducts,
+  type KeywordSearchOptions,
 } from "@/lib/aliexpress/api-client";
 import {
   RERANK_KEEP_THRESHOLD,
@@ -57,10 +58,11 @@ const RETRY_MIN_CANDIDATES_THRESHOLD = 5;
 async function searchCandidates(
   keywords: string,
   provider: "aliexpress_api" | "firecrawl_scrape",
+  opts: KeywordSearchOptions = {},
 ): Promise<AliExpressProductCandidate[]> {
   try {
     return provider === "aliexpress_api"
-      ? await searchAliExpressProducts(keywords)
+      ? await searchAliExpressProducts(keywords, opts)
       : await searchAliExpressViaScrape(keywords);
   } catch {
     return [];
@@ -189,6 +191,34 @@ export async function findAliExpressSupplier(params: {
     ? "aliexpress_api"
     : "firecrawl_scrape";
 
+  // Resolve locale + category vocab before any search so keyword arms use the
+  // same geo + category context as the smartmatch arm. Locale is derived from
+  // the source-store TLD (co.il → IL/ILS) so all AliExpress price quotes
+  // reflect the buyer's actual market, not env-default-US.
+  const locale = resolveLocaleFromSourceUrl(params.attributes.sourceUrl);
+  const categoryVocab = resolveCategoryVocab(
+    params.identity?.category ?? params.productCategory ?? null,
+  );
+
+  // Shared options for every keyword search call — locale + category filter +
+  // price band. Price band is derived from the source retail price and the
+  // vertical's configured floor/ceiling ratios (prevents re-sellers appearing
+  // as "the supplier"). Falls back gracefully when storePriceUsd is null.
+  const keywordOpts: KeywordSearchOptions = {
+    shipToCountry: locale.shipToCountry,
+    targetCurrency: locale.targetCurrency,
+    categoryIds: categoryVocab?.categoryIds.join(","),
+    sortStrategy: categoryVocab?.defaultSort,
+    minSalePrice:
+      categoryVocab && params.storePriceUsd != null
+        ? +(params.storePriceUsd * categoryVocab.priceFloorRatio).toFixed(2)
+        : undefined,
+    maxSalePrice:
+      categoryVocab && params.storePriceUsd != null
+        ? +(params.storePriceUsd * categoryVocab.priceCeilRatio).toFixed(2)
+        : undefined,
+  };
+
   // Search strategy — run in priority order and merge pools:
   // 1. AI functional keywords (most descriptive of what the product does)
   // 2. Title-derived keywords (good when title is descriptive)
@@ -198,7 +228,7 @@ export async function findAliExpressSupplier(params: {
 
   // AI keywords — search the first two independently and merge
   for (const kw of aiKeywords.slice(0, 2)) {
-    const results = await searchCandidates(kw, provider);
+    const results = await searchCandidates(kw, provider, keywordOpts);
     if (results.length > 0) {
       candidates = mergeAndDeduplicateCandidates(candidates, results);
       keywordsUsed.push(kw);
@@ -207,27 +237,17 @@ export async function findAliExpressSupplier(params: {
 
   // Title keywords — always add unless title is a near-empty brand slug
   if (titleKeywords.trim()) {
-    const titleResults = await searchCandidates(titleKeywords, provider);
+    const titleResults = await searchCandidates(titleKeywords, provider, keywordOpts);
     candidates = mergeAndDeduplicateCandidates(candidates, titleResults);
     if (titleResults.length > 0) keywordsUsed.push(titleKeywords);
   }
 
   // Category keywords — add when title was thin or pool is still small
   if (categoryKeywords && (thin || candidates.length < RETRY_MIN_CANDIDATES_THRESHOLD)) {
-    const categoryResults = await searchCandidates(categoryKeywords, provider);
+    const categoryResults = await searchCandidates(categoryKeywords, provider, keywordOpts);
     candidates = mergeAndDeduplicateCandidates(candidates, categoryResults);
     if (categoryResults.length > 0) keywordsUsed.push(categoryKeywords);
   }
-
-  // Resolve locale + category vocab once for the smartmatch + filter steps.
-  // Locale is derived from the source-store TLD (co.il → IL/ILS) so the
-  // AliExpress prices we surface match the buyer's actual warehouse, not
-  // env-default-US. Category vocab pulls verified AE category IDs and
-  // negative-keyword filters from the static seed table.
-  const locale = resolveLocaleFromSourceUrl(params.attributes.sourceUrl);
-  const categoryVocab = resolveCategoryVocab(
-    params.identity?.category ?? params.productCategory ?? null,
-  );
 
   // Phase 5: smartmatch arm — image-based AliExpress search.
   // Best-effort: requires API tier access, returns null on any failure.
@@ -330,7 +350,7 @@ export async function findAliExpressSupplier(params: {
         ...(categoryKeywords && !keywordsUsed.includes(categoryKeywords) ? [categoryKeywords] : []),
       ];
       for (const kw of extraKeywords.slice(0, 2)) {
-        const results = await searchCandidates(kw, provider);
+        const results = await searchCandidates(kw, provider, keywordOpts);
         if (results.length > 0) {
           candidates = mergeAndDeduplicateCandidates(candidates, results);
           keywordsUsed.push(kw);
@@ -414,7 +434,7 @@ export async function findAliExpressSupplier(params: {
 
       if (unusedForRetry.length > 0) {
         for (const kw of unusedForRetry.slice(0, 2)) {
-          const results = await searchCandidates(kw, provider);
+          const results = await searchCandidates(kw, provider, keywordOpts);
           if (results.length > 0) {
             candidates = mergeAndDeduplicateCandidates(candidates, results);
             keywordsUsed.push(`${kw} (retry)`);
@@ -474,7 +494,11 @@ export async function findAliExpressSupplier(params: {
     for (let i = 0; i < topForVariants.length; i += 1) {
       const entry = topForVariants[i];
       const detail = detailResults[i];
-      const variantMatch = matchVariantToSku(sourceVariant, detail);
+      const variantMatch = matchVariantToSku(
+        sourceVariant,
+        detail,
+        categoryVocab?.variantAxisMappings,
+      );
       variantResults.set(entry.candidate.productId, variantMatch);
 
       if (variantMatch.matchedSku || variantMatch.hardMismatch) {
@@ -584,6 +608,12 @@ export async function findAliExpressSupplier(params: {
       affiliateLinkValidated,
       affiliateProvider,
       ...(matchedSku ? { variantMatched: true, variantSkuId: matchedSku.skuId } : {}),
+      ...(categoryVocab === null
+        ? {
+            categoryVocabMiss:
+              params.identity?.category ?? params.productCategory ?? "(unknown)",
+          }
+        : {}),
     },
   };
 }

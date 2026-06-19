@@ -3,6 +3,7 @@ import type {
   AliExpressProductDetail,
   AliExpressSku,
 } from "@/lib/aliexpress/sku";
+import type { AxisMapping } from "@/lib/aliexpress/category-map";
 
 export interface VariantMatchResult {
   matchedSku: AliExpressSku | null;
@@ -157,6 +158,73 @@ function listSpecifiedDimensions(source: ScrapedProductVariant): string[] {
 }
 
 /**
+ * Project a source variant through per-category axis mappings before scoring.
+ *
+ * When a category's retail axis diverges from the AE factory axis (e.g.
+ * source uses `color: "purple"` but the AE SKU uses `scent: "lavender"`),
+ * a direct comparison finds zero shared dimensions and returns EMPTY_RESULT.
+ * This function builds a shadow SKU attrs copy that bridges the gap:
+ *
+ *   1. Walk each AxisMapping for the category.
+ *   2. Read the source value on `fromAxis` (e.g. source.color = "purple").
+ *   3. Look up the mapped target value (e.g. "lavender").
+ *   4. Inject it into a cloned attrs under `toAxis` ("scent": "lavender").
+ *   5. The caller then scores `source.color` against the injected virtual
+ *      `color` key that equals the remapped value — so it compares
+ *      "purple" vs "purple" (perfect match) rather than finding no color key.
+ *
+ * Returns `{ remappedSource, shadowAttrs }`.
+ * `remappedSource` has unmapped axes unchanged and mapped axes resolved to
+ * the target value. `shadowAttrs` is the SKU attrs clone with virtual keys
+ * injected so `scoreSkuAgainstSource` can find a match on the original axis
+ * name (`color`) rather than the factory axis name (`scent`).
+ */
+function applyAxisMappings(
+  source: ScrapedProductVariant,
+  skuAttrs: Record<string, string>,
+  mappings: AxisMapping[],
+): { remappedSource: ScrapedProductVariant; shadowAttrs: Record<string, string> } {
+  let remapped = { ...source };
+  const shadowAttrs = { ...skuAttrs };
+
+  for (const mapping of mappings) {
+    const sourceValue = source[mapping.fromAxis];
+    if (!sourceValue) continue;
+
+    const lowerSource = sourceValue.toLowerCase().trim();
+    const targetValue = mapping.valueMap[lowerSource];
+    if (!targetValue) continue;
+
+    // Check whether the SKU's factory axis contains the target value.
+    const factoryValue = skuAttrs[mapping.toAxis];
+    if (!factoryValue) continue;
+
+    const factoryNorm = factoryValue.toLowerCase().trim();
+    const targetNorm = targetValue.toLowerCase().trim();
+
+    // Only inject when the factory value actually matches the mapped target.
+    // This prevents false cross-axis matches (e.g. "purple → lavender" should
+    // not inject when the SKU scent is "rose").
+    if (
+      factoryNorm === targetNorm ||
+      factoryNorm.includes(targetNorm) ||
+      targetNorm.includes(factoryNorm)
+    ) {
+      // Inject a virtual fromAxis key into the shadow attrs so the standard
+      // scorer can compare source.color against attrs.color (both "purple").
+      shadowAttrs[mapping.fromAxis] = sourceValue;
+      // Record that the remap was applied so reasons are accurate.
+      remapped = {
+        ...remapped,
+        [mapping.fromAxis]: sourceValue, // unchanged; already the source value
+      };
+    }
+  }
+
+  return { remappedSource: remapped, shadowAttrs };
+}
+
+/**
  * Given a source variant (from the store) and a candidate's SKU table,
  * pick the SKU that best matches and return its price + warehouse.
  *
@@ -168,10 +236,16 @@ function listSpecifiedDimensions(source: ScrapedProductVariant): string[] {
  *   - Source can't match any SKU on a hard dimension (size/capacity)
  *                                    → best partial match returned with hardMismatch=true
  *                                      so the caller can soft-clamp the final score
+ *
+ * @param axisMappings  Optional per-category axis remappings (from
+ *                      `CategoryVocabEntry.variantAxisMappings`). When
+ *                      provided, cross-axis comparisons are attempted before
+ *                      the standard same-axis matching.
  */
 export function matchVariantToSku(
   source: ScrapedProductVariant | undefined,
   detail: AliExpressProductDetail | null,
+  axisMappings?: AxisMapping[],
 ): VariantMatchResult {
   if (!source || !detail || detail.skus.length === 0) {
     return EMPTY_RESULT;
@@ -186,18 +260,32 @@ export function matchVariantToSku(
     sku: AliExpressSku;
     score: number;
     dimensions: DimensionScore[];
+    axisRemapped: boolean;
   } | null = null;
 
   for (const sku of detail.skus) {
-    const { totalScore, dimensionCount, dimensions } = scoreSkuAgainstSource(
-      source,
-      sku,
-    );
-    // Skip SKUs that share no scorable dimension with the source — we don't
-    // want a 0-dim SKU to "win" by default.
-    if (dimensionCount === 0) continue;
-    if (!best || totalScore > best.score) {
-      best = { sku, score: totalScore, dimensions };
+    // Try standard same-axis matching first.
+    const direct = scoreSkuAgainstSource(source, sku);
+
+    if (direct.dimensionCount > 0) {
+      if (!best || direct.totalScore > best.score) {
+        best = { sku, score: direct.totalScore, dimensions: direct.dimensions, axisRemapped: false };
+      }
+      continue;
+    }
+
+    // Standard matching found no shared dimensions. If axis mappings are
+    // configured, attempt a cross-axis match by injecting virtual attrs.
+    if (axisMappings && axisMappings.length > 0) {
+      const { shadowAttrs } = applyAxisMappings(source, sku.attrs, axisMappings);
+      // Score using a shallow-cloned SKU with the shadow attrs injected.
+      const remappedSku: AliExpressSku = { ...sku, attrs: shadowAttrs };
+      const remapped = scoreSkuAgainstSource(source, remappedSku);
+      if (remapped.dimensionCount > 0) {
+        if (!best || remapped.totalScore > best.score) {
+          best = { sku, score: remapped.totalScore, dimensions: remapped.dimensions, axisRemapped: true };
+        }
+      }
     }
   }
 
@@ -214,6 +302,22 @@ export function matchVariantToSku(
   );
 
   const reasons: string[] = [];
+  if (best.axisRemapped && axisMappings) {
+    // Identify which mapping fired so the reason is human-readable.
+    for (const mapping of axisMappings) {
+      const sourceValue = source[mapping.fromAxis];
+      if (!sourceValue) continue;
+      const mapped = mapping.valueMap[sourceValue.toLowerCase().trim()];
+      if (mapped) {
+        const factoryValue = best.sku.attrs[mapping.toAxis];
+        if (factoryValue) {
+          reasons.push(
+            `${mapping.fromAxis}→${mapping.toAxis} remapped: ${sourceValue}→${factoryValue}`,
+          );
+        }
+      }
+    }
+  }
   for (const d of best.dimensions) {
     const label = d.exact ? "exact" : `${(d.score * 100).toFixed(0)}%`;
     reasons.push(`${d.name}: ${label}`);
