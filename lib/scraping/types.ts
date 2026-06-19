@@ -11,6 +11,13 @@ export interface RawScrapeResult {
   provider: ScrapeProvider;
   markdown: string;
   metadata: ScrapeMetadata;
+  /**
+   * Raw HTML of the page — present when Firecrawl returns it (formats includes "html").
+   * Used by the JSON-LD extractor to pull structured Product schema data
+   * (name, description, image, price, offers) deterministically without regex.
+   * Absent for Playwright scrapes (which return markdown only).
+   */
+  html?: string;
 }
 
 export interface ScrapedProductVariant {

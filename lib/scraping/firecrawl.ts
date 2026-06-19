@@ -16,6 +16,7 @@ interface FirecrawlMetadata {
 
 interface FirecrawlScrapeData {
   markdown?: string;
+  html?: string;
   metadata?: FirecrawlMetadata;
 }
 
@@ -93,7 +94,7 @@ export async function scrapeWithFirecrawl(targetUrl: string): Promise<RawScrapeR
       },
       body: JSON.stringify({
         url: targetUrl,
-        formats: ["markdown"],
+        formats: ["markdown", "html"],
         onlyMainContent: true,
         waitFor: 2000,
       }),
@@ -131,10 +132,16 @@ export async function scrapeWithFirecrawl(targetUrl: string): Promise<RawScrapeR
       );
     }
 
+    const html =
+      typeof payload.data?.html === "string" && payload.data.html.trim().length > 0
+        ? payload.data.html
+        : undefined;
+
     return {
       provider: "firecrawl",
       markdown: stripScrapedContent(markdown),
       metadata: extractMetadata(payload.data, targetUrl),
+      ...(html ? { html } : {}),
     };
   } catch (error) {
     if (error instanceof ScraperError) {
