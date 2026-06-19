@@ -10,6 +10,7 @@ import {
   searchAliExpressBySmartMatch,
   searchAliExpressProducts,
   type KeywordSearchOptions,
+  type SmartMatchOutcome,
 } from "@/lib/aliexpress/api-client";
 import {
   RERANK_KEEP_THRESHOLD,
@@ -261,8 +262,17 @@ export async function findAliExpressSupplier(params: {
   // anchor that pollutes raw consumer photos and the white-BG normalisation
   // aligns our hash to the catalog distribution.
   //
-  // Locale + categoryIds flow through so the IL-targeted funnel returns
-  // IL-warehouse prices.
+  // Stage 7 tracking: capture preprocess + smartmatch outcome for A/B analysis.
+  // These flow into searchMeta so they're visible in debug output and
+  // persisted in the stage cache for offline analysis.
+
+  // Tracking state — initialised to "skipped" and overwritten if we enter the block.
+  let preprocessAttempted = false;
+  let preprocessCacheHit = false;
+  let preprocessDurationMs = 0;
+  let smartmatchArm: SmartMatchOutcome["armUsed"] | "skipped" = "skipped";
+  let smartmatchCandidateCount = 0;
+
   if (
     provider === "aliexpress_api" &&
     params.attributes.mainImageUrl &&
@@ -277,10 +287,14 @@ export async function findAliExpressSupplier(params: {
 
     let cleanedBase64: string | undefined;
     let cleanedFormat: "jpg" | "png" | "webp" | undefined;
+
+    preprocessAttempted = true;
     try {
       const cleaned = await preprocessForSmartMatch(mainImageUrl, categoryForPrompt);
       cleanedBase64 = cleaned.base64;
       cleanedFormat = cleaned.format;
+      preprocessCacheHit = cleaned.cacheHit;
+      preprocessDurationMs = cleaned.durationMs;
     } catch (err) {
       // Preprocess is best-effort — keep going with the raw URL.
       if (err instanceof PreprocessError) {
@@ -292,17 +306,21 @@ export async function findAliExpressSupplier(params: {
       }
     }
 
-    const smartResults = await searchAliExpressBySmartMatch(mainImageUrl, {
+    const smartOutcome = await searchAliExpressBySmartMatch(mainImageUrl, {
       cleanedBase64,
       cleanedFormat,
       shipToCountry: locale.shipToCountry,
       targetCurrency: locale.targetCurrency,
       categoryIds: categoryVocab?.categoryIds.join(","),
     });
-    if (smartResults && smartResults.length > 0) {
-      candidates = mergeAndDeduplicateCandidates(candidates, smartResults);
+
+    smartmatchArm = smartOutcome.armUsed ?? null;
+    smartmatchCandidateCount = smartOutcome.candidates?.length ?? 0;
+
+    if (smartOutcome.candidates && smartOutcome.candidates.length > 0) {
+      candidates = mergeAndDeduplicateCandidates(candidates, smartOutcome.candidates);
       keywordsUsed.push(
-        `smartmatch:image${cleanedBase64 ? " (cleaned)" : ""} (${smartResults.length} candidates)`,
+        `smartmatch:image (arm:${smartOutcome.armUsed ?? "none"}, ${smartOutcome.candidates.length} candidates)`,
       );
     }
   }
@@ -614,6 +632,10 @@ export async function findAliExpressSupplier(params: {
               params.identity?.category ?? params.productCategory ?? "(unknown)",
           }
         : {}),
+      preprocessAttempted,
+      ...(preprocessAttempted ? { preprocessCacheHit, preprocessDurationMs } : {}),
+      smartmatchArm: smartmatchArm === null ? undefined : smartmatchArm,
+      smartmatchCandidateCount,
     },
   };
 }

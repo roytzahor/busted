@@ -236,7 +236,8 @@ export async function searchAliExpressProducts(
  * `opts.categoryIds`) flow through to the MTOP payload so an IL-targeted
  * funnel surfaces IL-warehouse prices instead of US-default.
  *
- * Returns null on any failure — never breaks the pipeline.
+ * `armUsed` in the return value tells the caller which dispatch arm produced
+ * the candidates — used for A/B outcome tracking (stage 7).
  */
 export interface SmartMatchOptions {
   /**
@@ -253,12 +254,23 @@ export interface SmartMatchOptions {
   categoryIds?: string;
 }
 
+export interface SmartMatchOutcome {
+  candidates: AliExpressProductCandidate[] | null;
+  /**
+   * Which dispatch arm actually returned candidates:
+   *   "base64" — Gemini-cleaned bytes arm succeeded
+   *   "url"    — raw image-URL arm succeeded
+   *   null     — both arms were tried but returned no candidates (or both threw)
+   */
+  armUsed: "base64" | "url" | null;
+}
+
 export async function searchAliExpressBySmartMatch(
   imageUrl: string,
   opts: SmartMatchOptions = {},
-): Promise<AliExpressProductCandidate[] | null> {
+): Promise<SmartMatchOutcome> {
   const config = getAffiliateConfig();
-  if (!config) return null;
+  if (!config) return { candidates: null, armUsed: null };
 
   const country = opts.shipToCountry ?? config.shipToCountry;
   const currency = opts.targetCurrency ?? "USD";
@@ -283,7 +295,7 @@ export async function searchAliExpressBySmartMatch(
         image_base64: opts.cleanedBase64,
         image_format: opts.cleanedFormat ?? "jpg",
       });
-      if (result && result.length > 0) return result;
+      if (result && result.length > 0) return { candidates: result, armUsed: "base64" };
     } catch {
       /* fall through to URL arm */
     }
@@ -291,9 +303,13 @@ export async function searchAliExpressBySmartMatch(
 
   // Arm B: raw URL — let AE fetch.
   try {
-    return await dispatchSmartMatchCall(baseBusinessParams, { image_url: imageUrl });
+    const result = await dispatchSmartMatchCall(baseBusinessParams, { image_url: imageUrl });
+    return {
+      candidates: result,
+      armUsed: result && result.length > 0 ? "url" : null,
+    };
   } catch {
-    return null;
+    return { candidates: null, armUsed: null };
   }
 }
 

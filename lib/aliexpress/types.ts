@@ -47,5 +47,21 @@ export interface SupplierMatchResult {
     variantSkuId?: string;
     /** Set when no category vocab entry matched — value is the unresolved category string. */
     categoryVocabMiss?: string;
+    // Stage 7 — SmartMatch + preprocess outcome tracking.
+    /** True when Gemini Vision preprocessing was attempted for the product image. */
+    preprocessAttempted?: boolean;
+    /** True when the preprocessed image was served from the DB cache (no Gemini call). */
+    preprocessCacheHit?: boolean;
+    /** Wall-clock ms spent in the preprocess call (0 when not attempted or cache hit). */
+    preprocessDurationMs?: number;
+    /**
+     * Which smartmatch dispatch arm produced candidates:
+     *   "base64"  — Gemini-cleaned bytes arm succeeded
+     *   "url"     — raw image-URL arm succeeded
+     *   "skipped" — smartmatch was not attempted (no API, no image, or pool already large)
+     */
+    smartmatchArm?: "base64" | "url" | "skipped";
+    /** Number of candidates returned by the smartmatch arm (0 when skipped or no results). */
+    smartmatchCandidateCount?: number;
   };
 }

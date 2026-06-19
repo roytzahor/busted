@@ -512,6 +512,27 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
         winnerPriceUsd: match.aliexpressData.priceUsd,
         affiliateProvider: match.searchMeta.affiliateProvider,
         affiliateLinkValidated: match.searchMeta.affiliateLinkValidated,
+        // Stage 7 — SmartMatch + preprocess outcome tracking.
+        ...(match.searchMeta.preprocessAttempted !== undefined
+          ? {
+              preprocess: {
+                attempted: match.searchMeta.preprocessAttempted,
+                cacheHit: match.searchMeta.preprocessCacheHit,
+                durationMs: match.searchMeta.preprocessDurationMs,
+              },
+            }
+          : {}),
+        ...(match.searchMeta.smartmatchArm !== undefined
+          ? {
+              smartmatch: {
+                arm: match.searchMeta.smartmatchArm,
+                candidateCount: match.searchMeta.smartmatchCandidateCount,
+              },
+            }
+          : {}),
+        ...(match.searchMeta.categoryVocabMiss
+          ? { categoryVocabMiss: match.searchMeta.categoryVocabMiss }
+          : {}),
       };
     } else if (supplierOut.kind === "no_match") {
       supplierSkipReason = supplierOut.reason;
