@@ -22,7 +22,7 @@ Stages 1–3 (Prisma migration, env var pin, live calmo test) were completed 202
 
 ## Phase 8 — Immediate sprint (this week)
 
-### Stage 4 — Geo-aware keyword arms (`searchAliExpressProducts`) ⬜
+### Stage 4 — Geo-aware keyword arms (`searchAliExpressProducts`) ✅
 
 **Why:** `searchAliExpressProducts()` still sends `target_currency: "USD"` and `ship_to_country` from env-default on every keyword call. IL-targeted funnels (`.co.il` stores) see USD prices and US-warehouse results. We fixed smartmatch in the last commit; this finishes the rewrite.
 
@@ -101,7 +101,7 @@ All four call sites in `findAliExpressSupplier()` pass:
 
 ---
 
-### Stage 5 — Variant-axis remapping (shower steamers + analogs) ⬜
+### Stage 5 — Variant-axis remapping (shower steamers + analogs) ✅
 
 **Why:** Source stores encode the variant as `color` ("purple", "orange", "green"). AliExpress factories encode the same distinction as `scent` ("lavender", "citrus", "mint"). The current matcher compares `source.color` against `sku.attrs.color` — when the SKU has no `color` key, the comparison returns zero dimensions and the variant match is skipped entirely (`EMPTY_RESULT`). The buyer lands on the wrong scent.
 
@@ -193,7 +193,7 @@ Inside `scoreSkuAgainstSource`, add the remapped attrs alongside the original:
 
 ---
 
-### Stage 6 — Category coverage-gap logging ⬜
+### Stage 6 — Category coverage-gap logging ✅
 
 **Why:** We seeded 5 verticals. Every store that resolves `productCategory: null` from `resolveCategoryVocab()` is a blind spot — no category filter, no price band, no negative-keyword strip. Without logging, we have no signal for which verticals to add next.
 
@@ -248,7 +248,7 @@ categoryVocabMiss: categoryVocab === null
 
 ## Phase 8 — Next sprint (next month)
 
-### Stage 7 — SmartMatch outcome tracking ⬜
+### Stage 7 — SmartMatch outcome tracking ✅
 
 **Why:** We don't know whether the Gemini-preprocessed `image_base64` arm actually outperforms the raw `image_url` arm. We're spending ~$0.001/call on Gemini preprocessing without evidence of lift. If cleaned images win by <10% of the time, preprocessing isn't worth the latency + cost.
 
@@ -273,7 +273,7 @@ categoryVocabMiss: categoryVocab === null
 
 ---
 
-### Stage 8 — AE category-ID verification job ⬜
+### Stage 8 — AE category-ID verification job ✅
 
 **Why:** AliExpress occasionally re-trees subcategories. A category ID that returned 500 results for "necklace" in June can return 0 in September because AE moved the family to a new parent node. We'd have no warning until a customer complains.
 
@@ -294,7 +294,7 @@ verificationProductId?: string; // a known-good AE product ID to use as probe
 
 ---
 
-### Stage 9 — Source-image inpaint quality scorer ⬜
+### Stage 9 — Source-image inpaint quality scorer ✅
 
 **Why:** Gemini's preprocessing is a black box. Sometimes it overcorrects (destroys product shape detail trying to remove a subtle logo). Sometimes it undercorrects (leaves brand text). A second cheap Gemini call asking "rate this cleanup 0–10" tells us when to retry with a lighter prompt or fall back to the raw URL.
 
@@ -315,7 +315,7 @@ verificationProductId?: string; // a known-good AE product ID to use as probe
 
 ## Phase 9 — Stretch (next quarter)
 
-### Stage 10 — Hebrew → English title translation pre-pass ⬜
+### Stage 10 — Hebrew → English title translation pre-pass ✅
 
 **Why:** 3 of the 4 test IL stores (`bleesse.com`, `imri-jewelry.co.il`, `calmo.co.il`) have Hebrew product titles. `extractSearchKeywords()` strips Hebrew as non-ASCII junk (`[^\w\s-]`). A Gemini pre-translate before keyword extraction unlocks the entire IL market — and any other non-Latin-script dropship vertical (Arabic `.sa`, Japanese `.jp`, Korean `.kr`).
 
@@ -335,7 +335,7 @@ verificationProductId?: string; // a known-good AE product ID to use as probe
 
 ---
 
-### Stage 11 — Per-store affiliate-link reputation ⬜
+### Stage 11 — Per-store affiliate-link reputation ✅
 
 **Why:** `validateAffiliateLink()` logs failures but they don't feed back into ranking. A product whose affiliate link reliably fails for IL (because the Israeli storefront isn't enabled in the AE affiliate program) will keep getting shown to Israeli users even though we know the link won't convert.
 
@@ -360,7 +360,7 @@ model SupplierReputation {
 
 ---
 
-### Stage 12 — JSON-LD variant extraction (replace Markdown regex) ⬜
+### Stage 12 — JSON-LD variant extraction (replace Markdown regex) ✅
 
 **Why:** Firecrawl currently returns `formats: ["markdown"]` only. Shopify stores embed complete `Product.offers[]` data in `<script type="application/ld+json">` blocks — structured, machine-readable, contains exact variant names and prices. Switching to `formats: ["markdown", "html"]` + a JSON-LD extractor replaces ~80% of the regex-based variant extraction in `extract-variant.ts` with deterministic structured pulls. Estimated variant-miss reduction on Shopify stores: 30% → 5%.
 
