@@ -216,7 +216,7 @@ async function probeAi(start: number): Promise<DevMonitorTestResult> {
         content: 'Reply with exactly the single word "OK" and nothing else.',
       },
     ],
-    maxTokens: 8,
+    maxTokens: 200,
     temperature: 0,
   });
 
