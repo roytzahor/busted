@@ -270,6 +270,8 @@ export async function findAliExpressSupplier(params: {
   let preprocessAttempted = false;
   let preprocessCacheHit = false;
   let preprocessDurationMs = 0;
+  let preprocessQualityScore: number | undefined;
+  let preprocessLightPromptUsed: boolean | undefined;
   let smartmatchArm: SmartMatchOutcome["armUsed"] | "skipped" = "skipped";
   let smartmatchCandidateCount = 0;
 
@@ -295,6 +297,8 @@ export async function findAliExpressSupplier(params: {
       cleanedFormat = cleaned.format;
       preprocessCacheHit = cleaned.cacheHit;
       preprocessDurationMs = cleaned.durationMs;
+      preprocessQualityScore = cleaned.qualityScore;
+      preprocessLightPromptUsed = cleaned.lightPromptUsed;
     } catch (err) {
       // Preprocess is best-effort — keep going with the raw URL.
       if (err instanceof PreprocessError) {
@@ -633,7 +637,14 @@ export async function findAliExpressSupplier(params: {
           }
         : {}),
       preprocessAttempted,
-      ...(preprocessAttempted ? { preprocessCacheHit, preprocessDurationMs } : {}),
+      ...(preprocessAttempted
+        ? {
+            preprocessCacheHit,
+            preprocessDurationMs,
+            ...(preprocessQualityScore !== undefined ? { preprocessQualityScore } : {}),
+            ...(preprocessLightPromptUsed !== undefined ? { preprocessLightPromptUsed } : {}),
+          }
+        : {}),
       smartmatchArm: smartmatchArm === null ? undefined : smartmatchArm,
       smartmatchCandidateCount,
     },

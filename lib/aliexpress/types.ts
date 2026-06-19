@@ -54,6 +54,10 @@ export interface SupplierMatchResult {
     preprocessCacheHit?: boolean;
     /** Wall-clock ms spent in the preprocess call (0 when not attempted or cache hit). */
     preprocessDurationMs?: number;
+    /** 0–10 quality score from the cleanup scorer. Absent on cache hits. */
+    preprocessQualityScore?: number;
+    /** True when the full preprocess scored poorly and the lighter retry prompt was used. */
+    preprocessLightPromptUsed?: boolean;
     /**
      * Which smartmatch dispatch arm produced candidates:
      *   "base64"  — Gemini-cleaned bytes arm succeeded

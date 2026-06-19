@@ -519,6 +519,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<AnalyzeRe
                 attempted: match.searchMeta.preprocessAttempted,
                 cacheHit: match.searchMeta.preprocessCacheHit,
                 durationMs: match.searchMeta.preprocessDurationMs,
+                qualityScore: match.searchMeta.preprocessQualityScore,
+                lightPromptUsed: match.searchMeta.preprocessLightPromptUsed,
               },
             }
           : {}),
