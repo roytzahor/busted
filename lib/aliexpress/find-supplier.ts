@@ -56,6 +56,39 @@ import {
 
 const TEXT_SCORE_SKIP_IMAGE_THRESHOLD = 0.85;
 
+/**
+ * Maps industrial material tokens (case-insensitive substring match) to
+ * generic terms that indicate a raw-material or component supplier rather
+ * than a finished-product listing. Added to the negative keyword filter when
+ * `preprocessForSmartMatch` detects these materials on the product image.
+ */
+const MATERIAL_GENERIC_NEGATIVES: Record<string, string[]> = {
+  TPU: ["tpu sheet", "tpu roll", "tpu pellets", "tpu granules", "tpu raw"],
+  ABS: ["abs filament", "abs sheet", "abs pellets", "abs plastic raw", "3d filament"],
+  EVA: ["eva foam roll", "eva foam sheet", "eva sheet raw", "eva pellets"],
+  ALUMINUM: ["aluminum billet", "aluminum sheet", "aluminum extrusion", "aluminium bar"],
+  "STAINLESS STEEL": ["stainless sheet", "steel tube raw", "steel bar stock"],
+  S925: ["925 silver plated", "silver plating", "silver imitation", "fake silver"],
+  "STERLING SILVER": ["silver plated", "silver plating", "imitation silver", "silver tone"],
+  SILICONE: ["silicone sheet", "silicone raw", "silicone mold material"],
+  CERAMIC: ["ceramic tile", "ceramic substrate", "ceramic powder raw"],
+  CARBON: ["carbon fiber sheet", "carbon fiber prepreg", "carbon fiber raw"],
+};
+
+/** Build negative keyword terms derived from detected material tokens. */
+function buildMaterialNegatives(materialTokens: string[]): string[] {
+  const negatives = new Set<string>();
+  for (const token of materialTokens) {
+    const upper = token.toUpperCase();
+    for (const [key, terms] of Object.entries(MATERIAL_GENERIC_NEGATIVES)) {
+      if (upper.includes(key)) {
+        for (const t of terms) negatives.add(t);
+      }
+    }
+  }
+  return [...negatives];
+}
+
 // When first-pass text scores are all below this, trigger a category keyword retry.
 const RETRY_WITH_CATEGORY_THRESHOLD = 0.35;
 
@@ -285,6 +318,10 @@ export async function findAliExpressSupplier(params: {
   let preprocessLightPromptUsed: boolean | undefined;
   let smartmatchArm: SmartMatchOutcome["armUsed"] | "skipped" = "skipped";
   let smartmatchCandidateCount = 0;
+  // Vision analysis signals from the preprocess round-trip.
+  let preprocessOcrTraces: string[] = [];
+  let preprocessMaterialTokens: string[] = [];
+  let preprocessTechnicalSpecs: string[] = [];
 
   if (
     provider === "aliexpress_api" &&
@@ -310,6 +347,9 @@ export async function findAliExpressSupplier(params: {
       preprocessDurationMs = cleaned.durationMs;
       preprocessQualityScore = cleaned.qualityScore;
       preprocessLightPromptUsed = cleaned.lightPromptUsed;
+      preprocessOcrTraces = cleaned.ocrTraces;
+      preprocessMaterialTokens = cleaned.materialTokens;
+      preprocessTechnicalSpecs = cleaned.technicalSpecs;
     } catch (err) {
       // Preprocess is best-effort — keep going with the raw URL.
       if (err instanceof PreprocessError) {
@@ -318,6 +358,38 @@ export async function findAliExpressSupplier(params: {
         );
       } else {
         console.warn("[smartmatch] preprocess failed:", err);
+      }
+    }
+
+    // ── OCR model-number arm ───────────────────────────────────────────────
+    // Model/serial numbers extracted from the product image yield near-exact
+    // factory matches. Run each as an independent keyword search before the
+    // image-based SmartMatch arm so its candidates enter the pool at highest
+    // priority. Cap at 2 traces to avoid burning API quota on noise.
+    if (preprocessOcrTraces.length > 0) {
+      for (const trace of preprocessOcrTraces.slice(0, 2)) {
+        const ocrResults = await searchCandidates(trace, provider, keywordOpts);
+        if (ocrResults.length > 0) {
+          candidates = mergeAndDeduplicateCandidates(candidates, ocrResults);
+          keywordsUsed.push(`ocr:${trace}`);
+        }
+      }
+    }
+
+    // ── Material/spec Text Arm B1 ──────────────────────────────────────────
+    // Combine material tokens + technical specs into a single query. These are
+    // precise industrial terms that the product title rarely contains — they
+    // dramatically narrow the catalog to factory-grade listings.
+    const specTerms = [
+      ...preprocessMaterialTokens.slice(0, 2),
+      ...preprocessTechnicalSpecs.slice(0, 2),
+    ].filter((t) => t.trim().length > 2);
+    if (specTerms.length > 0) {
+      const specQuery = specTerms.join(" ");
+      const specResults = await searchCandidates(specQuery, provider, keywordOpts);
+      if (specResults.length > 0) {
+        candidates = mergeAndDeduplicateCandidates(candidates, specResults);
+        keywordsUsed.push(`specs:${specQuery}`);
       }
     }
 
@@ -340,17 +412,23 @@ export async function findAliExpressSupplier(params: {
     }
   }
 
-  // Category-specific negative filter — applied after all candidate pools
-  // are merged but before scoring. Strips obvious noise (replacement parts,
-  // accessories, wrong-family lookalikes) so we don't burn Gemini Vision
-  // tokens on garbage in the rerank stage.
-  if (categoryVocab && candidates.length > 0) {
+  // Negative filter — merges category vocab negatives with material-derived negatives.
+  // Material negatives strip raw-material supplier listings (e.g. "TPU pellets",
+  // "ABS filament") that appear when spec terms broaden the candidate pool.
+  // Applied regardless of whether category vocab is present.
+  const materialNegatives = buildMaterialNegatives(preprocessMaterialTokens);
+  const effectiveNegatives = [
+    ...(categoryVocab?.negativeKeywords ?? []),
+    ...materialNegatives,
+  ];
+  if (effectiveNegatives.length > 0 && candidates.length > 0) {
     const before = candidates.length;
-    candidates = filterByNegativeKeywords(candidates, categoryVocab.negativeKeywords);
+    candidates = filterByNegativeKeywords(candidates, effectiveNegatives);
     if (candidates.length < before) {
-      keywordsUsed.push(
-        `negative-filter:${categoryVocab.vertical} (-${before - candidates.length})`,
-      );
+      const label = categoryVocab
+        ? `negative-filter:${categoryVocab.vertical}`
+        : "negative-filter:material";
+      keywordsUsed.push(`${label} (-${before - candidates.length})`);
     }
   }
 

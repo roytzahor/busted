@@ -58,6 +58,36 @@ const BROWSER_UA =
 
 export type ImageFormat = "jpg" | "png" | "webp";
 
+/**
+ * Structured intelligence extracted from the product image in the same
+ * Gemini round-trip that produces the cleaned image.
+ *
+ * All fields are always present (empty arrays on cache hits or parse failure)
+ * so callers can iterate without null-guarding.
+ */
+export interface VisionAnalysis {
+  /**
+   * Alphanumeric model numbers, manufacturing codes, batch serials, or
+   * factory branding codes found on the product, tags, or packaging.
+   * Model numbers fed into AliExpress keyword search yield near-exact supplier
+   * matches — these are treated as the highest-priority keyword arm.
+   */
+  ocrTraces: string[];
+  /**
+   * Industrial material designations detected from visible labels or inferred
+   * from product appearance (e.g. "TPU", "ABS", "CNC Aluminum", "S925 Silver").
+   * Injected as priority keyword terms and used to derive negative-keyword
+   * guards that strip raw-material supplier listings from the candidate pool.
+   */
+  materialTokens: string[];
+  /**
+   * Measurable specs or functional capability terms
+   * (e.g. "450ml", "10000mAh", "Type-C", "shockproof", "IP67").
+   * Appended to the material token query for the Text Arm B1 search.
+   */
+  technicalSpecs: string[];
+}
+
 export interface PreprocessResult {
   /** Base64-encoded cleaned image bytes — ready for AliExpress `image_base64`. */
   base64: string;
@@ -80,6 +110,14 @@ export interface PreprocessResult {
    * with the lighter (crop + brand-only) prompt. Absent on cache hits.
    */
   lightPromptUsed?: boolean;
+  /**
+   * Structured intelligence extracted from the original image in the same
+   * Gemini call. Always present; empty arrays on cache hits or if the model
+   * returned no usable analysis.
+   */
+  ocrTraces: string[];
+  materialTokens: string[];
+  technicalSpecs: string[];
 }
 
 export class PreprocessError extends Error {
@@ -107,6 +145,17 @@ interface CleanupScore {
   score: number;
   issues: string[];
 }
+
+interface AnalysisResult {
+  image: GeneratedImage;
+  analysis: VisionAnalysis;
+}
+
+const EMPTY_ANALYSIS: VisionAnalysis = {
+  ocrTraces: [],
+  materialTokens: [],
+  technicalSpecs: [],
+};
 
 /* ─── Source-image fetch ─────────────────────────────────────────────────── */
 
@@ -157,16 +206,27 @@ async function fetchSourceImage(imageUrl: string): Promise<SourceImage> {
 
 /* ─── Prompt construction ────────────────────────────────────────────────── */
 
-/** Full preprocess: crop + white BG + brand removal + artifact removal. */
+/**
+ * Full preprocess prompt — dual-task: image cleanup + structured analysis.
+ *
+ * Requests responseModalities ["TEXT", "IMAGE"] so Gemini returns:
+ *   • Image part  — the cleaned JPEG (used for AliExpress visual search)
+ *   • Text part   — compact JSON with ocrTraces / materialTokens / technicalSpecs
+ *
+ * `inpaintedImageBase64` is intentionally NOT included in the JSON: Gemini
+ * already returns the cleaned image as a native inline-data part, so encoding
+ * it again as base64-in-JSON would double the payload with no benefit.
+ */
 function buildFullPrompt(productCategory: string): string {
   const category = productCategory.trim() || "consumer product";
-  return `You are a product image processor for a reverse-image search pipeline.
-The output of your transformation will be dispatched to a catalog visual-search
-API to find the original factory/wholesale listing of a dropshipped product.
+  return `You are a product image processor and analyst for a dropship-detection pipeline.
+You have TWO independent tasks for the SAME input image. Complete both in a single response.
 
 INPUT IMAGE: A consumer-facing product image of a "${category}".
 
-REQUIRED TRANSFORMATIONS — apply ALL, in order:
+━━━ TASK 1 — IMAGE PROCESSING ━━━
+
+Apply ALL of the following transformations in order:
 
 1. CROP
    Tightly crop to the primary product item. Leave approximately 8% padding on
@@ -182,8 +242,8 @@ REQUIRED TRANSFORMATIONS — apply ALL, in order:
    watermarked brand wordmarks, logos, hangtags, stickers, and trademark
    symbols from the product surface. Inpaint cleanly using the surrounding
    product texture, color, and grain so the result looks like an unbranded
-   factory sample. This step is the single most important transformation —
-   factory listings on the target catalog DO NOT carry retail brand marks.
+   factory sample. Factory listings on the target catalog DO NOT carry retail
+   brand marks.
 
 4. ARTIFACT REMOVAL
    Remove any human hands, models, lifestyle props, packaging, boxes, swing
@@ -196,10 +256,8 @@ PRESERVE EXACTLY:
 - Any non-brand intrinsic markings (factory model numbers etched in metal,
   decorative patterns that are part of the product design)
 
-OUTPUT REQUIREMENTS:
-- Format: JPEG
-- Aspect ratio: 1:1 (square)
-- Approximate dimensions: 800x800 px
+IMAGE OUTPUT REQUIREMENTS:
+- Format: JPEG, aspect ratio 1:1 (square), approximately 800×800 px
 - Single product centered on pure white background
 - No added shadows, vignettes, glows, or decorative effects
 
@@ -210,7 +268,36 @@ EDGE CASES:
 - If the source image does not appear to show a "${category}" at all,
   return your best clean crop of the dominant subject — do not refuse.
 
-Return only the processed image. Do not include any text response.`;
+━━━ TASK 2 — PRODUCT ANALYSIS (on the ORIGINAL, unprocessed input image) ━━━
+
+Inspect the original input image carefully and extract:
+
+ocrTraces
+  Scan every visible surface, tag, label, barcode, and packaging. Extract
+  alphanumeric model numbers, manufacturing codes, batch serials, or factory
+  branding identifiers (e.g. "XZ-9900", "SKU: AB1234", "TC-500"). Include only
+  precise codes, NOT generic descriptive phrases.
+
+materialTokens
+  Identify industrial material designations visible on labels or inferable from
+  the product's appearance (e.g. "TPU", "ABS", "EVA", "CNC Aluminum",
+  "Sterling Silver S925", "304 Stainless"). Use standard industrial shorthand.
+
+technicalSpecs
+  Extract measurable specifications or functional capability terms visible on
+  product or packaging (e.g. "450ml", "10000mAh", "Type-C", "shockproof",
+  "magnetic closure", "IP67", "BPA-free"). Be precise — omit marketing copy.
+
+━━━ OUTPUT FORMAT ━━━
+
+Return EXACTLY two things, nothing else:
+
+1. The processed JPEG image (as the image part of your response).
+2. A single-line JSON text (as the text part of your response) — no markdown,
+   no code fences, no explanation:
+   {"ocrTraces":[],"materialTokens":[],"technicalSpecs":[]}
+
+Use empty arrays where nothing was found. Do not include commentary.`;
 }
 
 /**
@@ -417,6 +504,107 @@ async function runImageGeneration(
 }
 
 /**
+ * Parse the JSON text part from a dual-task Gemini response.
+ *
+ * Best-effort: returns EMPTY_ANALYSIS on any malformed or missing JSON so
+ * the preprocess pipeline never fails because of a missing analysis payload.
+ */
+function parseVisionAnalysis(rawText: string): VisionAnalysis {
+  try {
+    const cleaned = rawText
+      .replace(/^```(?:json)?\s*/im, "")
+      .replace(/\s*```\s*$/m, "")
+      .trim();
+    const parsed = JSON.parse(cleaned) as unknown;
+    if (typeof parsed !== "object" || parsed === null) return EMPTY_ANALYSIS;
+    const p = parsed as Record<string, unknown>;
+    const toStrArr = (v: unknown): string[] =>
+      Array.isArray(v)
+        ? (v as unknown[]).filter(
+            (x): x is string => typeof x === "string" && x.trim().length > 0,
+          )
+        : [];
+    return {
+      ocrTraces: toStrArr(p.ocrTraces),
+      materialTokens: toStrArr(p.materialTokens),
+      technicalSpecs: toStrArr(p.technicalSpecs),
+    };
+  } catch {
+    return EMPTY_ANALYSIS;
+  }
+}
+
+/**
+ * Full-preprocess round-trip: requests both image and structured analysis
+ * from Gemini in a single call (responseModalities: ["TEXT", "IMAGE"]).
+ *
+ * The image comes back as a native inline-data part; the analysis arrives as
+ * a text part containing compact JSON. Throws PreprocessError when no image
+ * part is returned (analysis absence is tolerated — returns EMPTY_ANALYSIS).
+ */
+async function runImageAndAnalysis(
+  model: GenerativeModel,
+  source: SourceImage,
+  prompt: string,
+): Promise<AnalysisResult> {
+  let response;
+  try {
+    response = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            { text: prompt },
+            { inlineData: { mimeType: source.mimeType, data: source.base64 } },
+          ],
+        },
+      ],
+      generationConfig: {
+        responseModalities: ["TEXT", "IMAGE"],
+      } as GoogleGenerativeAIGenerationConfig,
+    });
+  } catch (err) {
+    throw new PreprocessError(
+      "GEMINI_CALL_FAILED",
+      err instanceof Error ? err.message : "Gemini call threw an unknown error",
+    );
+  }
+
+  const parts = response.response?.candidates?.[0]?.content?.parts ?? [];
+
+  const imagePart = parts.find(isInlineImagePart);
+  if (!imagePart) {
+    throw new PreprocessError(
+      "GEMINI_NO_IMAGE_OUTPUT",
+      "Gemini response contained no image part — model may have refused or returned text only",
+    );
+  }
+
+  // Text part carries the analysis JSON. Position relative to image varies.
+  const textPart = parts.find(
+    (p): p is { text: string } =>
+      "text" in p && typeof (p as { text?: string }).text === "string",
+  );
+  const analysis = textPart
+    ? parseVisionAnalysis(textPart.text)
+    : EMPTY_ANALYSIS;
+
+  if (textPart && analysis === EMPTY_ANALYSIS) {
+    console.warn(
+      "[preprocess] vision analysis JSON unparseable — analysis fields will be empty",
+    );
+  }
+
+  return {
+    image: {
+      base64: imagePart.inlineData.data,
+      mimeType: imagePart.inlineData.mimeType,
+    },
+    analysis,
+  };
+}
+
+/**
  * Ask the vision model to rate a source → cleaned pair.
  *
  * Best-effort: any failure (API error, parse error, malformed JSON) returns
@@ -499,6 +687,8 @@ export async function preprocessForSmartMatch(
   const startedAt = Date.now();
 
   // 1. Cache hit — skip generation and scoring entirely.
+  // Analysis fields are stored alongside the image, so cache hits are full hits.
+  // Legacy rows (created before the Json columns were added) return empty arrays.
   const cached = await getCachedPreprocessed(imageUrl, productCategory);
   if (cached) {
     return {
@@ -509,6 +699,9 @@ export async function preprocessForSmartMatch(
       height: cached.height,
       cacheHit: true,
       durationMs: Date.now() - startedAt,
+      ocrTraces: cached.ocrTraces,
+      materialTokens: cached.materialTokens,
+      technicalSpecs: cached.technicalSpecs,
     };
   }
 
@@ -529,8 +722,21 @@ export async function preprocessForSmartMatch(
     model: process.env.GOOGLE_AI_IMAGE_MODEL ?? DEFAULT_IMAGE_MODEL,
   });
 
-  // 4. Full preprocess round-trip.
-  const cleaned = await runImageGeneration(imageModel, source, buildFullPrompt(productCategory));
+  // 4. Full preprocess round-trip — image cleanup + structured analysis in one call.
+  const { image: cleaned, analysis } = await runImageAndAnalysis(
+    imageModel,
+    source,
+    buildFullPrompt(productCategory),
+  );
+
+  if (analysis.ocrTraces.length > 0 || analysis.materialTokens.length > 0) {
+    console.info(
+      `[preprocess] analysis for ${imageUrl}: ` +
+      `ocr=[${analysis.ocrTraces.join(",")}] ` +
+      `materials=[${analysis.materialTokens.join(",")}] ` +
+      `specs=[${analysis.technicalSpecs.join(",")}]`,
+    );
+  }
 
   // 5. Score the result.
   const { score: fullScore, issues: fullIssues } = await scoreCleanup(
@@ -550,7 +756,15 @@ export async function preprocessForSmartMatch(
 
     const format = mimeTypeToFormat(cleaned.mimeType);
     const { width, height } = readDimensions(cleaned.base64, format);
-    savePreprocessedAsync(imageUrl, productCategory, { base64: cleaned.base64, format, width, height });
+    savePreprocessedAsync(imageUrl, productCategory, {
+      base64: cleaned.base64,
+      format,
+      width,
+      height,
+      ocrTraces: analysis.ocrTraces,
+      materialTokens: analysis.materialTokens,
+      technicalSpecs: analysis.technicalSpecs,
+    });
 
     return {
       base64: cleaned.base64,
@@ -562,10 +776,13 @@ export async function preprocessForSmartMatch(
       durationMs: Date.now() - startedAt,
       qualityScore: fullScore,
       lightPromptUsed: false,
+      // Analysis comes from the full prompt pass — valid even if we later swap the image.
+      ...analysis,
     };
   }
 
   // Path B: full preprocess scored < SCORE_WARN_THRESHOLD — retry with lighter prompt.
+  // The analysis from the full pass is still valid (it describes the original image).
   console.warn(
     `[preprocess] full prompt scored ${fullScore}/10 for ${imageUrl} — retrying with light prompt. ` +
     `Issues: ${fullIssues.join("; ")}`,
@@ -601,6 +818,11 @@ export async function preprocessForSmartMatch(
     format: lightFormat,
     width: lightW,
     height: lightH,
+    // Analysis comes from the full prompt pass, which always ran before the
+    // light retry — its values remain valid and must be persisted here.
+    ocrTraces: analysis.ocrTraces,
+    materialTokens: analysis.materialTokens,
+    technicalSpecs: analysis.technicalSpecs,
   });
 
   return {
@@ -613,5 +835,7 @@ export async function preprocessForSmartMatch(
     durationMs: Date.now() - startedAt,
     qualityScore: lightScore,
     lightPromptUsed: true,
+    // Carry forward analysis from full pass — the light pass is image-only.
+    ...analysis,
   };
 }

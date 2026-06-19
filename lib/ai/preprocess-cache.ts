@@ -33,6 +33,14 @@ export interface CachedPreprocessedImage {
   format: "jpg" | "png" | "webp";
   width: number;
   height: number;
+  /**
+   * Vision-analysis payload extracted in the same Gemini round-trip as the
+   * image cleanup. Always string arrays; empty on legacy rows that predate
+   * this field (null in the DB → treated as [] by the cache layer).
+   */
+  ocrTraces: string[];
+  materialTokens: string[];
+  technicalSpecs: string[];
 }
 
 export function makeCacheKey(
@@ -49,6 +57,12 @@ function normalizeFormat(raw: string): "jpg" | "png" | "webp" {
   if (lower === "png") return "png";
   if (lower === "webp") return "webp";
   return "jpg";
+}
+
+/** Safely coerce a Prisma Json? field to a string array. */
+function parseJsonStrArr(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((v): v is string => typeof v === "string");
 }
 
 /**
@@ -90,6 +104,9 @@ export async function getCachedPreprocessed(
     format: normalizeFormat(row.format),
     width: row.width,
     height: row.height,
+    ocrTraces: parseJsonStrArr(row.ocrTraces),
+    materialTokens: parseJsonStrArr(row.materialTokens),
+    technicalSpecs: parseJsonStrArr(row.technicalSpecs),
   };
 }
 
@@ -132,6 +149,9 @@ export function savePreprocessedAsync(
         width: data.width,
         height: data.height,
         payloadBytes: buffer.byteLength,
+        ocrTraces: data.ocrTraces,
+        materialTokens: data.materialTokens,
+        technicalSpecs: data.technicalSpecs,
       },
       update: {
         processedImage: buffer,
@@ -140,6 +160,9 @@ export function savePreprocessedAsync(
         height: data.height,
         payloadBytes: buffer.byteLength,
         lastHitAt: new Date(),
+        ocrTraces: data.ocrTraces,
+        materialTokens: data.materialTokens,
+        technicalSpecs: data.technicalSpecs,
         // createdAt deliberately NOT touched on update — the row's age drives
         // TTL eviction, so an old key getting refreshed keeps its TTL window.
       },

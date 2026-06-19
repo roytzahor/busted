@@ -54,6 +54,34 @@ model User {
   @@index([email])
 }
 
+/// Raw HTML/markdown cache for fetchProductPage() — dual-arm scraper output.
+///
+/// Keyed by sha256(url). Both html and markdown are stored gzip-compressed
+/// (typical Shopify page: 300 KB raw → 28 KB compressed). The source field
+/// records which arm produced the content so callers see the original scraper
+/// name even on cache hits.
+///
+/// 14-day TTL enforced at query time (see lib/scraper/page-cache.ts).
+model FetchedPage {
+  /// sha256(url) — fixed 64-char hex string, used directly as PK.
+  cacheKey  String   @id
+  url       String   @unique
+  /// Gzip-compressed HTML bytes. Null when the arm returned no HTML.
+  html      Bytes?
+  /// Gzip-compressed markdown bytes. Null when the arm returned no markdown.
+  markdown  Bytes?
+  /// "crawlbase" | "firecrawl" — the arm that produced this payload.
+  source    String
+  /// Compressed size in bytes. Useful for monitoring storage costs.
+  sizeBytes Int
+  hits      Int      @default(0)
+  createdAt DateTime @default(now())
+  lastHitAt DateTime @default(now())
+
+  @@index([url])
+  @@index([createdAt])
+}
+
 /// Cached output of Gemini Vision image preprocessing (crop, background
 /// normalisation, brand-text inpaint). Keyed by sha256(sourceImageUrl + "|" +
 /// productCategory) so cache invalidates if either input changes.
@@ -76,6 +104,12 @@ model PreprocessedImage {
   hits            Int      @default(0)
   createdAt       DateTime @default(now())
   lastHitAt       DateTime @default(now())
+  /// Vision-analysis payload extracted in the same Gemini round-trip as the
+  /// image cleanup. Stored as JSON string arrays. Null on rows created before
+  /// these fields were added — callers must treat null as an empty array.
+  ocrTraces       Json?
+  materialTokens  Json?
+  technicalSpecs  Json?
 
   @@index([cacheKey])
   @@index([createdAt])
