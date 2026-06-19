@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { AnalysisSkeleton } from "@/components/analysis-skeleton";
 import { AnalysisTabs } from "@/components/analysis-tabs";
+import { LivePipelineView } from "@/components/live-pipeline-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,6 +11,8 @@ import {
   getProductUrlHint,
   validateProductUrl,
   type AnalyzeProgress,
+  type LiveStageUpdate,
+  type SSEStageId,
 } from "@/lib/analyze/client";
 import type { ProductComparisonResult } from "@/lib/mock-data";
 import type { DropshipAnalysisResult } from "@/lib/analyze/map-response";
@@ -81,6 +84,8 @@ export function SearchHub() {
   const [comparison, setComparison] = useState<ProductComparisonResult | null>(null);
   const [dropshipResult, setDropshipResult] = useState<DropshipAnalysisResult | null>(null);
   const [debugInfo, setDebugInfo] = useState<AnalyzeDebugInfo | null>(null);
+  // Stage 17 — live pipeline state
+  const [liveStages, setLiveStages] = useState<Map<SSEStageId, LiveStageUpdate>>(new Map());
   const handleUrlChange = useCallback((value: string) => {
     setUrl(value);
     if (value.trim()) {
@@ -103,12 +108,20 @@ export function SearchHub() {
     setComparison(null);
     setDropshipResult(null);
     setDebugInfo(null);
+    setLiveStages(new Map()); // reset stage view for new scan
     setPhase("analyzing");
     setProgress({ step: "Checking cache…", progress: 0 });
     try {
       const result = await analyzeProductUrl(url, {
         debug: true,
         onProgress: setProgress,
+        onStage: (update) => {
+          setLiveStages((prev) => {
+            const next = new Map(prev);
+            next.set(update.stage, update);
+            return next;
+          });
+        },
       });
       setComparison(result.comparison);
       setDropshipResult(result.dropshipAnalysis);
@@ -284,7 +297,11 @@ export function SearchHub() {
       {/* ── Progress ──────────────────────────────────────────────── */}
       {phase === "analyzing" ? (
         <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <AnalysisSkeleton step={progress.step} progress={progress.progress} />
+          {liveStages.size > 0 ? (
+            <LivePipelineView stageMap={liveStages} />
+          ) : (
+            <AnalysisSkeleton step={progress.step} progress={progress.progress} />
+          )}
         </div>
       ) : null}
 

@@ -586,7 +586,7 @@ busting the page cache).
 
 ---
 
-### Stage 17 — Live animated pipeline view during scan ⬜
+### Stage 17 — Live animated pipeline view during scan ✅
 
 **Why:** Today the user stares at a skeleton during a 20-second scan and has no
 idea what's happening. We already emit progress events via `analyzeProductUrl(...,
