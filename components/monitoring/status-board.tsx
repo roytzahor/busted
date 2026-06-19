@@ -139,10 +139,10 @@ export function StatusBoard() {
     setIsRunningAll(false);
   }, []);
 
-  // Auto-probe on mount and every 30s
+  // Auto-probe on mount and every 5 minutes
   useEffect(() => {
     void probeAll();
-    const interval = setInterval(() => void probeAll(), 30_000);
+    const interval = setInterval(() => void probeAll(), 5 * 60_000);
     return () => clearInterval(interval);
   }, [probeAll]);
 
@@ -174,7 +174,7 @@ export function StatusBoard() {
             </p>
             {lastRefreshed ? (
               <p className="text-xs text-muted-foreground">
-                Last checked {lastRefreshed.toLocaleTimeString()} · auto-refreshes every 30s
+                Last checked {lastRefreshed.toLocaleTimeString()} · auto-refreshes every 5 min
               </p>
             ) : null}
           </div>

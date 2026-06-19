@@ -1,3 +1,4 @@
+import { scrapeWithCrawlbase } from "@/lib/scraping/crawlbase";
 import { scrapeWithFirecrawl } from "@/lib/scraping/firecrawl";
 import { extractProductAttributes, assertValidProductAttributes } from "@/lib/scraping/extract-product";
 import { scrapeWithPlaywright } from "@/lib/scraping/playwright-fallback";
@@ -32,7 +33,23 @@ async function maybeTranslate(
 export async function scrapeProductUrl(
   targetUrl: string,
 ): Promise<ScrapeRouteResult> {
-  let primaryError: ScraperError | null = null;
+  // ── 1. Crawlbase (JS-rendered, handles Shopify SPAs) ────────────────────────
+  try {
+    const raw = await scrapeWithCrawlbase(targetUrl);
+    const attributes = await maybeTranslate(extractProductAttributes(raw));
+    assertValidProductAttributes(attributes);
+    return { raw, attributes };
+  } catch (crawlbaseError) {
+    console.warn(
+      "[scrape-router] Crawlbase arm failed, trying Firecrawl:",
+      crawlbaseError instanceof ScraperError
+        ? crawlbaseError.message
+        : crawlbaseError,
+    );
+  }
+
+  // ── 2. Firecrawl (markdown-optimised) ───────────────────────────────────────
+  let firecrawlError: ScraperError | null = null;
 
   try {
     const raw = await scrapeWithFirecrawl(targetUrl);
@@ -40,16 +57,17 @@ export async function scrapeProductUrl(
     assertValidProductAttributes(attributes);
     return { raw, attributes };
   } catch (error) {
-    primaryError =
+    firecrawlError =
       error instanceof ScraperError
         ? error
         : new ScraperError(
             "FIRECRAWL_ROUTER_ERROR",
-            "Primary scraper failed unexpectedly.",
+            "Firecrawl scraper failed unexpectedly.",
             500,
           );
   }
 
+  // ── 3. Playwright (headless fallback) ────────────────────────────────────────
   try {
     const raw = await scrapeWithPlaywright(targetUrl);
     const attributes = await maybeTranslate(extractProductAttributes(raw));
@@ -66,14 +84,14 @@ export async function scrapeProductUrl(
           );
 
     const combinedMessage = [
-      `Primary scraper failed: ${primaryError?.message ?? "unknown error"}`,
-      `Fallback scraper failed: ${fallback.message}`,
+      `Firecrawl failed: ${firecrawlError?.message ?? "unknown error"}`,
+      `Playwright fallback failed: ${fallback.message}`,
     ].join(" | ");
 
     throw new ScraperError(
       "SCRAPE_PIPELINE_FAILED",
       combinedMessage,
-      fallback.statusCode === 500 || primaryError?.statusCode === 500 ? 500 : 422,
+      fallback.statusCode === 500 || firecrawlError?.statusCode === 500 ? 500 : 422,
     );
   }
 }

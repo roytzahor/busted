@@ -9,6 +9,7 @@ import type {
   DevMonitorTestResult,
 } from "@/lib/dev-monitor/types";
 import { prisma } from "@/lib/prisma";
+import { scrapeWithCrawlbase } from "@/lib/scraping/crawlbase";
 import { scrapeWithFirecrawl } from "@/lib/scraping/firecrawl";
 
 function elapsed(start: number): number {
@@ -50,12 +51,12 @@ export function buildServiceSnapshots(): Record<
       },
     },
     scraper: {
-      configured: firecrawlConfigured,
-      label: "Firecrawl / Playwright",
+      configured: Boolean(process.env.CRAWLBASE_TOKEN?.trim()) || firecrawlConfigured,
+      label: "Crawlbase / Firecrawl / Playwright",
       details: {
+        crawlbaseToken: Boolean(process.env.CRAWLBASE_TOKEN?.trim()),
         firecrawlKey: firecrawlConfigured,
         playwrightFallback: playwrightEnabled,
-        tierLimit: "Plan-dependent · ~500–3k credits/mo (placeholder)",
         timeoutMs: Number(process.env.SCRAPER_TIMEOUT_MS ?? "30000"),
       },
     },
@@ -147,25 +148,44 @@ async function probeDatabase(start: number): Promise<DevMonitorTestResult> {
 }
 
 async function probeScraper(start: number): Promise<DevMonitorTestResult> {
-  if (!process.env.FIRECRAWL_API_KEY?.trim()) {
+  const hasCrawlbase = Boolean(process.env.CRAWLBASE_TOKEN?.trim());
+  const hasFirecrawl = Boolean(process.env.FIRECRAWL_API_KEY?.trim());
+
+  if (!hasCrawlbase && !hasFirecrawl) {
     return {
       service: "scraper",
       status: "uninitialized",
       latencyMs: elapsed(start),
-      message: "FIRECRAWL_API_KEY is not set.",
+      message: "Neither CRAWLBASE_TOKEN nor FIRECRAWL_API_KEY is set.",
       details: {
         playwrightFallback: process.env.PLAYWRIGHT_FALLBACK_ENABLED === "true",
       },
     };
   }
 
-  const result = await scrapeWithFirecrawl("https://example.com");
+  // Probe whichever arm is primary
+  if (hasCrawlbase) {
+    const result = await scrapeWithCrawlbase("https://example.com");
+    return {
+      service: "scraper",
+      status: "connected",
+      latencyMs: elapsed(start),
+      message: "Crawlbase scrape probe succeeded.",
+      details: {
+        provider: result.provider,
+        markdownChars: result.markdown.length,
+        firecrawlFallback: hasFirecrawl,
+        playwrightFallback: process.env.PLAYWRIGHT_FALLBACK_ENABLED === "true",
+      },
+    };
+  }
 
+  const result = await scrapeWithFirecrawl("https://example.com");
   return {
     service: "scraper",
     status: "connected",
     latencyMs: elapsed(start),
-    message: "Firecrawl scrape probe succeeded.",
+    message: "Firecrawl scrape probe succeeded (no Crawlbase token).",
     details: {
       provider: result.provider,
       markdownChars: result.markdown.length,

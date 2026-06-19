@@ -87,7 +87,7 @@ export function parseCachedScrapeData(
         typeof attrs.mainImageUrl === "string" ? attrs.mainImageUrl : null,
       sourceUrl: typeof attrs.sourceUrl === "string" ? attrs.sourceUrl : "",
       provider:
-        attrs.provider === "firecrawl" || attrs.provider === "playwright"
+        attrs.provider === "crawlbase" || attrs.provider === "firecrawl" || attrs.provider === "playwright"
           ? attrs.provider
           : "firecrawl",
       ...(cachedVariant ? { variant: cachedVariant } : {}),

@@ -1,4 +1,4 @@
-export type ScrapeProvider = "firecrawl" | "playwright";
+export type ScrapeProvider = "crawlbase" | "firecrawl" | "playwright";
 
 export interface ScrapeMetadata {
   title?: string;
