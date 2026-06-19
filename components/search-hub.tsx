@@ -144,7 +144,7 @@ export function SearchHub() {
   return (
     <div className="mx-auto w-full max-w-5xl px-4">
       {/* ── Hero ──────────────────────────────────────────────────── */}
-      <section className="py-14 text-center sm:py-20 md:py-24">
+      <section className="py-10 text-center sm:py-20 md:py-24">
         {/* Tagline chip */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">
           <span className="animate-live size-1.5 rounded-full bg-primary" aria-hidden="true" />
@@ -153,7 +153,7 @@ export function SearchHub() {
         </div>
 
         {/* Headline */}
-        <h1 className="mb-5 text-5xl font-black tracking-tight sm:text-6xl md:text-7xl md:leading-[1.05]">
+        <h1 className="mb-5 text-4xl font-black tracking-tight sm:text-5xl md:text-6xl lg:text-7xl md:leading-[1.05]">
           <span className="bg-gradient-to-br from-primary via-orange-400 to-amber-300 bg-clip-text text-transparent">
             {BRAND_HOOK_BUSTED}
           </span>{" "}
@@ -169,9 +169,9 @@ export function SearchHub() {
         {/* Stats bar — glass pill */}
         <div className="mb-10 inline-flex items-center justify-center divide-x divide-white/10 overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] backdrop-blur-sm">
           {STATS.map(({ icon: Icon, label, value }) => (
-            <div key={label} className="flex items-center gap-2 px-5 py-2.5 text-sm">
-              <Icon className="size-4 text-primary" aria-hidden="true" />
-              <span className="text-muted-foreground">{label}:</span>
+            <div key={label} className="flex items-center gap-1 px-3 py-2.5 text-xs sm:gap-2 sm:px-5 sm:text-sm">
+              <Icon className="size-3.5 shrink-0 text-primary sm:size-4" aria-hidden="true" />
+              <span className="hidden text-muted-foreground sm:inline">{label}:</span>
               <span className="font-semibold">{value}</span>
             </div>
           ))}
