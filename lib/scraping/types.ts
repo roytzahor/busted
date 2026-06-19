@@ -28,6 +28,13 @@ export interface ScrapedProductAttributes {
   sourceUrl: string;
   provider: ScrapeProvider;
   variant?: ScrapedProductVariant;
+  /**
+   * English translation of `title` when the original is non-Latin script
+   * (Hebrew, Arabic, CJK, Korean). Used for AliExpress keyword extraction
+   * only — the original title is preserved for AI verdict prompts.
+   * Absent when the title is already Latin-script or translation failed.
+   */
+  translatedTitle?: string;
 }
 
 export class ScraperError extends Error {

@@ -91,6 +91,9 @@ export function parseCachedScrapeData(
           ? attrs.provider
           : "firecrawl",
       ...(cachedVariant ? { variant: cachedVariant } : {}),
+      ...(typeof attrs.translatedTitle === "string"
+        ? { translatedTitle: attrs.translatedTitle }
+        : {}),
     },
     detectedStorePriceUsd:
       typeof record.detectedStorePriceUsd === "number"

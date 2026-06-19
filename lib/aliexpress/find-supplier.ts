@@ -141,8 +141,13 @@ export async function findAliExpressSupplier(params: {
    */
   identity?: ProductIdentity | null;
 }): Promise<SupplierMatchResult> {
-  const titleKeywords = extractSearchKeywords(params.attributes.title);
-  const thin = isThinTitle(params.attributes.title);
+  // Use the translated title for keyword extraction when the original title is
+  // non-Latin script (Hebrew, Arabic, CJK). The translation is attached by the
+  // scrape router and preserves the original for AI verdict prompts.
+  const effectiveTitle =
+    params.attributes.translatedTitle ?? params.attributes.title;
+  const titleKeywords = extractSearchKeywords(effectiveTitle);
+  const thin = isThinTitle(effectiveTitle);
 
   // Phase 4 keyword precedence:
   //   1. identity.searchKeywords.primary (vision-grounded canonical)
@@ -177,7 +182,7 @@ export async function findAliExpressSupplier(params: {
     params.identity?.category ?? params.productCategory ?? null;
   const categoryKeywords =
     categorySource && (thin || aiKeywords.length === 0)
-      ? buildCategoryKeywords(params.attributes.title, categorySource)
+      ? buildCategoryKeywords(effectiveTitle, categorySource)
       : null;
 
   if (!titleKeywords.trim() && aiKeywords.length === 0 && !categoryKeywords) {

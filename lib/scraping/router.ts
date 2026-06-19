@@ -1,6 +1,7 @@
 import { scrapeWithFirecrawl } from "@/lib/scraping/firecrawl";
 import { extractProductAttributes, assertValidProductAttributes } from "@/lib/scraping/extract-product";
 import { scrapeWithPlaywright } from "@/lib/scraping/playwright-fallback";
+import { isNonLatinTitle, translateTitle } from "@/lib/ai/translate-title";
 import {
   ScraperError,
   type RawScrapeResult,
@@ -12,6 +13,22 @@ export interface ScrapeRouteResult {
   raw: RawScrapeResult;
 }
 
+/**
+ * Detect non-Latin titles and attach an English translation for downstream
+ * keyword extraction. Best-effort — never throws.
+ */
+async function maybeTranslate(
+  attributes: ScrapedProductAttributes,
+): Promise<ScrapedProductAttributes> {
+  if (!isNonLatinTitle(attributes.title)) return attributes;
+  const translation = await translateTitle(attributes.title);
+  if (!translation || translation === attributes.title) return attributes;
+  console.info(
+    `[scrape-router] translated title: "${attributes.title}" → "${translation}"`,
+  );
+  return { ...attributes, translatedTitle: translation };
+}
+
 export async function scrapeProductUrl(
   targetUrl: string,
 ): Promise<ScrapeRouteResult> {
@@ -19,7 +36,7 @@ export async function scrapeProductUrl(
 
   try {
     const raw = await scrapeWithFirecrawl(targetUrl);
-    const attributes = extractProductAttributes(raw);
+    const attributes = await maybeTranslate(extractProductAttributes(raw));
     assertValidProductAttributes(attributes);
     return { raw, attributes };
   } catch (error) {
@@ -35,7 +52,7 @@ export async function scrapeProductUrl(
 
   try {
     const raw = await scrapeWithPlaywright(targetUrl);
-    const attributes = extractProductAttributes(raw);
+    const attributes = await maybeTranslate(extractProductAttributes(raw));
     assertValidProductAttributes(attributes);
     return { raw, attributes };
   } catch (fallbackError) {
