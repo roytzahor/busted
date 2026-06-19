@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BRAND_NAME } from "@/lib/brand";
+import { RecentScans } from "@/components/recent-scans";
 import { cn } from "@/lib/utils";
 import {
   Activity,
@@ -79,6 +80,7 @@ export function Nav() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <RecentScans />
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -24,3 +24,31 @@ export const DISCLAIMER_SHORT =
  */
 export const DISCLAIMER_LONG =
   "Busted is a price-comparison and education tool. Dropship detection and AliExpress matches are AI-generated estimates — verify product identity, seller reputation, and shipping before purchasing. Not affiliated with the stores or marketplaces we link to.";
+
+/**
+ * "Why this exists" FAQ shown below the how-it-works grid in idle state.
+ * Three items max — keep it skimmable; this is for the curious-but-not-sold
+ * visitor.
+ */
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export const FAQ_ITEMS: FaqItem[] = [
+  {
+    question: "How does Busted know it’s a dropship?",
+    answer:
+      "We scrape the product page, then run an AI model trained to spot dropship signals: stock photography that matches AliExpress listings, generic descriptions, premium pricing on commodity items, and a handful of brand-quality heuristics. We label estimates clearly — this is a guide, not a verdict.",
+  },
+  {
+    question: "Is comparing prices like this legal?",
+    answer:
+      "Yes. Comparing publicly listed prices and pointing users to a different retailer is standard consumer education — the same thing Honey, Capital One Shopping, and Google Shopping all do. We don’t bypass paywalls, scrape private data, or impersonate anyone.",
+  },
+  {
+    question: "Why AliExpress specifically?",
+    answer:
+      "Because that’s where most dropship inventory actually ships from. AliExpress lets factories list direct, which is why the same item you saw for $40 on a Shopify boutique is $4 on AliExpress. Buying direct skips the middleman markup — that’s the entire game.",
+  },
+];

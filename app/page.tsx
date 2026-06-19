@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SearchHub } from "@/components/search-hub";
 
 export default function Home() {
@@ -10,7 +11,10 @@ export default function Home() {
         <div className="absolute top-1/3 left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-primary/7 blur-[100px]" />
         <div className="absolute bottom-1/3 right-1/4 h-[280px] w-[280px] rounded-full bg-destructive/5 blur-[80px]" />
       </div>
-      <SearchHub />
+      {/* useSearchParams() in SearchHub forces a Suspense boundary in Next 15. */}
+      <Suspense fallback={null}>
+        <SearchHub />
+      </Suspense>
     </div>
   );
 }

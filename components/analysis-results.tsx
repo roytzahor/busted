@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { ShareButton } from "@/components/share-button";
 import type { ProductComparisonResult } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import {
@@ -218,20 +219,31 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
               {supplierProduct.sellerRating}★ rating.
             </p>
           </div>
-          <Button
-            asChild
-            size="lg"
-            className="glow-success h-11 w-full bg-success text-success-foreground shadow-lg shadow-success/20 transition-all hover:bg-success/90 hover:shadow-xl hover:shadow-success/35 sm:w-auto sm:min-w-[260px]"
-          >
-            <a
-              href={supplierProduct.affiliateUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <ShareButton
+              productUrl={result.originalUrl}
+              title={storeProduct.title}
+              savingsPercent={savingsPercent}
+              storeUsd={storeProduct.priceUsd}
+              aliUsd={supplierProduct.priceUsd}
+              imageUrl={storeProduct.imageUrl}
+              className="w-full sm:w-auto"
+            />
+            <Button
+              asChild
+              size="lg"
+              className="glow-success h-11 w-full bg-success text-success-foreground shadow-lg shadow-success/20 transition-all hover:bg-success/90 hover:shadow-xl hover:shadow-success/35 sm:w-auto sm:min-w-[260px]"
             >
-              Buy Original on AliExpress &amp; Save
-              <ExternalLink className="ml-1.5 size-4" aria-hidden="true" />
-            </a>
-          </Button>
+              <a
+                href={supplierProduct.affiliateUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Buy Original on AliExpress &amp; Save
+                <ExternalLink className="ml-1.5 size-4" aria-hidden="true" />
+              </a>
+            </Button>
+          </div>
         </div>
 
         {/* Decorative glow */}

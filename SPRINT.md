@@ -660,6 +660,226 @@ all 5 verticals, so `npm run verify:categories` reports SKIPPED for everything.
 
 ---
 
+## Sprint 10 — Product surface & growth (this week)
+
+**Started:** 2026-06-19  
+**Theme:** the engine works. Now make it findable, shareable, and sticky.
+
+**Why this sprint, why now.** Sprints 1–9 built a sophisticated detection +
+matching engine: dual-arm scraping, variant-axis remapping, image-AI confidence
+folding, vision cache, live SSE pipeline. None of that helps if a first-time
+visitor lands on a blank input and bounces in 4 seconds. Sprint 10 closes the
+gap between the engine and the user — onboarding, retention, virality, social
+proof. Zero new AI calls (Gemini quota was just exhausted; this is deliberately
+front-end heavy).
+
+**Goal metrics (for the next review):**
+- First-scan rate on new visitors: ≥ 60% (today: estimated ~20%, lots of bounces)
+- Returning users in 7 days: ≥ 15% (today: zero — no retention surface)
+- Scans-per-share: at least 1 in 10 results clicks the share button
+- Time-to-first-scan on a cold visitor: under 8 seconds (today: requires the
+  user to have a URL ready — no scaffolding)
+
+### Stage 19 — Onboarding: example URL chips ✅
+
+**Why:** A new visitor with no URL in mind bounces. We need a one-click path
+from "landing page" to "results screen". A row of 3–4 real example chips below
+the search input gives them somewhere to click.
+
+**Impact:** Removes the cold-start problem. Lets us also demo the product
+for screenshots and TikTok captures from a live URL we control.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `lib/examples.ts` (new) | Static list of `{ label, url, savingsHint }[]` — 3-4 entries across verticals |
+| `components/search-hub.tsx` | Render a chip row below the disclaimer when `phase === "idle"`. Clicking a chip pre-fills + auto-submits |
+
+**Copy spec:**
+```
+Try one:
+[Shower steamers $14 → $1.20]  [Slippers $39 → $4.80]  [Phone case $24 → $2]
+```
+
+**Acceptance:**
+- [ ] Chips render only in idle state, animate-in with the rest of the hero
+- [ ] Each chip is keyboard-focusable, has aria-label "Try the X example"
+- [ ] Clicking a chip pre-fills the input AND auto-runs the scan
+- [ ] On mobile, chips wrap onto multiple lines without horizontal scroll
+
+---
+
+### Stage 20 — Anonymous scan history ✅
+
+**Why:** Today every scan vaporises on refresh. There's no come-back hook.
+Without auth we can still persist locally — and that's enough to let a user
+flip between two scans they ran an hour apart.
+
+**Impact:** A retention surface that costs zero backend complexity. People who
+ran a successful scan see a chip next to the logo: "Recent scans (3)". Open
+the sheet → re-launch any of them in one click (cache will hit, so it's free).
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `lib/scan-history.ts` (new) | `getHistory()`, `appendScan()`, `clearHistory()` — localStorage-backed, capped at 25 entries |
+| `components/recent-scans.tsx` (new) | Sheet/drawer rendered from the nav. Shows thumbnail · title · savings · timestamp |
+| `components/nav.tsx` | Add a "Recent" pill button that opens the sheet; shows count badge |
+| `components/search-hub.tsx` | On successful scan, call `appendScan({ url, title, image, savingsPercent, completedAt })` |
+
+**Storage shape:**
+```ts
+interface ScanHistoryEntry {
+  id: string;          // crypto.randomUUID()
+  url: string;
+  title: string;
+  imageUrl: string | null;
+  savingsPercent: number | null;
+  completedAt: string; // ISO
+}
+```
+
+**Acceptance:**
+- [ ] Persists across refresh; capped at 25 entries (oldest evicted)
+- [ ] "Recent" button hidden when history is empty
+- [ ] Drawer has a "Clear history" link at the bottom
+- [ ] Clicking an entry re-submits the URL (cache HIT path)
+
+---
+
+### Stage 21 — Dynamic OG share images + share button ✅
+
+**Why:** Today a scan result is a private page — no shareable artifact. If
+someone wants to brag about saving $30 on shower steamers, they screenshot.
+A proper OG card means every shared link previews as a value-prop image on
+WhatsApp, Twitter, LinkedIn, iMessage.
+
+**Impact:** Compounding virality. Every shared result becomes a marketing
+asset. Cheap to build: Next.js ImageResponse can render it on the edge.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `app/api/og/scan/route.tsx` (new) | `ImageResponse` returning a 1200×630 card with title, savings %, brand mark |
+| `app/scan/[id]/page.tsx` (new) | Server-rendered scan result page (looks up `ScannedProduct` by id); sets `openGraph.images` to the OG route |
+| `components/share-button.tsx` (new) | "Share result" button → Web Share API if available, else copy-to-clipboard with toast |
+| `components/analysis-results.tsx` | Mount `<ShareButton />` next to the CTA |
+
+**OG card layout:**
+```
+┌──────────────────────────────────────────────┐
+│  BUSTED                                       │
+│                                              │
+│  [product img]   They're busted.             │
+│                  Save 87%                    │
+│                  $24 → $3.10                 │
+└──────────────────────────────────────────────┘
+```
+
+**Acceptance:**
+- [ ] `/api/og/scan?title=X&savings=87&image=...` returns a valid 1200×630 PNG
+- [ ] `/scan/[id]` is publicly shareable and renders the same data
+- [ ] Share button uses navigator.share when available, falls back to clipboard
+- [ ] WhatsApp / Twitter unfurl previews show the new card
+
+---
+
+### Stage 22 — Live trust counter widget ✅
+
+**Why:** Social proof. "3,847 stores busted this week · $124k saved" turns a
+landing page into a live feed. Real numbers, fetched cheap.
+
+**Impact:** First-time visitors see the product is real and being used.
+Conversion to "first scan" should lift noticeably.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `app/api/stats/totals/route.ts` (new) | Returns `{ scansThisWeek, totalSavingsUsd, refreshedAt }`. `next: { revalidate: 3600 }` |
+| `components/trust-counter.tsx` (new) | Animated counter chip; uses `useEffect` to count from 0 → N over 1.2s |
+| `components/search-hub.tsx` | Render the chip above the STATS row |
+
+**SQL:**
+```sql
+-- scansThisWeek
+SELECT COUNT(*) FROM "ScannedProduct" WHERE "createdAt" > NOW() - INTERVAL '7 days';
+
+-- totalSavingsUsd (sum of estimatedMarkupPercent applied to estimatedStorePriceUsd in aiPrediction)
+-- For Sprint 10 we'll approximate: count × $18 average savings until we wire up the calc.
+```
+
+**Acceptance:**
+- [ ] Endpoint cached server-side for 1h via Next.js revalidate
+- [ ] Counter animates from 0 on mount, respects prefers-reduced-motion
+- [ ] Falls back to a static "Busted is live" pill if API fails
+
+---
+
+### Stage 23 — PWA manifest + share-target + clipboard paste ✅
+
+**Why:** On mobile, the typical flow is: see a sketchy product on TikTok → tap
+share → pick a target. If Busted is a share target, we own that flow. Add a
+"Paste from clipboard" affordance for desktop users coming in fresh.
+
+**Impact:** Native-app feel without writing a native app. One-tap scan from
+any Shopify checkout.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `app/manifest.ts` (new) | Next.js metadata route exporting the webmanifest with `share_target` |
+| `app/page.tsx` | Read `?share=...` and `?url=...` from URL on mount; if present, pre-fill + auto-run |
+| `components/search-hub.tsx` | Add a clipboard icon button inside the input; clicking it calls `navigator.clipboard.readText()` |
+| `app/layout.tsx` | Add `<link rel="manifest" href="/manifest.webmanifest">` (Next.js auto-handles) |
+
+**share_target stanza:**
+```json
+{
+  "action": "/",
+  "method": "GET",
+  "params": { "title": "title", "text": "share", "url": "url" }
+}
+```
+
+**Acceptance:**
+- [ ] iOS Share → "Add to Home Screen" works
+- [ ] Sharing a URL to the installed PWA opens the homepage with the URL pre-filled and auto-running
+- [ ] Clipboard button only renders when `navigator.clipboard.readText` exists
+- [ ] Pre-fill via `?url=...` works in any browser (no PWA install required)
+
+---
+
+### Stage 24 — Empty state polish + value-prop refresh ✅
+
+**Why:** With Sprint 10 we accumulate visible surface. Time to make sure the
+hero copy still reads cleanly, the bento grid feels purposeful, and a small
+"Why this exists" accordion lives at the bottom for the curious-but-not-sold
+visitor.
+
+**Impact:** Marginal but compounding. Cleaner copy, sharper value-prop, fewer
+half-finished sentences.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `components/value-prop-faq.tsx` (new) | 3-item accordion: "How does Busted know?", "Is this legal?", "Why AliExpress?" |
+| `components/search-hub.tsx` | Mount the FAQ in idle state, below the how-it-works grid |
+| `lib/brand.ts` | Add `FAQ_ITEMS` so copy lives in one place |
+
+**Acceptance:**
+- [ ] FAQ uses Radix Accordion (already in shadcn/ui)
+- [ ] Only renders in idle state
+- [ ] Each answer is one short paragraph, no jargon
+- [ ] Last item visible without scroll on a 13" laptop
+
+---
+
 ## Completed ✅
 
 | Stage | Description | Commit |

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AnalysisSkeleton } from "@/components/analysis-skeleton";
 import { AnalysisTabs } from "@/components/analysis-tabs";
 import { LivePipelineView } from "@/components/live-pipeline-view";
@@ -17,6 +18,10 @@ import {
 import type { ProductComparisonResult } from "@/lib/mock-data";
 import type { DropshipAnalysisResult } from "@/lib/analyze/map-response";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
+import { DEMO_EXAMPLES } from "@/lib/examples";
+import { appendScan } from "@/lib/scan-history";
+import { TrustCounter } from "@/components/trust-counter";
+import { ValuePropFaq } from "@/components/value-prop-faq";
 import {
   BRAND_DESCRIPTION,
   BRAND_HOOK_BUSTED,
@@ -28,6 +33,7 @@ import { cn } from "@/lib/utils";
 import {
   AlertCircle,
   ArrowRight,
+  ClipboardPaste,
   Clock,
   Flame,
   Info,
@@ -72,6 +78,7 @@ const HOW_IT_WORKS = [
 ];
 
 export function SearchHub() {
+  const searchParams = useSearchParams();
   const [url, setUrl] = useState("");
   const [phase, setPhase] = useState<SearchPhase>("idle");
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -97,12 +104,14 @@ export function SearchHub() {
     }
   }, []);
 
-  const handleAnalyze = useCallback(async () => {
-    const error = validateProductUrl(url);
+  const handleAnalyze = useCallback(async (overrideUrl?: string) => {
+    const targetUrl = overrideUrl ?? url;
+    const error = validateProductUrl(targetUrl);
     if (error) {
       setValidationError(error);
       return;
     }
+    if (overrideUrl) setUrl(overrideUrl); // keep input in sync when called from a chip
     setValidationError(null);
     setAnalysisError(null);
     setComparison(null);
@@ -112,7 +121,7 @@ export function SearchHub() {
     setPhase("analyzing");
     setProgress({ step: "Checking cache…", progress: 0 });
     try {
-      const result = await analyzeProductUrl(url, {
+      const result = await analyzeProductUrl(targetUrl, {
         debug: true,
         onProgress: setProgress,
         onStage: (update) => {
@@ -127,11 +136,28 @@ export function SearchHub() {
       setDropshipResult(result.dropshipAnalysis);
       setDebugInfo(result.debug);
       setPhase("complete");
+
+      // Append to local scan history for the Recent drawer.
+      try {
+        appendScan({
+          url: targetUrl,
+          title:
+            result.comparison?.storeProduct.title ??
+            result.dropshipAnalysis?.storeProduct.title ??
+            targetUrl,
+          imageUrl:
+            result.comparison?.storeProduct.imageUrl ??
+            result.dropshipAnalysis?.storeProduct.imageUrl ??
+            null,
+          savingsPercent: result.comparison?.savingsPercent ?? null,
+        });
+      } catch { /* non-critical */ }
+
       // Persist debug info to localStorage so /monitoring can display it
       if (result.debug) {
         try {
           localStorage.setItem("busted_last_scan_debug", JSON.stringify(result.debug));
-          localStorage.setItem("busted_last_scan_url", url);
+          localStorage.setItem("busted_last_scan_url", targetUrl);
           localStorage.setItem("busted_last_scan_at", new Date().toISOString());
         } catch { /* storage full or unavailable */ }
       }
@@ -149,6 +175,39 @@ export function SearchHub() {
     event.preventDefault();
     void handleAnalyze();
   };
+
+  // Clipboard paste — Stage 23. Reads navigator.clipboard.readText when
+  // available (HTTPS + user gesture required). Errors silently if blocked.
+  const [canClipboard, setCanClipboard] = useState(false);
+  useEffect(() => {
+    setCanClipboard(
+      typeof navigator !== "undefined" &&
+        !!navigator.clipboard &&
+        typeof navigator.clipboard.readText === "function",
+    );
+  }, []);
+  const handleClipboardPaste = useCallback(async () => {
+    try {
+      const text = (await navigator.clipboard.readText()).trim();
+      if (!text) return;
+      handleUrlChange(text);
+    } catch {
+      /* permission denied — no-op */
+    }
+  }, [handleUrlChange]);
+
+  // Honor ?url=... or PWA share_target ?text=... / ?share=... — auto-run once.
+  useEffect(() => {
+    const incoming =
+      searchParams.get("url") ??
+      searchParams.get("share") ??
+      searchParams.get("text");
+    if (!incoming) return;
+    if (phase !== "idle") return;
+    if (validateProductUrl(incoming)) return; // invalid → ignore silently
+    void handleAnalyze(incoming);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const isAnalyzing = phase === "analyzing";
   const canSubmit = url.trim().length > 0 && !validationError && !isAnalyzing;
@@ -177,9 +236,14 @@ export function SearchHub() {
           </span>
         </h1>
 
-        <p className="mx-auto mb-8 max-w-lg text-base text-muted-foreground sm:text-lg">
+        <p className="mx-auto mb-6 max-w-lg text-base text-muted-foreground sm:text-lg">
           {BRAND_DESCRIPTION}
         </p>
+
+        {/* Live trust counter — real DB aggregate, cached server-side 1h */}
+        <div className="mb-6 flex justify-center">
+          <TrustCounter />
+        </div>
 
         {/* Stats bar — glass pill */}
         <div className="mb-10 inline-flex items-center justify-center divide-x divide-white/10 overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] backdrop-blur-sm">
@@ -230,9 +294,21 @@ export function SearchHub() {
                   "h-12 border-white/10 bg-white/5 pl-10 text-base placeholder:text-muted-foreground/50 focus-visible:border-primary/50 focus-visible:ring-primary/20",
                   validationError && "border-destructive/60 ring-2 ring-destructive/20",
                   urlHint && !validationError && "border-primary/40",
+                  canClipboard && !url && "pr-24",
                 )}
                 disabled={isAnalyzing}
               />
+              {canClipboard && !url && !isAnalyzing ? (
+                <button
+                  type="button"
+                  onClick={() => void handleClipboardPaste()}
+                  aria-label="Paste link from clipboard"
+                  className="absolute top-1/2 right-2 inline-flex h-8 -translate-y-1/2 items-center gap-1 rounded-md border border-white/10 bg-white/[0.04] px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/8 hover:text-foreground"
+                >
+                  <ClipboardPaste className="size-3.5" aria-hidden="true" />
+                  Paste
+                </button>
+              ) : null}
             </div>
 
             {urlHint && !validationError ? (
@@ -292,6 +368,32 @@ export function SearchHub() {
           />
           <span>{DISCLAIMER_SHORT}</span>
         </p>
+
+        {/* Demo example chips — give a cold visitor a one-click path to results. */}
+        {isIdle ? (
+          <div className="mt-6 flex flex-col items-center gap-2">
+            <p className="text-xs uppercase tracking-widest text-muted-foreground/50">
+              Try one
+            </p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {DEMO_EXAMPLES.map((ex) => (
+                <button
+                  key={ex.url}
+                  type="button"
+                  onClick={() => void handleAnalyze(ex.url)}
+                  disabled={isAnalyzing}
+                  aria-label={`Try the ${ex.label} example`}
+                  className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/8 disabled:opacity-40 disabled:hover:translate-y-0"
+                >
+                  <span className="font-semibold text-foreground/90">{ex.label}</span>
+                  <span className="text-muted-foreground/70 group-hover:text-success">
+                    {ex.savingsHint}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {/* ── Progress ──────────────────────────────────────────────── */}
@@ -335,7 +437,8 @@ export function SearchHub() {
 
       {/* ── How it works — bento grid (idle only) ─────────────────── */}
       {isIdle ? (
-        <section aria-label="How it works" className="mb-20">
+        <>
+        <section aria-label="How it works" className="mb-12">
           <p className="mb-5 text-center text-xs font-bold uppercase tracking-widest text-muted-foreground/50">
             How it works
           </p>
@@ -377,6 +480,8 @@ export function SearchHub() {
             })}
           </div>
         </section>
+        <ValuePropFaq className="mb-20" />
+        </>
       ) : null}
     </div>
   );
