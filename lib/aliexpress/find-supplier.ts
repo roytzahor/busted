@@ -47,6 +47,12 @@ import {
 import type { AliExpressProductCandidate } from "@/lib/aliexpress/types";
 import type { AliExpressProductData } from "@/lib/types/analyze";
 import type { ScrapedProductAttributes } from "@/lib/scraping/types";
+import {
+  buildReputationPenaltyReason,
+  getReputationForProducts,
+  recordLinkOutcome,
+  REPUTATION_PENALTY_MULTIPLIER,
+} from "@/lib/aliexpress/reputation";
 
 const TEXT_SCORE_SKIP_IMAGE_THRESHOLD = 0.85;
 
@@ -366,6 +372,30 @@ export async function findAliExpressSupplier(params: {
   }));
   scored.sort((a, b) => b.confidence.score - a.confidence.score);
 
+  // Stage 11: apply affiliate-link reputation penalty before image rerank.
+  // Fetches reputation rows for the top candidates in one query. Candidates
+  // whose link has failed >80% of the time for this country (min 5 samples)
+  // get their confidence score multiplied by REPUTATION_PENALTY_MULTIPLIER.
+  // This prevents repeat exposure of products with broken affiliate funnels.
+  if (provider === "aliexpress_api" && scored.length > 0) {
+    const topIds = scored.map((s) => s.candidate.productId);
+    const reputation = await getReputationForProducts(topIds, locale.shipToCountry);
+
+    let penaltyApplied = false;
+    for (const entry of scored) {
+      const rep = reputation.get(entry.candidate.productId);
+      if (!rep) continue;
+      const reason = buildReputationPenaltyReason(rep);
+      if (!reason) continue;
+      entry.confidence.score = Math.max(0, entry.confidence.score * REPUTATION_PENALTY_MULTIPLIER);
+      entry.confidence.reasons.push(reason);
+      penaltyApplied = true;
+    }
+    if (penaltyApplied) {
+      scored.sort((a, b) => b.confidence.score - a.confidence.score);
+    }
+  }
+
   // If all top text scores are still weak, try any remaining AI keywords we
   // haven't used yet and fold in new candidates.
   const topTextScore = scored[0]?.confidence.score ?? 0;
@@ -614,6 +644,10 @@ export async function findAliExpressSupplier(params: {
       : {}),
     ...(winnerVariantMatch?.hardMismatch ? { variantWarning: true } : {}),
   };
+
+  // Fire-and-forget: persist this affiliate link outcome for future reputation scoring.
+  // Never awaited — never blocks the response. Runs in the background.
+  recordLinkOutcome(winner.productId, locale.shipToCountry, affiliateLinkValidated);
 
   return {
     aliexpressUrl: productUrlWithVariant,

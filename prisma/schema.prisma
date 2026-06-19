@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 /// Cached product analysis — 14-day TTL enforced at query time.
@@ -79,6 +80,26 @@ model PreprocessedImage {
   @@index([cacheKey])
   @@index([createdAt])
   @@index([productCategory])
+}
+
+/// Tracks affiliate-link validation outcomes per (product, country) pair.
+/// Used to down-rank candidates whose links reliably fail for a given
+/// country so buyers in that market don't see broken purchase flows.
+///
+/// A failure rate > 80% over ≥5 outcomes triggers a 0.7× score multiplier
+/// in the supplier-matching confidence calculation.
+model SupplierReputation {
+  id            String    @id @default(cuid())
+  productId     String
+  shipToCountry String
+  linkFailures  Int       @default(0)
+  linkSuccesses Int       @default(0)
+  lastFailedAt  DateTime?
+  lastCheckedAt DateTime  @default(now())
+
+  @@unique([productId, shipToCountry])
+  @@index([productId])
+  @@index([shipToCountry, lastCheckedAt])
 }
 
 /// Per-user search log linked to cached product records.
