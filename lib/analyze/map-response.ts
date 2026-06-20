@@ -5,6 +5,8 @@ import type { AnalyzeDebugInfo } from "@/lib/types/debug";
 
 export interface DropshipAnalysisResult {
   originalUrl: string;
+  /** Persisted ScannedProduct.id — drives /scan/[id] permalink. */
+  scanId?: string;
   cache: "HIT" | "MISS";
   storeProduct: StoreProduct;
   dropshipPrediction: DropshipPrediction;
@@ -55,6 +57,7 @@ export function mapAnalyzeResponseToComparison(
       mode: "full",
       comparison: {
         originalUrl: response.originalUrl,
+        scanId: response.scanId,
         cache: response.cache,
         storeProduct: {
           ...storeProduct,
@@ -103,6 +106,7 @@ export function mapAnalyzeResponseToComparison(
     comparison: null,
       dropshipAnalysis: {
       originalUrl: response.originalUrl,
+      scanId: response.scanId,
       cache: response.cache,
       storeProduct,
       dropshipPrediction: response.dropshipPrediction,

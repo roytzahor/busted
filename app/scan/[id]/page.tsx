@@ -1,0 +1,158 @@
+import { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { AnalysisResults } from "@/components/analysis-results";
+import { DropshipAnalysisResults } from "@/components/dropship-analysis-results";
+import { Button } from "@/components/ui/button";
+import { loadScanById } from "@/lib/cache/lookup-by-id";
+import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brand";
+import { ArrowLeft, Search } from "lucide-react";
+
+interface PageProps {
+  params: Promise<{ id: string }>;
+}
+
+/**
+ * Permanent home for a single scan result.
+ *
+ * Server-rendered; data sourced from the cached ScannedProduct row. The OG
+ * card is built dynamically from the same data so social unfurlers can cache
+ * the right preview forever.
+ */
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const loaded = await loadScanById(id);
+  if (!loaded) {
+    return {
+      title: `Scan not found — ${BRAND_NAME}`,
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const cmp = loaded.comparison?.comparison;
+  const title =
+    cmp?.storeProduct.title ?? loaded.response.storeProduct.title ?? "Scan";
+  const savings = cmp?.savingsPercent ?? null;
+  const headline =
+    savings !== null
+      ? `${title} — saved ${savings}% on ${BRAND_NAME}`
+      : `${title} — ${BRAND_NAME}`;
+
+  const ogParams = new URLSearchParams();
+  ogParams.set("title", title.slice(0, 80));
+  if (savings !== null) ogParams.set("savings", String(savings));
+  if (cmp?.storeProduct.priceUsd) {
+    ogParams.set("storeUsd", String(cmp.storeProduct.priceUsd));
+  }
+  if (cmp?.supplierProduct.priceUsd) {
+    ogParams.set("aliUsd", String(cmp.supplierProduct.priceUsd));
+  }
+  if (cmp?.storeProduct.imageUrl) {
+    ogParams.set("image", cmp.storeProduct.imageUrl);
+  }
+
+  return {
+    title: headline,
+    description: `${title} — see the original supplier price and skip the markup.`,
+    openGraph: {
+      title: headline,
+      description: BRAND_TAGLINE,
+      type: "article",
+      images: [
+        {
+          url: `/api/og/scan?${ogParams.toString()}`,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: headline,
+      description: BRAND_TAGLINE,
+      images: [`/api/og/scan?${ogParams.toString()}`],
+    },
+  };
+}
+
+export default async function ScanPermalinkPage({ params }: PageProps) {
+  const { id } = await params;
+  const loaded = await loadScanById(id);
+
+  if (!loaded || !loaded.comparison) {
+    notFound();
+  }
+
+  const { comparison, dropshipAnalysis, debug } = loaded.comparison;
+
+  return (
+    <div className="relative">
+      {/* Ambient blobs — same as homepage so the layout feels familiar. */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      >
+        <div className="absolute -top-60 -right-60 h-[900px] w-[900px] rounded-full bg-primary/10 blur-[160px]" />
+        <div className="absolute -bottom-80 -left-80 h-[750px] w-[750px] rounded-full bg-success/6 blur-[130px]" />
+      </div>
+
+      <div className="mx-auto w-full max-w-5xl px-4 pt-8 pb-16 sm:pt-12">
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="-ml-2 gap-1.5 text-muted-foreground hover:text-foreground"
+          >
+            <Link href="/">
+              <ArrowLeft className="size-4" aria-hidden="true" />
+              Home
+            </Link>
+          </Button>
+          <Button
+            asChild
+            size="sm"
+            className="gap-1.5 bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90"
+          >
+            <Link
+              href={`/?url=${encodeURIComponent(loaded.originalUrl)}&forceRefresh=1`}
+            >
+              <Search className="size-4" aria-hidden="true" />
+              Re-scan
+            </Link>
+          </Button>
+        </div>
+
+        {dropshipAnalysis ? (
+          <div className="mb-4">
+            <DropshipAnalysisResults result={dropshipAnalysis} />
+          </div>
+        ) : null}
+
+        {comparison ? (
+          <AnalysisResults result={comparison} />
+        ) : (
+          <p className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-muted-foreground">
+            Nothing to display for this scan.
+          </p>
+        )}
+
+        <p className="mt-10 text-center text-xs text-muted-foreground/60">
+          Scanned {new Date(loaded.lastScrapedAt).toLocaleString()} ·{" "}
+          <Link
+            href={`/?url=${encodeURIComponent(loaded.originalUrl)}`}
+            className="underline-offset-4 hover:underline"
+          >
+            Open original
+          </Link>
+          {debug ? " · debug captured" : null}
+        </p>
+      </div>
+    </div>
+  );
+}

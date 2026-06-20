@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { track } from "@/lib/track";
 import { Check, Share2 } from "lucide-react";
 import { useState } from "react";
 
@@ -17,6 +18,9 @@ import { useState } from "react";
  */
 
 interface ShareButtonProps {
+  /** Persisted ScannedProduct.id — when present, we share the /scan/<id>
+   *  permalink (proper OG unfurl). Otherwise we fall back to ?url=. */
+  scanId?: string;
   /** The original product URL that was scanned. */
   productUrl: string;
   /** Display title — short, used in the share text and OG card. */
@@ -34,10 +38,10 @@ interface ShareButtonProps {
 
 function buildShareUrl(props: ShareButtonProps): string {
   if (typeof window === "undefined") return "";
-  const base = `${window.location.origin}/?url=${encodeURIComponent(props.productUrl)}`;
-  // Encode OG hints into the URL hash so they don't trigger a re-scan but DO
-  // get picked up by social unfurlers via the meta tags we'll set on /scan.
-  return base;
+  if (props.scanId) {
+    return `${window.location.origin}/scan/${props.scanId}`;
+  }
+  return `${window.location.origin}/?url=${encodeURIComponent(props.productUrl)}`;
 }
 
 function buildOgPreviewUrl(props: ShareButtonProps): string {
@@ -68,6 +72,7 @@ export function ShareButton(props: ShareButtonProps) {
     if (typeof navigator !== "undefined" && "share" in navigator) {
       try {
         await navigator.share({ title: "Busted", text, url });
+        track("share_click", { scanId: props.scanId, props: { target: "native" } });
         return;
       } catch {
         // user dismissed — fall through to copy
@@ -77,6 +82,7 @@ export function ShareButton(props: ShareButtonProps) {
     try {
       await navigator.clipboard.writeText(`${text}\n${url}`);
       setCopied(true);
+      track("share_click", { scanId: props.scanId, props: { target: "clipboard" } });
       setTimeout(() => setCopied(false), 2000);
     } catch {
       /* clipboard blocked — no-op */

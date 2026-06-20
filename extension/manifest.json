@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Busted — Spot the markup",
+  "short_name": "Busted",
+  "description": "See the original supplier price on any dropship product page. Skip the markup.",
+  "version": "0.1.0",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "permissions": ["activeTab", "storage"],
+  "content_scripts": [
+    {
+      "matches": ["http://*/*", "https://*/*"],
+      "exclude_matches": [
+        "*://*.aliexpress.com/*",
+        "*://*.busted.app/*",
+        "*://*.google.com/*",
+        "*://*.youtube.com/*"
+      ],
+      "css": ["content.css"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["icons/icon-48.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

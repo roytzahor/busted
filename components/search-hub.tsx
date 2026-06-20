@@ -20,6 +20,7 @@ import type { DropshipAnalysisResult } from "@/lib/analyze/map-response";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
 import { DEMO_EXAMPLES } from "@/lib/examples";
 import { appendScan } from "@/lib/scan-history";
+import { track } from "@/lib/track";
 import { TrustCounter } from "@/components/trust-counter";
 import { ValuePropFaq } from "@/components/value-prop-faq";
 import {
@@ -120,6 +121,8 @@ export function SearchHub() {
     setLiveStages(new Map()); // reset stage view for new scan
     setPhase("analyzing");
     setProgress({ step: "Checking cache…", progress: 0 });
+    const scanStartedAt = performance.now();
+    track("scan_start", { props: { url: targetUrl, source: overrideUrl ? "chip" : "manual" } });
     try {
       const result = await analyzeProductUrl(targetUrl, {
         debug: true,
@@ -136,6 +139,18 @@ export function SearchHub() {
       setDropshipResult(result.dropshipAnalysis);
       setDebugInfo(result.debug);
       setPhase("complete");
+
+      track("scan_complete", {
+        scanId:
+          result.comparison?.scanId ?? result.dropshipAnalysis?.scanId,
+        props: {
+          savingsPercent: result.comparison?.savingsPercent ?? null,
+          fromCache:
+            result.comparison?.cache === "HIT" ||
+            result.dropshipAnalysis?.cache === "HIT",
+          durationMs: Math.round(performance.now() - scanStartedAt),
+        },
+      });
 
       // Append to local scan history for the Recent drawer.
       try {
@@ -163,11 +178,12 @@ export function SearchHub() {
       }
     } catch (err) {
       const errorWithDebug = err as Error & { debug?: AnalyzeDebugInfo };
-      setAnalysisError(
-        err instanceof Error ? err.message : "Analysis failed. Please try again.",
-      );
+      const message =
+        err instanceof Error ? err.message : "Analysis failed. Please try again.";
+      setAnalysisError(message);
       if (errorWithDebug.debug) setDebugInfo(errorWithDebug.debug);
       setPhase("error");
+      track("scan_error", { props: { url: targetUrl, message: message.slice(0, 200) } });
     }
   }, [url]);
 
@@ -191,6 +207,7 @@ export function SearchHub() {
       const text = (await navigator.clipboard.readText()).trim();
       if (!text) return;
       handleUrlChange(text);
+      track("paste_click");
     } catch {
       /* permission denied — no-op */
     }
@@ -380,7 +397,10 @@ export function SearchHub() {
                 <button
                   key={ex.url}
                   type="button"
-                  onClick={() => void handleAnalyze(ex.url)}
+                  onClick={() => {
+                    track("example_click", { props: { url: ex.url, label: ex.label } });
+                    void handleAnalyze(ex.url);
+                  }}
                   disabled={isAnalyzing}
                   aria-label={`Try the ${ex.label} example`}
                   className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/8 disabled:opacity-40 disabled:hover:translate-y-0"

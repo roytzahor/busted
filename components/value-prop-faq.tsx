@@ -1,6 +1,7 @@
 "use client";
 
 import { FAQ_ITEMS } from "@/lib/brand";
+import { track } from "@/lib/track";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import { useState } from "react";
@@ -34,7 +35,13 @@ export function ValuePropFaq({ className }: { className?: string }) {
             >
               <button
                 type="button"
-                onClick={() => setOpenIndex(open ? null : idx)}
+                onClick={() => {
+                  const willOpen = !open;
+                  setOpenIndex(open ? null : idx);
+                  if (willOpen) {
+                    track("faq_open", { props: { question: item.question } });
+                  }
+                }}
                 aria-expanded={open}
                 aria-controls={`faq-panel-${idx}`}
                 className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-white/[0.02]"

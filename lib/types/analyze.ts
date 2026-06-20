@@ -40,6 +40,9 @@ export type SupplierMatchQuality = "high" | "medium" | "low" | "none";
 interface AnalyzeSuccessBase {
   status: "success";
   originalUrl: string;
+  /** Persisted ScannedProduct.id — present once the persist stage has run.
+   *  Drives /scan/[id] permalinks, share targets, and click tracking. */
+  scanId?: string;
   aliexpressUrl: string | null;
   aliexpressData: AliExpressProductData | null;
   supplierStatus: SupplierStatus;

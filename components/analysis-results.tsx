@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ShareButton } from "@/components/share-button";
+import { trackAffiliateClick } from "@/lib/clicks";
 import type { ProductComparisonResult } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import {
@@ -221,6 +222,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <ShareButton
+              scanId={result.scanId}
               productUrl={result.originalUrl}
               title={storeProduct.title}
               savingsPercent={savingsPercent}
@@ -238,6 +240,18 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                 href={supplierProduct.affiliateUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() =>
+                  trackAffiliateClick({
+                    scanId: result.scanId,
+                    targetUrl: supplierProduct.affiliateUrl,
+                  })
+                }
+                onAuxClick={() =>
+                  trackAffiliateClick({
+                    scanId: result.scanId,
+                    targetUrl: supplierProduct.affiliateUrl,
+                  })
+                }
               >
                 Buy Original on AliExpress &amp; Save
                 <ExternalLink className="ml-1.5 size-4" aria-hidden="true" />

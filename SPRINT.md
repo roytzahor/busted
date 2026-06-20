@@ -880,6 +880,213 @@ half-finished sentences.
 
 ---
 
+## Sprint 11 — Measurement, distribution, durability (this week)
+
+**Started:** 2026-06-20  
+**Theme:** stop building blind. Wire telemetry, capture clicks, claim search,
+catch errors, plant the seed of the real distribution channel.
+
+**Why this sprint, why now.** Sprint 10 gave us shareable surface but every
+result vanishes on refresh, we have no analytics to measure what works, no
+record of affiliate clicks (so no business attribution), no SEO presence,
+no error visibility, and no path off the website itself. Sprint 11 fixes the
+measurement layer (so future bets are informed) and plants the seed of the
+extension (the actual scalable distribution channel).
+
+**Goal metrics:**
+- 100% of completed scans now write a telemetry row
+- 100% of affiliate clicks pass through the tracked redirect
+- Sitemap submitted to Search Console with all permalink URLs
+- Client errors visible in the DB within 60s of occurring
+- Extension installable locally in unpacked mode
+
+### Stage 25 — Scan permalinks `/scan/[id]` ✅
+
+**Why:** Today every result lives at `/?url=...` and re-runs the pipeline on
+visit. A real permalink (`/scan/<id>`) lets us cache the unfurl card forever,
+makes WhatsApp/Twitter previews actually work, and gives the SEO crawler real
+indexable pages.
+
+**Impact:** Sharing actually compounds. Every shared scan becomes a permanent
+landing page with the right OG card.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `app/scan/[id]/page.tsx` (new) | Server component; looks up ScannedProduct by id; passes data to AnalysisResults |
+| `app/scan/[id]/loading.tsx` (new) | Skeleton |
+| `lib/cache/lookup-by-id.ts` (new) | `getScannedProductById(id)` helper |
+| `components/share-button.tsx` | Prefer permalink when `scanId` is known |
+| `components/analysis-results.tsx` | Plumb scanId through to ShareButton |
+| `app/api/analyze/route.ts` | Surface the persisted ScannedProduct.id in the response so the client can build the permalink |
+
+**Acceptance:**
+- [ ] `GET /scan/<id>` returns 200 with the rendered comparison
+- [ ] `generateMetadata` builds `openGraph.images = [/api/og/scan?...]` with real data
+- [ ] WhatsApp + Twitter unfurl shows the OG card
+- [ ] 404 page when id doesn't exist
+- [ ] No new prisma migration required (reuses ScannedProduct)
+
+---
+
+### Stage 26 — First-party analytics ✅
+
+**Why:** We don't measure anything. Bounce rate, scan completion rate, click-
+through to affiliate, time-on-page — all opaque. We can't optimize what we
+don't see. Off-the-shelf analytics (GA, Plausible) work but add a network
+dep and a privacy-policy obligation; a first-party endpoint is cheaper and
+keeps the data ours.
+
+**Impact:** Real funnel data within a week. Every Sprint 12+ decision is
+grounded in evidence.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `prisma/schema.prisma` | Add `TelemetryEvent` model |
+| `app/api/track/route.ts` (new) | POST endpoint; validates event name; writes row |
+| `lib/track.ts` (new) | Tiny client tracker; sessionId via sessionStorage; sendBeacon when available |
+| `components/search-hub.tsx` | Fire scan_start / scan_complete / example_click / history_click |
+| `components/share-button.tsx` | Fire share_click |
+| `app/layout.tsx` | Fire page_view on mount (client component wrapper) |
+
+**Event taxonomy:**
+```
+page_view       { path }
+scan_start      { url, source: "manual"|"example"|"history"|"share_target" }
+scan_complete   { url, savingsPercent, fromCache, durationMs }
+scan_error      { url, errorCode }
+example_click   { url }
+history_click   { url }
+share_click     { scanId, target: "native"|"clipboard" }
+faq_open        { question }
+```
+
+**Acceptance:**
+- [ ] Schema added; user runs migrate deploy
+- [ ] sessionId persists for the session, no PII, no IP
+- [ ] sendBeacon used on unload so navigation events survive
+- [ ] Row count in TelemetryEvent grows as expected during a manual scan
+
+---
+
+### Stage 27 — Affiliate click tracking ✅
+
+**Why:** We currently link straight to the AliExpress affiliate URL. We have
+no idea how many people click. Without the click event we can't compute CTR
+or attribute revenue when the Admitad postback eventually lands.
+
+**Impact:** Foundation of revenue attribution. Required for any future "how
+much money flowed through Busted?" answer.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `prisma/schema.prisma` | Add `AffiliateClick` model (scanId, target, createdAt) |
+| `app/api/clicks/route.ts` (new) | POST endpoint that logs a click given { scanId, target } |
+| `components/analysis-results.tsx` | onClick on the affiliate CTA fires a click POST (no await, fire-and-forget) |
+
+**Note:** the CTA still navigates directly to AliExpress — we don't insert
+ourselves as a redirect because that adds latency and breaks "right-click,
+open in new tab". The tracker is a beacon POST in parallel.
+
+**Acceptance:**
+- [ ] Schema added
+- [ ] Click → AffiliateClick row appears
+- [ ] No latency hit on the CTA
+- [ ] Works under right-click → open-in-new-tab (Pointer events both fire)
+
+---
+
+### Stage 28 — SEO foundations ✅
+
+**Why:** Organic search is the cheapest growth channel for an
+ecommerce-adjacent product. Today we have no sitemap, no robots.txt, no
+canonical, no organization markup. A 30-minute investment captures every
+future scan permalink in Google's index.
+
+**Impact:** Compounding organic traffic. Each scan permalink becomes a long-
+tail landing page for "X dropship" searches.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `app/sitemap.ts` (new) | Metadata route; includes `/`, `/monitoring` (excluded), and recent scan permalinks (last 1000) |
+| `app/robots.ts` (new) | Allow all; disallow `/api`, `/dev-monitor`, `/monitoring`; reference sitemap |
+| `app/layout.tsx` | Add JSON-LD Organization schema; default OG image; canonical link generator |
+| `public/og-default.png` (new) | Static 1200×630 fallback OG card |
+
+**Acceptance:**
+- [ ] `GET /sitemap.xml` returns valid XML
+- [ ] `GET /robots.txt` references the sitemap
+- [ ] View source on `/` shows `<script type="application/ld+json">` with Organization
+- [ ] Default OG card renders on every page that doesn't set its own
+
+---
+
+### Stage 29 — Error boundary + client error capture ✅
+
+**Why:** A JS exception in production is invisible today. The user sees
+white screen; we hear nothing. A friendly error fallback + a `/api/errors`
+endpoint that captures `window.onerror` and `unhandledrejection` gives us
+visibility without a paid SaaS.
+
+**Impact:** Errors are caught and surfaced; no more silent failures.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `app/error.tsx` (new) | Friendly fallback with "Try again" + auto-report |
+| `app/global-error.tsx` (new) | Same idea, root level |
+| `prisma/schema.prisma` | Add `ClientError` model (message, stack, url, ua, createdAt) |
+| `app/api/errors/route.ts` (new) | POST endpoint, rate-limited per session |
+| `lib/error-reporter.ts` (new) | window.onerror + unhandledrejection → /api/errors via beacon |
+| `app/layout.tsx` | Mount reporter via a small client component |
+
+**Acceptance:**
+- [ ] `throw new Error("test")` in a component shows the friendly page, not white
+- [ ] ClientError row appears within 60s
+- [ ] Stack traces are truncated to 4 KB to avoid bloat
+- [ ] Rate-limited so a runaway error doesn't fill the table
+
+---
+
+### Stage 30 — Chrome extension scaffold (MV3) ✅
+
+**Why:** Every successful product in this category — Honey, Capital One
+Shopping, Rakuten, Karma — is fundamentally a browser extension. Users don't
+visit a "compare prices" site every time they shop; they want the comparison
+to appear *while* they shop. This sprint just plants the seed: Manifest V3
+shell + a content script that detects Shopify product pages and shows a
+floating "Bust this" pill.
+
+**Impact:** Long-arc bet. Sprint 12+ will grow this into an inline price
+overlay and one-click scan. Today: an installable proof.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `extension/manifest.json` (new) | MV3 manifest; declares content script for `<all_urls>`, host_permissions |
+| `extension/content.ts` (new) | Detects `application/ld+json` Product schema; injects `.busted-pill` |
+| `extension/popup.html` (new) | Minimal popup with "Open Busted" + "Bust this page" |
+| `extension/icons/` (new) | 16/48/128 icons (reuse `/icon.png`) |
+| `extension/README.md` (new) | How to install unpacked + roadmap |
+| `extension/styles.css` (new) | Pill styles, dark-mode safe, z-index 2147483647 |
+
+**Acceptance:**
+- [ ] `chrome://extensions` → Load unpacked → builds without manifest errors
+- [ ] Visiting any Shopify product page shows a floating "Bust this" pill bottom-right
+- [ ] Clicking the pill opens `https://busted.app/?url=<current_url>&utm_source=ext`
+- [ ] No console errors on non-product pages
+
+---
+
 ## Completed ✅
 
 | Stage | Description | Commit |

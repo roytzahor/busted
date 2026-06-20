@@ -8,6 +8,7 @@ import {
   getHistory,
   type ScanHistoryEntry,
 } from "@/lib/scan-history";
+import { track } from "@/lib/track";
 import { cn } from "@/lib/utils";
 import { Clock, History, TrendingDown, X } from "lucide-react";
 import Image from "next/image";
@@ -66,6 +67,7 @@ export function RecentScans() {
 
   const handleSelect = (url: string) => {
     setOpen(false);
+    track("history_click", { props: { url } });
     router.push(`/?url=${encodeURIComponent(url)}`);
   };
 

@@ -27,6 +27,8 @@ export type SupplierMatchQuality = "high" | "medium" | "low" | "none";
 
 export interface ProductComparisonResult {
   originalUrl: string;
+  /** Persisted ScannedProduct.id — drives /scan/[id] permalink + click tracking. */
+  scanId?: string;
   cache: "HIT" | "MISS";
   storeProduct: StoreProduct;
   supplierProduct: SupplierProduct;

@@ -150,3 +150,66 @@ model SearchHistory {
   @@index([userId, searchedAt])
   @@index([scannedProductId])
 }
+
+/// First-party analytics — Sprint 11 Stage 26.
+///
+/// Captures product events with a session-scoped anonymous ID. No PII, no IP,
+/// no email. Lets us answer: bounce rate, scan completion, share/affiliate
+/// CTR, example-chip effectiveness — without depending on Google Analytics.
+model TelemetryEvent {
+  id        String   @id @default(cuid())
+  /// Event name (e.g. "page_view", "scan_complete"). Lowercase snake_case.
+  name      String
+  /// Free-form event properties. Keys must not contain PII. Stack with care.
+  props     Json?
+  /// Anonymous per-session UUID (sessionStorage); rotates on close.
+  sessionId String
+  /// Optional persisted ScannedProduct.id when the event refers to a scan.
+  scanId    String?
+  /// Source surface ("web" today; "extension" / "ios" later).
+  surface   String   @default("web")
+  createdAt DateTime @default(now())
+
+  @@index([name, createdAt])
+  @@index([sessionId, createdAt])
+  @@index([scanId])
+}
+
+/// Affiliate-click outbound event — Sprint 11 Stage 27.
+///
+/// One row per "user clicked the Buy on AliExpress CTA". When the Admitad
+/// webhook lands in a future sprint we'll join this to actual revenue.
+model AffiliateClick {
+  id         String   @id @default(cuid())
+  scanId     String?
+  /// Tracking surface ("web", "extension").
+  surface    String   @default("web")
+  /// Anonymous session UUID — same one TelemetryEvent uses.
+  sessionId  String?
+  /// Destination domain at click time (sanity-check that we sent to AE).
+  targetHost String?
+  createdAt  DateTime @default(now())
+
+  @@index([scanId])
+  @@index([createdAt])
+}
+
+/// Client-side error capture — Sprint 11 Stage 29.
+///
+/// Holds at most one row per (sessionId, errorHash, hour) so a runaway
+/// exception loop can't flood the table.
+model ClientError {
+  id        String   @id @default(cuid())
+  message   String   @db.Text
+  /// SHA-256 of (message + first stack line) — used for de-dupe.
+  errorHash String
+  /// Truncated stack trace (4 KB cap).
+  stack     String?  @db.Text
+  url       String
+  userAgent String?  @db.Text
+  sessionId String?
+  createdAt DateTime @default(now())
+
+  @@index([errorHash, createdAt])
+  @@index([createdAt])
+}
