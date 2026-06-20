@@ -37,6 +37,7 @@ import {
 } from "@/lib/aliexpress/category-map";
 import { resolveLocaleFromSourceUrl } from "@/lib/aliexpress/locale";
 import {
+  isPreprocessEnabled,
   PreprocessError,
   preprocessForSmartMatch,
 } from "@/lib/ai/preprocess-image";
@@ -55,6 +56,16 @@ import {
 } from "@/lib/aliexpress/reputation";
 
 const TEXT_SCORE_SKIP_IMAGE_THRESHOLD = 0.85;
+
+/**
+ * Sprint 12 — conditional preprocess threshold.
+ *
+ * When `PREPROCESS_ENABLED=true`, `preprocessForSmartMatch()` only fires when
+ * the best text+raw-image score after initial scoring is below this value.
+ * Above 0.6 we already have a confident-enough match and spending $0.039 on
+ * image generation produces no meaningful lift.
+ */
+const PREPROCESS_TRIGGER_THRESHOLD = 0.6;
 
 /**
  * Maps industrial material tokens (case-insensitive substring match) to
@@ -100,13 +111,52 @@ async function searchCandidates(
   provider: "aliexpress_api" | "firecrawl_scrape",
   opts: KeywordSearchOptions = {},
 ): Promise<AliExpressProductCandidate[]> {
-  try {
-    return provider === "aliexpress_api"
-      ? await searchAliExpressProducts(keywords, opts)
-      : await searchAliExpressViaScrape(keywords);
-  } catch {
-    return [];
+  if (provider !== "aliexpress_api") {
+    try {
+      return await searchAliExpressViaScrape(keywords);
+    } catch {
+      return [];
+    }
   }
+
+  // The AliExpress affiliate API returns empty or errors when category IDs or
+  // price-band params aren't supported by the caller's API tier. We try in
+  // progressive fallback order to keep the keyword search useful even when
+  // category/price narrowing isn't available:
+  //   1. Full opts (category IDs + price band + sort)
+  //   2. Without price band (category IDs + sort only)
+  //   3. Without category IDs (base search — always works)
+  const attempts: KeywordSearchOptions[] = [opts];
+
+  const hasPriceBand =
+    opts.minSalePrice !== undefined || opts.maxSalePrice !== undefined;
+  const hasCategoryIds = opts.categoryIds !== undefined;
+
+  // Build progressive fallback chain: drop constraints one tier at a time.
+  // Tier 2: no price band (keep categoryIds + sort)
+  // Tier 3: no categoryIds + no price band (keep sort)
+  // Tier 4: bare locale search (drop everything except geo)
+  if (hasPriceBand || hasCategoryIds) {
+    const { minSalePrice: _a, maxSalePrice: _b, ...withoutPrice } = opts;
+    if (hasPriceBand) attempts.push(withoutPrice);
+
+    const { categoryIds: _c, minSalePrice: _d, maxSalePrice: _e, ...withoutCat } = opts;
+    if (hasCategoryIds) attempts.push(withoutCat);
+
+    // Bare locale — always works, no narrowing.
+    const { categoryIds: _f, minSalePrice: _g, maxSalePrice: _h, sortStrategy: _s, ...bareOpts } = opts;
+    attempts.push(bareOpts);
+  }
+
+  for (const attemptOpts of attempts) {
+    try {
+      const results = await searchAliExpressProducts(keywords, attemptOpts);
+      if (results.length > 0) return results;
+    } catch {
+      // swallow and try next fallback
+    }
+  }
+  return [];
 }
 
 function mergeAndDeduplicateCandidates(
@@ -294,23 +344,12 @@ export async function findAliExpressSupplier(params: {
     if (categoryResults.length > 0) keywordsUsed.push(categoryKeywords);
   }
 
-  // Phase 5: smartmatch arm — image-based AliExpress search.
-  // Best-effort: requires API tier access, returns null on any failure.
-  // Worth trying because it catches visually-similar products that text
-  // keywords miss entirely. Only attempted when API is configured AND we
-  // have a hostable source image URL.
+  // ── Phase 5A: SmartMatch raw-URL arm (always, free) ────────────────────────
+  // We always dispatch SmartMatch with the raw source image URL — no Gemini
+  // preprocessing, no cost. If the match is already confident (score ≥ 0.6
+  // after text scoring below) we skip the expensive preprocess entirely.
   //
-  // Phase 7 upgrade: we run the source image through Gemini Vision
-  // preprocess first (tight crop, white BG, brand-text inpaint) and ship
-  // the cleaned bytes via `image_base64`. This removes the brand-wordmark
-  // anchor that pollutes raw consumer photos and the white-BG normalisation
-  // aligns our hash to the catalog distribution.
-  //
-  // Stage 7 tracking: capture preprocess + smartmatch outcome for A/B analysis.
-  // These flow into searchMeta so they're visible in debug output and
-  // persisted in the stage cache for offline analysis.
-
-  // Tracking state — initialised to "skipped" and overwritten if we enter the block.
+  // Tracking state — initialised to "skipped" and overwritten below.
   let preprocessAttempted = false;
   let preprocessCacheHit = false;
   let preprocessDurationMs = 0;
@@ -318,96 +357,32 @@ export async function findAliExpressSupplier(params: {
   let preprocessLightPromptUsed: boolean | undefined;
   let smartmatchArm: SmartMatchOutcome["armUsed"] | "skipped" = "skipped";
   let smartmatchCandidateCount = 0;
-  // Vision analysis signals from the preprocess round-trip.
   let preprocessOcrTraces: string[] = [];
   let preprocessMaterialTokens: string[] = [];
   let preprocessTechnicalSpecs: string[] = [];
 
-  if (
-    provider === "aliexpress_api" &&
-    params.attributes.mainImageUrl &&
-    candidates.length < 30
-  ) {
-    const mainImageUrl = params.attributes.mainImageUrl;
-    const categoryForPrompt =
-      categoryVocab?.vertical ??
-      params.identity?.category ??
-      params.productCategory ??
-      "product";
+  const mainImageUrl = params.attributes.mainImageUrl;
+  const categoryForPrompt =
+    categoryVocab?.vertical ??
+    params.identity?.category ??
+    params.productCategory ??
+    "product";
 
-    let cleanedBase64: string | undefined;
-    let cleanedFormat: "jpg" | "png" | "webp" | undefined;
-
-    preprocessAttempted = true;
-    try {
-      const cleaned = await preprocessForSmartMatch(mainImageUrl, categoryForPrompt);
-      cleanedBase64 = cleaned.base64;
-      cleanedFormat = cleaned.format;
-      preprocessCacheHit = cleaned.cacheHit;
-      preprocessDurationMs = cleaned.durationMs;
-      preprocessQualityScore = cleaned.qualityScore;
-      preprocessLightPromptUsed = cleaned.lightPromptUsed;
-      preprocessOcrTraces = cleaned.ocrTraces;
-      preprocessMaterialTokens = cleaned.materialTokens;
-      preprocessTechnicalSpecs = cleaned.technicalSpecs;
-    } catch (err) {
-      // Preprocess is best-effort — keep going with the raw URL.
-      if (err instanceof PreprocessError) {
-        console.warn(
-          `[smartmatch] preprocess skipped (${err.code}): ${err.message}`,
-        );
-      } else {
-        console.warn("[smartmatch] preprocess failed:", err);
-      }
-    }
-
-    // ── OCR model-number arm ───────────────────────────────────────────────
-    // Model/serial numbers extracted from the product image yield near-exact
-    // factory matches. Run each as an independent keyword search before the
-    // image-based SmartMatch arm so its candidates enter the pool at highest
-    // priority. Cap at 2 traces to avoid burning API quota on noise.
-    if (preprocessOcrTraces.length > 0) {
-      for (const trace of preprocessOcrTraces.slice(0, 2)) {
-        const ocrResults = await searchCandidates(trace, provider, keywordOpts);
-        if (ocrResults.length > 0) {
-          candidates = mergeAndDeduplicateCandidates(candidates, ocrResults);
-          keywordsUsed.push(`ocr:${trace}`);
-        }
-      }
-    }
-
-    // ── Material/spec Text Arm B1 ──────────────────────────────────────────
-    // Combine material tokens + technical specs into a single query. These are
-    // precise industrial terms that the product title rarely contains — they
-    // dramatically narrow the catalog to factory-grade listings.
-    const specTerms = [
-      ...preprocessMaterialTokens.slice(0, 2),
-      ...preprocessTechnicalSpecs.slice(0, 2),
-    ].filter((t) => t.trim().length > 2);
-    if (specTerms.length > 0) {
-      const specQuery = specTerms.join(" ");
-      const specResults = await searchCandidates(specQuery, provider, keywordOpts);
-      if (specResults.length > 0) {
-        candidates = mergeAndDeduplicateCandidates(candidates, specResults);
-        keywordsUsed.push(`specs:${specQuery}`);
-      }
-    }
-
-    const smartOutcome = await searchAliExpressBySmartMatch(mainImageUrl, {
-      cleanedBase64,
-      cleanedFormat,
+  if (provider === "aliexpress_api" && mainImageUrl) {
+    const rawSmartOutcome = await searchAliExpressBySmartMatch(mainImageUrl, {
+      // No cleanedBase64 — raw URL arm only at this stage.
       shipToCountry: locale.shipToCountry,
       targetCurrency: locale.targetCurrency,
       categoryIds: categoryVocab?.categoryIds.join(","),
     });
 
-    smartmatchArm = smartOutcome.armUsed ?? null;
-    smartmatchCandidateCount = smartOutcome.candidates?.length ?? 0;
+    smartmatchArm = rawSmartOutcome.armUsed ?? null;
+    smartmatchCandidateCount = rawSmartOutcome.candidates?.length ?? 0;
 
-    if (smartOutcome.candidates && smartOutcome.candidates.length > 0) {
-      candidates = mergeAndDeduplicateCandidates(candidates, smartOutcome.candidates);
+    if (rawSmartOutcome.candidates && rawSmartOutcome.candidates.length > 0) {
+      candidates = mergeAndDeduplicateCandidates(candidates, rawSmartOutcome.candidates);
       keywordsUsed.push(
-        `smartmatch:image (arm:${smartOutcome.armUsed ?? "none"}, ${smartOutcome.candidates.length} candidates)`,
+        `smartmatch:url (${rawSmartOutcome.candidates.length} candidates)`,
       );
     }
   }
@@ -500,6 +475,99 @@ export async function findAliExpressSupplier(params: {
       newScored.sort((a, b) => b.confidence.score - a.confidence.score);
       scored.splice(0, scored.length, ...newScored);
     }
+  }
+
+  // ── Phase 5B: Conditional preprocess — Sprint 12 cost gate ───────────────
+  // Only fires when:
+  //   1. PREPROCESS_ENABLED=true  (off by default — keeps cold scan at $0.0015)
+  //   2. Best score after text+raw-image scoring < PREPROCESS_TRIGGER_THRESHOLD
+  //   3. We have a source image URL and are using the AE API provider
+  //
+  // When triggered, `preprocessForSmartMatch()` sends the source image to
+  // Gemini for a tight crop + white-BG + brand-text inpaint (cost: ~$0.039).
+  // The cleaned bytes feed a second SmartMatch call via `image_base64` which
+  // yields significantly better recall on visually similar factory listings.
+  // OCR traces and material tokens from the preprocess round-trip also seed
+  // additional keyword searches before we re-score.
+  if (
+    isPreprocessEnabled() &&
+    provider === "aliexpress_api" &&
+    mainImageUrl &&
+    (scored[0]?.confidence.score ?? 0) < PREPROCESS_TRIGGER_THRESHOLD
+  ) {
+    let cleanedBase64: string | undefined;
+    let cleanedFormat: "jpg" | "png" | "webp" | undefined;
+
+    preprocessAttempted = true;
+    try {
+      const cleaned = await preprocessForSmartMatch(mainImageUrl, categoryForPrompt);
+      cleanedBase64 = cleaned.base64;
+      cleanedFormat = cleaned.format;
+      preprocessCacheHit = cleaned.cacheHit;
+      preprocessDurationMs = cleaned.durationMs;
+      preprocessQualityScore = cleaned.qualityScore;
+      preprocessLightPromptUsed = cleaned.lightPromptUsed;
+      preprocessOcrTraces = cleaned.ocrTraces;
+      preprocessMaterialTokens = cleaned.materialTokens;
+      preprocessTechnicalSpecs = cleaned.technicalSpecs;
+    } catch (err) {
+      if (err instanceof PreprocessError) {
+        console.warn(`[smartmatch] preprocess skipped (${err.code}): ${err.message}`);
+      } else {
+        console.warn("[smartmatch] preprocess failed:", err);
+      }
+    }
+
+    // OCR model-number arm — near-exact factory hits when a model/serial is visible.
+    for (const trace of preprocessOcrTraces.slice(0, 2)) {
+      const ocrResults = await searchCandidates(trace, provider, keywordOpts);
+      if (ocrResults.length > 0) {
+        candidates = mergeAndDeduplicateCandidates(candidates, ocrResults);
+        keywordsUsed.push(`ocr:${trace}`);
+      }
+    }
+
+    // Material/spec text arm — industrial terms narrow the pool to factory-grade listings.
+    const specTerms = [
+      ...preprocessMaterialTokens.slice(0, 2),
+      ...preprocessTechnicalSpecs.slice(0, 2),
+    ].filter((t) => t.trim().length > 2);
+    if (specTerms.length > 0) {
+      const specQuery = specTerms.join(" ");
+      const specResults = await searchCandidates(specQuery, provider, keywordOpts);
+      if (specResults.length > 0) {
+        candidates = mergeAndDeduplicateCandidates(candidates, specResults);
+        keywordsUsed.push(`specs:${specQuery}`);
+      }
+    }
+
+    // SmartMatch base64 arm — uses the cleaned image bytes for higher precision.
+    if (cleanedBase64) {
+      const base64Outcome = await searchAliExpressBySmartMatch(mainImageUrl, {
+        cleanedBase64,
+        cleanedFormat,
+        shipToCountry: locale.shipToCountry,
+        targetCurrency: locale.targetCurrency,
+        categoryIds: categoryVocab?.categoryIds.join(","),
+      });
+
+      smartmatchArm = base64Outcome.armUsed ?? smartmatchArm;
+      if (base64Outcome.candidates && base64Outcome.candidates.length > 0) {
+        smartmatchCandidateCount += base64Outcome.candidates.length;
+        candidates = mergeAndDeduplicateCandidates(candidates, base64Outcome.candidates);
+        keywordsUsed.push(
+          `smartmatch:base64 (arm:base64, ${base64Outcome.candidates.length} candidates)`,
+        );
+      }
+    }
+
+    // Re-score the now-richer candidate pool.
+    const reScored = candidates.slice(0, TOP_N).map((candidate) => ({
+      candidate,
+      confidence: computeMatchConfidence(params.attributes, params.storePriceUsd, candidate),
+    }));
+    reScored.sort((a, b) => b.confidence.score - a.confidence.score);
+    scored.splice(0, scored.length, ...reScored);
   }
 
   // Phase 5 Stage 2 — Cheap batch image rerank (single Gemini call).

@@ -20,16 +20,17 @@ async function main() {
 
   const result = await findAliExpressSupplier({
     attributes: {
-      title: "Men's Wool Lounger Comfortable Slip-On Shoes",
+      title: "Aromatherapy Shower Steamers – Lavender Eucalyptus Set of 6",
       description:
-        "Soft, breathable, machine-washable wool slip-on shoes for everyday wear.",
-      mainImageUrl: null,
-      sourceUrl: "https://www.allbirds.com/products/mens-wool-loungers",
+        "Fizzing shower tablets with essential oils. Place on shower floor; steam activates the scent. Set of 6, various scents.",
+      mainImageUrl:
+        "https://images.unsplash.com/photo-1598440947619-2c35fc9aa908?w=600",
+      sourceUrl: "https://www.examplestore.com/products/shower-steamers",
       provider: "crawlbase",
     },
-    storePriceUsd: 100,
-    productCategory: "shoes",
-    aiKeywords: ["wool slippers men", "wool loungers shoes", "merino wool slip-on"],
+    storePriceUsd: 28,
+    productCategory: "shower steamer",
+    aiKeywords: ["shower steamer aromatherapy tablets", "eucalyptus shower bomb tablets"],
   });
 
   console.log(`\nMatch confidence: ${(result.matchConfidence * 100).toFixed(0)}% (${result.matchQuality})`);

@@ -32,9 +32,25 @@ import {
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 
-const DEFAULT_IMAGE_MODEL = "gemini-3-flash-image";
+// gemini-3-flash-image was the original default but returns 404 on v1beta.
+// gemini-2.5-flash-image is the current stable image-generation model.
+const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image";
 /** Fast vision model used for cleanup scoring (text output, not image output). */
 const DEFAULT_VISION_MODEL = "gemini-2.0-flash";
+
+/**
+ * Sprint 12 cost gate — Sprint 12 Stage 31.
+ *
+ * When false (the default), `preprocessForSmartMatch()` is skipped entirely.
+ * The supplier-find pipeline still runs SmartMatch using the raw source image
+ * URL (the "url arm"), which costs nothing. Preprocess is only enabled when
+ * `PREPROCESS_ENABLED=true` AND the initial text+image match score is below
+ * the trigger threshold (0.6). This keeps cold-scan cost at ~$0.0015 instead
+ * of ~$0.041 for the typical case.
+ */
+export function isPreprocessEnabled(): boolean {
+  return process.env.PREPROCESS_ENABLED === "true";
+}
 
 const FETCH_TIMEOUT_MS = 8_000;
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
