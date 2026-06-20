@@ -45,16 +45,16 @@ export interface AIClientConfig {
 }
 
 const DEFAULT_MODELS: Record<AIProvider, string> = {
-  google: "gemini-2.0-flash",
+  google: "gemini-2.5-flash",
   anthropic: "claude-3-5-haiku-20241022",
   openai: "gpt-4o-mini",
 };
 
-/** Ordered fallback chain — gemini-2.0-flash primary (1500 req/day free tier vs 20 for 3.5). */
+/** Ordered fallback chain — gemini-2.0-flash was retired; 2.5-flash is current stable. */
 export const GOOGLE_MODEL_FALLBACK_CHAIN = [
-  "gemini-2.0-flash",
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
   "gemini-2.5-flash-lite",
-  "gemini-2.0-flash-lite",
 ] as const;
 
 function resolveProvider(config: AIClientConfig): AIProvider {
