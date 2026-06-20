@@ -364,6 +364,162 @@ export const CATEGORY_MAP: Record<string, CategoryVocabEntry> = {
       "ceiling is tighter (1/1.3) because legitimate brand apparel and " +
       "white-label apparel overlap in the AE catalog above that band.",
   },
+
+  // ── Sprint 12 Stage 34: five new verticals ───────────────────────────────
+
+  "shoes": {
+    vertical: "shoes",
+    parentFamily: "Shoes",
+    // 200000301 = Men's Shoes (catch-all); 200002032 = Women's Casual Shoes;
+    // 200002033 = Athletic / Running Shoes.
+    categoryIds: ["200000301", "200002032", "200002033"],
+    queries: [
+      "men's casual loafers wool",
+      "wool slip-on shoes men",
+      "merino wool everyday shoes",
+      "lounger walking shoes",
+    ],
+    negativeKeywords: [
+      "slipper", "house shoe", "indoor slipper",
+      "shoelace", "lace only", "insole", "insert", "shoe horn",
+      "shoe rack", "shoe box", "shoe cleaner", "polish",
+      "kids", "child", "baby", "infant", "doll",
+      "size guide", "shoe model", "decoration",
+      "replica", "1:1 quality", "AAA quality",
+      "wholesale lot", "carton of",
+    ],
+    priceFloorRatio: 1 / 20, // $100 shoes → $5 floor
+    priceCeilRatio: 1 / 1.5, // $100 shoes → $66 ceiling (real brand premium tighter)
+    defaultSort: "LAST_VOLUME_DESC",
+    verificationProductId: undefined,
+    verifiedAt: "2026-06-20",
+    notes:
+      "Shoes are a high-volume dropship category but pricing varies wildly " +
+      "by sub-segment. We keep the price ceiling tight to filter out cheap " +
+      "sandals when the source is a $100 casual.",
+  },
+
+  "water bottle": {
+    vertical: "water bottle",
+    parentFamily: "Home & Garden",
+    // 200001074 = Water Bottles; 200001081 = Vacuum Flasks & Thermoses.
+    categoryIds: ["200001074", "200001081"],
+    queries: [
+      "stainless steel water bottle insulated",
+      "vacuum thermos water bottle 1L",
+      "leakproof gym water bottle",
+      "double wall tumbler water bottle",
+    ],
+    negativeKeywords: [
+      "wine bottle", "spray bottle", "perfume bottle", "shampoo bottle",
+      "feeding bottle", "baby bottle", "pet bottle", "dog water bottle",
+      "filter only", "replacement filter", "lid only", "cap only",
+      "straw only", "brush", "cleaning",
+      "decoration", "sticker", "skin only",
+      "wholesale lot", "carton",
+    ],
+    priceFloorRatio: 1 / 18, // $45 bottle → $2.50 floor
+    priceCeilRatio: 1 / 1.3,
+    defaultSort: "LAST_VOLUME_DESC",
+    verificationProductId: undefined,
+    verifiedAt: "2026-06-20",
+    notes:
+      "Vacuum-insulated stainless dominates the dropship segment; plastic " +
+      "is a different price band entirely. The price ceiling helps keep us " +
+      "off plastic listings when comparing against Owala/Stanley/etc.",
+  },
+
+  "dog harness": {
+    vertical: "dog harness",
+    parentFamily: "Home & Garden",
+    // 200002241 = Pet Products; 200002253 = Dog Collars & Leashes.
+    categoryIds: ["200002241", "200002253"],
+    queries: [
+      "no pull dog harness adjustable",
+      "tactical dog harness vest",
+      "dog harness front clip padded",
+      "small dog harness no pull",
+    ],
+    negativeKeywords: [
+      "cat harness", "rabbit harness", "horse harness", "human harness",
+      "leash only", "collar only", "tag", "name tag",
+      "training treat", "poop bag", "litter",
+      "carrier", "crate", "kennel", "bed only",
+      "shock collar", "bark collar", "training collar",
+      "wholesale lot", "carton",
+    ],
+    priceFloorRatio: 1 / 15, // $45 harness → $3 floor
+    priceCeilRatio: 1 / 1.5,
+    defaultSort: "LAST_VOLUME_DESC",
+    verificationProductId: undefined,
+    verifiedAt: "2026-06-20",
+    notes:
+      "Pet category sees big size-variant divergence. We rely on the dog-" +
+      "specific keywords to keep cat/rabbit harnesses out.",
+  },
+
+  "kitchen gadget": {
+    vertical: "kitchen gadget",
+    parentFamily: "Home & Garden",
+    // 200001143 = Kitchen Tools & Gadgets (parent leaf — broad on purpose).
+    categoryIds: ["200001143"],
+    queries: [
+      "stainless steel kitchen gadget tool",
+      "kitchen utensil gadget multifunction",
+      "kitchen gadget set",
+      "kitchen tool peeler slicer",
+    ],
+    negativeKeywords: [
+      "knife set", "chef knife only", "blade only", "sharpener",
+      "pan only", "pot only", "pressure cooker", "rice cooker", "blender",
+      "mixer", "stand mixer", "food processor",
+      "apron", "towel", "cloth",
+      "cleaner", "cleaning spray", "dish soap",
+      "wholesale lot", "carton of", "100 pcs", "bulk", "1000",
+      "tiktok", "as seen on", "viral 2026",
+    ],
+    priceFloorRatio: 1 / 25, // gadget markup spread is huge
+    priceCeilRatio: 1 / 1.2,
+    defaultSort: "LAST_VOLUME_DESC",
+    verificationProductId: undefined,
+    verifiedAt: "2026-06-20",
+    notes:
+      "Kitchen gadgets are the dropship goldmine — a $39 'magical peeler' " +
+      "lists for $1.40 on AE. Wide net category; lean on tight price ceiling " +
+      "to keep us off bulk pallets.",
+  },
+
+  "beauty tool": {
+    vertical: "beauty tool",
+    parentFamily: "Beauty & Health",
+    // 200000503 = Skin Care Tools; 200001005 = Face Massagers.
+    categoryIds: ["200000503", "200001005"],
+    queries: [
+      "facial roller jade massager",
+      "gua sha stone face tool",
+      "led face mask therapy",
+      "microcurrent beauty device",
+    ],
+    negativeKeywords: [
+      "makeup", "lipstick", "eyeshadow", "foundation",
+      "serum", "moisturizer", "toner", "essence",
+      "cleanser", "wipes", "face wash",
+      "hair tool", "hair dryer", "curling iron", "straightener",
+      "razor", "shaver", "epilator",
+      "replacement head", "replacement battery",
+      "wholesale lot", "carton",
+      "tiktok", "as seen on", "viral",
+    ],
+    priceFloorRatio: 1 / 30, // beauty tools have 30× markup all the time
+    priceCeilRatio: 1 / 1.2,
+    defaultSort: "LAST_VOLUME_DESC",
+    verificationProductId: undefined,
+    verifiedAt: "2026-06-20",
+    notes:
+      "Beauty tools (rollers, gua sha, LED masks, microcurrent devices) are " +
+      "the highest-margin dropship segment we've seen. 1/30 floor reflects " +
+      "the spread.",
+  },
 };
 
 /* ─── Resolver ───────────────────────────────────────────────────────── */
@@ -409,6 +565,70 @@ const VERTICAL_SYNONYMS: Array<{ patterns: RegExp[]; vertical: string }> = [
       /dress\b/i,
     ],
     vertical: "apparel sizes",
+  },
+  // ── Sprint 12 Stage 34 synonyms ──────────────────────────────────────────
+  {
+    // "shoes" — covers loungers, loafers, sneakers, runners. Excluded if it
+    // matches the slippers synonyms above (those run first).
+    patterns: [
+      /\bshoes?\b/i,
+      /lounger/i,
+      /sneaker/i,
+      /trainer/i,
+      /loafer/i,
+      /runner/i,
+      /\bboot\b/i,
+    ],
+    vertical: "shoes",
+  },
+  {
+    patterns: [
+      /water bottle/i,
+      /tumbler/i,
+      /thermos/i,
+      /vacuum flask/i,
+      /insulated bottle/i,
+      /hydration flask/i,
+    ],
+    vertical: "water bottle",
+  },
+  {
+    patterns: [
+      /dog harness/i,
+      /pet harness/i,
+      /no-?pull harness/i,
+      /dog leash/i,
+      /pet vest/i,
+      /dog collar/i,
+    ],
+    vertical: "dog harness",
+  },
+  {
+    patterns: [
+      /kitchen gadget/i,
+      /kitchen tool/i,
+      /kitchen utensil/i,
+      /peeler/i,
+      /\bgrater\b/i,
+      /slicer/i,
+      /chopper/i,
+      /scraper/i,
+    ],
+    vertical: "kitchen gadget",
+  },
+  {
+    patterns: [
+      /beauty tool/i,
+      /facial roller/i,
+      /face roller/i,
+      /jade roller/i,
+      /gua sha/i,
+      /led mask/i,
+      /microcurrent/i,
+      /face massager/i,
+      /derma roller/i,
+    ],
+    vertical: "beauty tool",
   },
 ];
 

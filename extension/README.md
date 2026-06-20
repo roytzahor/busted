@@ -6,8 +6,10 @@ price meta tag.
 
 ## Status
 
-**Scaffold (Sprint 11, Stage 30).** Manifest V3, vanilla JS content script,
-no build step. Not in the Chrome Web Store yet — install unpacked for now.
+**v0.2 (Sprint 12, Stage 36).** Two-stage pill — generic by default, rich
+with cached supplier price + savings % when we've previously scanned the
+URL. Manifest V3, vanilla JS, no build step. Not in the Chrome Web Store
+yet — install unpacked for now.
 
 ## Install locally
 
@@ -43,11 +45,14 @@ Add more in `manifest.json` → `content_scripts[0].exclude_matches`.
 
 ## Roadmap
 
-- **v0.2:** Inline price overlay — show the comparison right on the page
-- **v0.3:** Pre-cached supplier price in the pill ("Cheaper on AliExpress: $4")
-- **v0.4:** Background scan + chrome.notifications for big-savings finds
-- **v1.0:** Chrome Web Store publication (need a privacy policy + reviewer-
-  ready listing)
+- **v0.2 (shipped):** Quick-lookup → rich pill with supplier price + savings
+  % when the URL is already in our 14-day cache
+- **v0.3:** Background scan trigger for unseen URLs — kick off `/api/analyze`
+  in the background, switch the pill from generic → rich as soon as it lands
+- **v0.4:** Inline price tag injected next to the page's price element
+- **v0.5:** chrome.notifications for big-savings finds (≥ 70%)
+- **v1.0:** Chrome Web Store publication (needs privacy policy + reviewer-
+  ready listing + 16/48/128 vector icons)
 
 ## Files
 

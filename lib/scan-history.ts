@@ -14,6 +14,8 @@ const MAX_ENTRIES = 25;
 
 export interface ScanHistoryEntry {
   id: string;
+  /** Sprint 12 Stage 35 — persisted ScannedProduct.id for /scan/<id> permalinks. */
+  scanId?: string;
   url: string;
   title: string;
   imageUrl: string | null;

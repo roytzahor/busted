@@ -10,7 +10,7 @@ import {
 } from "@/lib/scan-history";
 import { track } from "@/lib/track";
 import { cn } from "@/lib/utils";
-import { Clock, History, TrendingDown, X } from "lucide-react";
+import { Clock, ExternalLink, History, TrendingDown, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -131,11 +131,26 @@ export function RecentScans() {
 
         <ul className="flex-1 divide-y divide-white/5 overflow-y-auto">
           {history.map((entry) => (
-            <li key={entry.id}>
+            <li key={entry.id} className="group relative">
+              {entry.scanId ? (
+                <a
+                  href={`/scan/${entry.scanId}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpen(false);
+                    track("history_click", { props: { url: entry.url, target: "permalink" } });
+                  }}
+                  aria-label={`Open permanent link for ${entry.title}`}
+                  className="absolute top-3 right-5 inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <ExternalLink className="size-3" aria-hidden="true" />
+                  View
+                </a>
+              ) : null}
               <button
                 type="button"
                 onClick={() => handleSelect(entry.url)}
-                className="group flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-white/[0.04]"
+                className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-white/[0.04]"
               >
                 {entry.imageUrl ? (
                   <div className="relative size-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/20">

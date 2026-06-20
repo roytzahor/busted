@@ -441,6 +441,51 @@ async function runAnalysisPipeline(
 
   let aliexpressUrl: string | null = null;
   let aliexpressData = null;
+  // ── Stage 31: graceful AI degradation ─────────────────────────────────────
+  // If we scraped successfully but the AI verdict failed (and this isn't a
+  // supplier-marketplace URL where the skip is by design), return a partial
+  // response. Skip supplier search (no keywords → empty result anyway) and
+  // skip persist (don't poison the cache with an incomplete row).
+  if (!isSupplierListing && aiResult.prediction === null && aiResult.error) {
+    const partialResponse: AnalyzeResponse = {
+      status: "partial",
+      cache: "MISS",
+      originalUrl: normalizedUrl,
+      degradedReason: "ai_unavailable",
+      degradedDetail: aiResult.error,
+      sourceType,
+      lastScrapedAt: new Date().toISOString(),
+      scrapeProvider: scrapeOut.provider,
+      storeProduct: {
+        title: scrapeOut.attributes.title,
+        priceUsd: storePriceUsd ?? null,
+        imageUrl: scrapeOut.attributes.mainImageUrl,
+        storeName,
+      },
+      aliexpressData: null,
+      ...(opts.includeDebug
+        ? {
+            debug: {
+              scrape: buildDebugScrape(normalizedUrl, scrapeData),
+              serviceEvents,
+              ai: {
+                provider: aiResult.provider,
+                model: aiResult.model,
+                prediction: null,
+                rawResponse: aiResult.rawResponse,
+                error: aiResult.error,
+              },
+              waterfall: waterfall.entries,
+              pipeline: { cacheStatus: "MISS", steps: pipelineSteps },
+            },
+          }
+        : {}),
+    };
+    emit({ type: "stage", stage: "supplier-search", status: "skipped", message: "Skipped — AI verdict unavailable" });
+    emit({ type: "stage", stage: "persist", status: "skipped", message: "Partial result — not cached" });
+    return { response: partialResponse, cacheHeader: "MISS" };
+  }
+
   let supplierStatus: "complete" | "skipped" = "skipped";
   let supplierSkipReason: string | undefined =
     "AliExpress Affiliate API keys are not configured in .env";

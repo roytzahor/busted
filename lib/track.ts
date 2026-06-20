@@ -13,6 +13,7 @@ export type TrackEventName =
   | "page_view"
   | "scan_start"
   | "scan_complete"
+  | "scan_partial"
   | "scan_error"
   | "example_click"
   | "history_click"

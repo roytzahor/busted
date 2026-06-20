@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnalysisSkeleton } from "@/components/analysis-skeleton";
 import { AnalysisTabs } from "@/components/analysis-tabs";
+import { PartialResult } from "@/components/partial-result";
 import { LivePipelineView } from "@/components/live-pipeline-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,9 +17,16 @@ import {
   type SSEStageId,
 } from "@/lib/analyze/client";
 import type { ProductComparisonResult } from "@/lib/mock-data";
-import type { DropshipAnalysisResult } from "@/lib/analyze/map-response";
+import type {
+  DropshipAnalysisResult,
+  PartialResult as PartialResultData,
+} from "@/lib/analyze/map-response";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
-import { DEMO_EXAMPLES } from "@/lib/examples";
+import {
+  DEMO_EXAMPLES_FALLBACK,
+  fetchFeaturedExamples,
+  type DemoExample,
+} from "@/lib/examples";
 import { appendScan } from "@/lib/scan-history";
 import { track } from "@/lib/track";
 import { TrustCounter } from "@/components/trust-counter";
@@ -91,9 +99,17 @@ export function SearchHub() {
   });
   const [comparison, setComparison] = useState<ProductComparisonResult | null>(null);
   const [dropshipResult, setDropshipResult] = useState<DropshipAnalysisResult | null>(null);
+  const [partialResult, setPartialResult] = useState<PartialResultData | null>(null);
   const [debugInfo, setDebugInfo] = useState<AnalyzeDebugInfo | null>(null);
   // Stage 17 — live pipeline state
   const [liveStages, setLiveStages] = useState<Map<SSEStageId, LiveStageUpdate>>(new Map());
+  // Stage 33 — self-healing demo examples
+  const [examples, setExamples] = useState<DemoExample[]>(DEMO_EXAMPLES_FALLBACK);
+  useEffect(() => {
+    const ac = new AbortController();
+    void fetchFeaturedExamples(ac.signal).then(setExamples);
+    return () => ac.abort();
+  }, []);
   const handleUrlChange = useCallback((value: string) => {
     setUrl(value);
     if (value.trim()) {
@@ -117,6 +133,7 @@ export function SearchHub() {
     setAnalysisError(null);
     setComparison(null);
     setDropshipResult(null);
+    setPartialResult(null);
     setDebugInfo(null);
     setLiveStages(new Map()); // reset stage view for new scan
     setPhase("analyzing");
@@ -137,36 +154,53 @@ export function SearchHub() {
       });
       setComparison(result.comparison);
       setDropshipResult(result.dropshipAnalysis);
+      setPartialResult(result.partial);
       setDebugInfo(result.debug);
       setPhase("complete");
 
-      track("scan_complete", {
-        scanId:
-          result.comparison?.scanId ?? result.dropshipAnalysis?.scanId,
-        props: {
-          savingsPercent: result.comparison?.savingsPercent ?? null,
-          fromCache:
-            result.comparison?.cache === "HIT" ||
-            result.dropshipAnalysis?.cache === "HIT",
-          durationMs: Math.round(performance.now() - scanStartedAt),
-        },
-      });
-
-      // Append to local scan history for the Recent drawer.
-      try {
-        appendScan({
-          url: targetUrl,
-          title:
-            result.comparison?.storeProduct.title ??
-            result.dropshipAnalysis?.storeProduct.title ??
-            targetUrl,
-          imageUrl:
-            result.comparison?.storeProduct.imageUrl ??
-            result.dropshipAnalysis?.storeProduct.imageUrl ??
-            null,
-          savingsPercent: result.comparison?.savingsPercent ?? null,
+      if (result.mode === "partial") {
+        track("scan_partial", {
+          props: {
+            url: targetUrl,
+            reason: result.partial?.degradedReason ?? "unknown",
+            durationMs: Math.round(performance.now() - scanStartedAt),
+          },
         });
-      } catch { /* non-critical */ }
+      } else {
+        track("scan_complete", {
+          scanId:
+            result.comparison?.scanId ?? result.dropshipAnalysis?.scanId,
+          props: {
+            savingsPercent: result.comparison?.savingsPercent ?? null,
+            fromCache:
+              result.comparison?.cache === "HIT" ||
+              result.dropshipAnalysis?.cache === "HIT",
+            durationMs: Math.round(performance.now() - scanStartedAt),
+          },
+        });
+      }
+
+      // Append to local scan history for the Recent drawer. Partial results
+      // aren't persisted to the server cache and have nothing useful to revisit,
+      // so we skip them here too.
+      if (result.mode !== "partial") {
+        try {
+          appendScan({
+            url: targetUrl,
+            scanId:
+              result.comparison?.scanId ?? result.dropshipAnalysis?.scanId,
+            title:
+              result.comparison?.storeProduct.title ??
+              result.dropshipAnalysis?.storeProduct.title ??
+              targetUrl,
+            imageUrl:
+              result.comparison?.storeProduct.imageUrl ??
+              result.dropshipAnalysis?.storeProduct.imageUrl ??
+              null,
+            savingsPercent: result.comparison?.savingsPercent ?? null,
+          });
+        } catch { /* non-critical */ }
+      }
 
       // Persist debug info to localStorage so /monitoring can display it
       if (result.debug) {
@@ -393,7 +427,7 @@ export function SearchHub() {
               Try one
             </p>
             <div className="flex flex-wrap justify-center gap-2">
-              {DEMO_EXAMPLES.map((ex) => (
+              {examples.map((ex) => (
                 <button
                   key={ex.url}
                   type="button"
@@ -452,6 +486,13 @@ export function SearchHub() {
             dropshipResult={dropshipResult}
             debugInfo={debugInfo}
           />
+        </div>
+      ) : null}
+
+      {/* Stage 31 — partial result (scrape OK, AI failed) */}
+      {phase === "complete" && partialResult ? (
+        <div className="mb-16">
+          <PartialResult result={partialResult} onRetry={() => void handleAnalyze(partialResult.originalUrl)} />
         </div>
       ) : null}
 

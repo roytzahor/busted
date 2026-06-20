@@ -84,9 +84,42 @@ export interface AnalyzeErrorResponse {
   debug?: AnalyzeDebugInfo;
 }
 
+/**
+ * Sprint 12 Stage 31 — Partial result.
+ *
+ * Returned when the scrape stage succeeded but a downstream non-essential
+ * stage (currently: AI verdict) failed. The user still sees the scraped
+ * product card, the result is NOT persisted to cache (so a retry can try
+ * again), and the client renders a "verdict unavailable, retry?" banner.
+ */
+export type DegradedReason = "ai_unavailable" | "supplier_search_failed";
+
+export interface AnalyzePartialResponse {
+  status: "partial";
+  cache: "MISS";
+  originalUrl: string;
+  /** What stage failed, in plain language. */
+  degradedReason: DegradedReason;
+  /** Human-readable detail surfaced under the banner. */
+  degradedDetail: string;
+  /** Scraped store product is always present. */
+  storeProduct: {
+    title: string;
+    priceUsd: number | null;
+    imageUrl: string | null;
+    storeName: string;
+  };
+  sourceType: ProductSourceType;
+  lastScrapedAt: string;
+  scrapeProvider: string;
+  aliexpressData: null;
+  debug?: AnalyzeDebugInfo;
+}
+
 export type AnalyzeResponse =
   | AnalyzeCacheHitResponse
   | AnalyzeScrapeSuccessResponse
+  | AnalyzePartialResponse
   | AnalyzeErrorResponse;
 
 export function parseAliExpressData(

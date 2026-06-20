@@ -84,16 +84,15 @@ function resolveGoogleModelChain(config: AIClientConfig): string[] {
 
 function resolveApiKey(provider: AIProvider, config: AIClientConfig): string {
   if (provider === "google") {
-    const key =
-      config.googleApiKey ??
-      process.env.GOOGLE_AI_API_KEY ??
-      process.env.GEMINI_API_KEY;
-    if (!key) {
+    // Use the first key from the multi-key chain. The actual multi-key
+    // dispatcher in callGoogleWithFailover consults the chain directly.
+    const chain = resolveGoogleKeyChain(config);
+    if (chain.length === 0) {
       throw new Error(
-        "Missing API key for Google AI. Set GOOGLE_AI_API_KEY or GEMINI_API_KEY.",
+        "Missing API key for Google AI. Set GOOGLE_AI_API_KEY, GEMINI_API_KEY, or GOOGLE_AI_API_KEYS.",
       );
     }
-    return key;
+    return chain[0];
   }
 
   if (provider === "anthropic") {
@@ -109,6 +108,59 @@ function resolveApiKey(provider: AIProvider, config: AIClientConfig): string {
     throw new Error("Missing API key for OpenAI. Set OPENAI_API_KEY.");
   }
   return key;
+}
+
+/* ─── Stage 32: multi-key Gemini failover ──────────────────────────────────
+ *
+ * Resolves the Google key chain from (in priority order):
+ *   1. config.googleApiKey (single)
+ *   2. GOOGLE_AI_API_KEYS  (comma-separated list — Stage 32)
+ *   3. GOOGLE_AI_API_KEY   (legacy single, still supported)
+ *   4. GEMINI_API_KEY      (legacy single, still supported)
+ *
+ * Each key gets an in-memory cooldown when it returns a 429/503. The chain
+ * filters out cooled-down keys before being used. State is process-local;
+ * resets on cold start. */
+
+const KEY_COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6 hours
+const _cooledUntil = new Map<string, number>();
+
+function isCooled(key: string): boolean {
+  const until = _cooledUntil.get(key);
+  if (!until) return false;
+  if (Date.now() > until) {
+    _cooledUntil.delete(key);
+    return false;
+  }
+  return true;
+}
+
+function markKeyCooled(key: string): void {
+  _cooledUntil.set(key, Date.now() + KEY_COOLDOWN_MS);
+}
+
+function resolveGoogleKeyChain(config: AIClientConfig): string[] {
+  if (config.googleApiKey) return [config.googleApiKey];
+
+  const multi = process.env.GOOGLE_AI_API_KEYS;
+  if (multi) {
+    const parsed = multi
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    if (parsed.length > 0) return parsed;
+  }
+
+  const legacy = process.env.GOOGLE_AI_API_KEY ?? process.env.GEMINI_API_KEY;
+  return legacy ? [legacy] : [];
+}
+
+function resolveActiveGoogleKeys(config: AIClientConfig): string[] {
+  const chain = resolveGoogleKeyChain(config);
+  const active = chain.filter((k) => !isCooled(k));
+  // If all keys are cooled down, retry them anyway — better to attempt and
+  // re-fail loudly than to throw a "all keys cooled" error the user can't act on.
+  return active.length > 0 ? active : chain;
 }
 
 function isRetryableGoogleError(status: number, body: string): boolean {
@@ -129,7 +181,22 @@ function toGoogleHistory(messages: AIMessage[]): Content[] {
     }));
 }
 
-async function callGoogleWithSdk(
+function isQuotaError(message: string): boolean {
+  return (
+    message.includes("429") ||
+    message.includes("503") ||
+    message.includes("RESOURCE_EXHAUSTED") ||
+    message.includes("quota") ||
+    message.includes("rate limit")
+  );
+}
+
+function maskKey(key: string): string {
+  if (key.length < 10) return "***";
+  return `${key.slice(0, 4)}…${key.slice(-4)}`;
+}
+
+async function callGoogleOnce(
   apiKey: string,
   modelChain: string[],
   options: AICompletionOptions,
@@ -184,6 +251,48 @@ async function callGoogleWithSdk(
   }
 
   throw new Error(`Google AI API error: ${lastError}`);
+}
+
+/**
+ * Multi-key Google dispatcher — Sprint 12 Stage 32.
+ *
+ * Iterates the active key chain (cooled keys excluded). On a quota/rate-limit
+ * error, marks the key as cooled and tries the next key. Only throws when
+ * every key has been tried.
+ */
+async function callGoogleWithSdk(
+  _apiKeyIgnored: string,
+  modelChain: string[],
+  options: AICompletionOptions,
+  keyChain: string[],
+): Promise<AICompletionResult> {
+  if (keyChain.length === 0) {
+    throw new Error("Google AI API error: no usable keys in chain.");
+  }
+
+  let lastError = "All Google AI keys exhausted.";
+
+  for (const key of keyChain) {
+    try {
+      return await callGoogleOnce(key, modelChain, options);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      lastError = message;
+
+      if (isQuotaError(message)) {
+        markKeyCooled(key);
+        console.warn(
+          `[ai-client] key ${maskKey(key)} cooled down (${KEY_COOLDOWN_MS / 3600_000}h) — quota/rate-limit error.`,
+        );
+        continue;
+      }
+
+      // Non-quota error: don't bother with the next key, it'll fail the same way.
+      throw error;
+    }
+  }
+
+  throw new Error(`Google AI API error: all ${keyChain.length} key(s) exhausted. Last error: ${lastError}`);
 }
 
 async function callAnthropic(
@@ -281,6 +390,7 @@ export class AIClient {
   private readonly apiKey: string;
   private readonly model: string;
   private readonly googleModelChain: string[];
+  private readonly config: AIClientConfig;
 
   constructor(config: AIClientConfig = {}) {
     this.provider = resolveProvider(config);
@@ -290,6 +400,7 @@ export class AIClient {
       this.provider === "google"
         ? this.googleModelChain[0]
         : config.model ?? DEFAULT_MODELS[this.provider];
+    this.config = config;
   }
 
   get activeProvider(): AIProvider {
@@ -302,8 +413,12 @@ export class AIClient {
 
   async complete(options: AICompletionOptions): Promise<AICompletionResult> {
     switch (this.provider) {
-      case "google":
-        return callGoogleWithSdk(this.apiKey, this.googleModelChain, options);
+      case "google": {
+        // Stage 32: resolve the active (non-cooled) key chain on every call so
+        // a previously-cooled key can come back online without a process restart.
+        const keyChain = resolveActiveGoogleKeys(this.config);
+        return callGoogleWithSdk(this.apiKey, this.googleModelChain, options, keyChain);
+      }
       case "anthropic":
         return callAnthropic(this.apiKey, this.model, options);
       case "openai":

@@ -1087,6 +1087,221 @@ overlay and one-click scan. Today: an installable proof.
 
 ---
 
+## Sprint 12 — Resilience & Extension v0.2 (this week)
+
+**Started:** 2026-06-20  
+**Theme:** make the product reliable enough for first real users; turn the
+extension scaffold into something users see value from on every Shopify page.
+
+**Why this sprint, why now.** The live test in `localhost` exposed concrete
+brittleness: when Gemini's free-tier quota hit zero, every scan returned
+"Analysis failed" — no degradation, no fallback. The example chips on the
+homepage point at dead URLs. The category map covers 5 verticals; the test
+showed shoes (a massive category) producing a vocab miss. The extension ships
+a generic pill that doesn't convey the actual savings. Sprint 12 turns each of
+those into "boring, reliable, useful."
+
+**Goal metrics:**
+- A scan with AI completely unavailable still shows the product card (today: white error screen)
+- Demo example chips always link to live, fresh, high-confidence scans
+- Category-vocab miss rate ≤ 30% on real traffic (today: every "shoes" / "kitchen" / "bottle" misses)
+- Extension pill shows the *actual* savings number on any page we've previously scanned
+
+### Stage 31 — Graceful AI degradation ✅
+
+**Why:** Today a Gemini outage breaks the whole pipeline. Live test:
+`gemini-2.0-flash` returned 429 → scrape succeeded but the API returned
+`status: "error"` with no scrape data → UI showed the generic error banner.
+First real users hitting any rate-limit window would bounce.
+
+**Impact:** A degraded experience instead of a broken one. The user sees the
+scraped product card with an amber "AI verdict unavailable — try again" note
+and a retry button. Crawlbase + AliExpress traffic still earns us data.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `lib/types/analyze.ts` | New `AnalyzePartialResponse` (status: "partial") with scrape data + `degradedReason: "ai_unavailable"` |
+| `app/api/analyze/route.ts` | Catch the AI service failure; if scrape succeeded, return a partial response. Do NOT persist (cache stays MISS so a retry can re-attempt) |
+| `lib/analyze/client.ts` | Forward partial as a normal resolution (not a throw); types updated |
+| `lib/analyze/map-response.ts` | Map partial → `{ mode: "partial", storeOnly: StoreProduct, degradedReason }` |
+| `components/partial-result.tsx` (new) | Amber-bordered card: product image + title + price + retry button |
+| `components/search-hub.tsx` | When `phase === "complete"` and `result.mode === "partial"`, render `<PartialResult />` |
+| `components/analytics-mount.tsx` | Fire `scan_partial` telemetry event |
+
+**Acceptance:**
+- [ ] With Gemini quota = 0, scanning Allbirds returns 200 with `status: "partial"`
+- [ ] UI shows the product card + amber banner + "Retry scan" button
+- [ ] Telemetry: `scan_partial` event written with `props.reason`
+- [ ] Cache stays MISS (retry doesn't hit a poisoned cache row)
+
+---
+
+### Stage 32 — Multi-key Gemini failover ✅
+
+**Why:** A single API key is a single point of failure. Today's free-tier key
+limits us to 20–1500 req/day depending on model. Holding multiple keys (free
+tier or otherwise) and rotating them lifts the effective limit linearly.
+
+**Impact:** Resilience to per-key quota exhaustion. A `429` on key N moves
+traffic to key N+1 within milliseconds; the exhausted key gets a 6-hour
+cooldown before retry.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `lib/ai/client.ts` | Parse `GOOGLE_AI_API_KEYS` (comma-separated) as well as the legacy `GOOGLE_AI_API_KEY`. Round-robin selection; per-key in-memory cooldown map |
+| `.env.example` | Document `GOOGLE_AI_API_KEYS=key1,key2,key3` |
+
+**Behaviour:**
+- Pre-cooldown probe: skip any key currently in cooldown (last 429/503 < 6h ago)
+- On 429/503: mark key as cooled, retry with next key, repeat until exhausted
+- Total attempts = `keys.length × modelChain.length` (bounded)
+
+**Acceptance:**
+- [ ] One bad key + one good key → caller never sees the bad key's error
+- [ ] All keys cooled → throw the existing "Google AI API error" with a useful summary
+- [ ] Legacy single-key env still works (backwards compatible)
+- [ ] No persistent state — purely in-memory, resets on cold start
+
+---
+
+### Stage 33 — Self-healing demo examples ✅
+
+**Why:** Live test: 2 of 3 hardcoded example URLs are dead (calmo & casetify
+return 404). New visitors who click those see "Analysis failed" — the worst
+possible first impression.
+
+**Impact:** Examples always point at scans we know succeed because we just
+ran them. As cached scans roll over (TTL: 14d), examples roll over too. Zero
+manual maintenance.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `app/api/examples/featured/route.ts` (new) | Returns top 3 scans from last 30 days with `aliexpressData != null` AND savings > 50% AND no error in events |
+| `lib/examples.ts` | Keep the static list as fallback only; add `fetchFeaturedExamples()` async loader |
+| `components/search-hub.tsx` | Fetch featured on mount; merge with static fallback |
+
+**Selection query:**
+```typescript
+prisma.scannedProduct.findMany({
+  where: {
+    aliexpressData: { not: Prisma.JsonNull },
+    aiPrediction: { not: undefined },
+    lastScrapedAt: { gt: thirtyDaysAgo },
+  },
+  orderBy: { lastScrapedAt: "desc" },
+  take: 20, // sample pool — we pick the best 3 client-side
+});
+```
+
+**Acceptance:**
+- [ ] `/api/examples/featured` returns valid JSON in < 200 ms
+- [ ] When DB has zero qualifying scans, static fallback list is shown
+- [ ] Cached: `next: { revalidate: 3600 }`
+- [ ] Each chip's URL is verified live before display (HEAD cache on the server)
+
+---
+
+### Stage 34 — Expand category map (+5 verticals) ✅
+
+**Why:** Live test logged `[category-map] No vocab entry for "shoes"`. Shoes
+alone are ~15% of dropship traffic. Adding 5 high-frequency verticals roughly
+doubles the addressable surface for category-narrowed searches.
+
+**Impact:** Each new vertical gets: category-ID-filtered AE search · price
+band · negative keywords · variant axis mapping where applicable. Each lifts
+match precision from ~50% to ~80% in that vertical.
+
+**Verticals to add:**
+
+| Vertical | Synonyms | Notes |
+|---|---|---|
+| `shoes` | shoe, sneaker, sneakers, slip-on, lounger, runner, trainer | broad; tight price band needed |
+| `water bottle` | bottle, tumbler, thermos, flask, hydration | tumbler vs vacuum-flask distinction matters |
+| `dog harness` | harness, leash, collar, pet harness, dog vest | seasonal demand spike pattern |
+| `kitchen gadget` | peeler, slicer, grater, gadget, scraper, cutter | huge category; pick a few sub-verticals |
+| `beauty tool` | facial roller, massager, gua sha, derma roller | high-margin dropship favourite |
+
+**Files to change:**
+- `lib/aliexpress/category-map.ts` — add 5 entries with categoryIds (one per vertical, found via a quick AE API probe)
+
+**Acceptance:**
+- [ ] `npm run verify:categories` passes for all 5 new verticals (after IDs populated)
+- [ ] A "shoes" scan logs no `categoryVocabMiss` warn
+- [ ] Match confidence on Allbirds wool lounger lifts from 55% → ≥ 70%
+
+---
+
+### Stage 35 — Test + polish scan permalink ✅
+
+**Why:** Built last sprint, never opened. Need to verify it loads, the OG card
+renders, and the share button + history drawer wire-through works end-to-end.
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `components/recent-scans.tsx` | Add a "View permalink" link on entries that carry `scanId` |
+| `lib/scan-history.ts` | Persist `scanId` alongside the existing fields |
+| `components/search-hub.tsx` | Pass `scanId` into `appendScan()` |
+| `app/scan/[id]/page.tsx` | Verify; fix any rendering bugs |
+
+**Acceptance:**
+- [ ] Open `/scan/<id>` for a real cached scan → renders the comparison
+- [ ] `view-source:` shows the OG meta with `/api/og/scan?...` URL
+- [ ] History drawer entries that have `scanId` show a "View" affordance
+- [ ] Share button on `/scan/<id>` builds the permalink URL (no `?url=`)
+
+---
+
+### Stage 36 — Extension v0.2: inline price pill ✅
+
+**Why:** v0.1 ships a generic "Bust this product" pill. v0.2 makes the pill
+actually carry the value-prop: when we've previously scanned the current URL,
+show "AliExpress: $X · save Y%" right in the pill so the user sees the number
+without clicking through.
+
+**Impact:** First time the extension delivers value *on the page itself*. Sets
+us up for v0.3 (background scans for unseen URLs, notifications for big finds).
+
+**Files to change:**
+
+| File | Change |
+|------|--------|
+| `app/api/extension/quick-lookup/route.ts` (new) | `GET ?url=...` returns cached scan data ONLY (never triggers a scrape). CORS headers for `chrome-extension://` origins |
+| `extension/manifest.json` | Add `host_permissions` for `https://buy-pass-silk.vercel.app/*` |
+| `extension/content.js` | After detecting a product page, fetch `/api/extension/quick-lookup`. If hit → render rich pill with savings %, supplier price, "Open Busted" affordance. If miss → keep v0.1 generic pill |
+| `extension/content.css` | New rich-pill layout: two lines (price arrow + savings) |
+| `extension/README.md` | Document new quick-lookup endpoint |
+
+**Quick-lookup response shape:**
+```typescript
+{ found: false } |
+{
+  found: true;
+  scanId: string;
+  storeTitle: string;
+  storePriceUsd: number;
+  aliPriceUsd: number;
+  savingsPercent: number;
+  permalink: string; // /scan/<id>
+}
+```
+
+**Acceptance:**
+- [ ] Reload the extension; visit a product page previously scanned → rich pill appears with the real savings number
+- [ ] Visit a product page never scanned → generic pill (v0.1 behaviour)
+- [ ] Quick-lookup endpoint never invokes the scrape pipeline (no Crawlbase calls, no AI calls)
+- [ ] CORS: response includes `Access-Control-Allow-Origin: *` and OPTIONS preflight 204
+- [ ] Pill respects existing exclude_matches list
+
+---
+
 ## Completed ✅
 
 | Stage | Description | Commit |

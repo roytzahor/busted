@@ -15,10 +15,19 @@ export interface DropshipAnalysisResult {
   supplierSkipReason?: string;
 }
 
+export interface PartialResult {
+  /** Sprint 12 Stage 31 — scrape worked, AI didn't. */
+  storeProduct: StoreProduct;
+  degradedReason: "ai_unavailable" | "supplier_search_failed";
+  degradedDetail: string;
+  originalUrl: string;
+}
+
 export interface AnalyzeClientResult {
-  mode: "full" | "dropship_only";
+  mode: "full" | "dropship_only" | "partial";
   comparison: ProductComparisonResult | null;
   dropshipAnalysis: DropshipAnalysisResult | null;
+  partial: PartialResult | null;
   debug: AnalyzeDebugInfo | null;
 }
 
@@ -37,6 +46,29 @@ function buildStoreProduct(response: AnalyzeResponse & { status: "success" }): S
 export function mapAnalyzeResponseToComparison(
   response: AnalyzeResponse,
 ): AnalyzeClientResult | null {
+  // Sprint 12 Stage 31 — partial result (scrape OK, AI failed).
+  if (response.status === "partial") {
+    return {
+      mode: "partial",
+      comparison: null,
+      dropshipAnalysis: null,
+      partial: {
+        originalUrl: response.originalUrl,
+        degradedReason: response.degradedReason,
+        degradedDetail: response.degradedDetail,
+        storeProduct: {
+          title: response.storeProduct.title,
+          priceUsd: response.storeProduct.priceUsd ?? 0,
+          imageUrl:
+            response.storeProduct.imageUrl ??
+            "https://placehold.co/480x480/dc2626/ffffff/png?text=Store",
+          storeName: response.storeProduct.storeName,
+        },
+      },
+      debug: response.debug ?? null,
+    };
+  }
+
   if (response.status !== "success") {
     return null;
   }
@@ -93,6 +125,7 @@ export function mapAnalyzeResponseToComparison(
         imageMatchReasoning: response.supplierImageMatchReasoning,
       },
       dropshipAnalysis: null,
+      partial: null,
       debug,
     };
   }
@@ -104,7 +137,7 @@ export function mapAnalyzeResponseToComparison(
   return {
     mode: "dropship_only",
     comparison: null,
-      dropshipAnalysis: {
+    dropshipAnalysis: {
       originalUrl: response.originalUrl,
       scanId: response.scanId,
       cache: response.cache,
@@ -114,6 +147,7 @@ export function mapAnalyzeResponseToComparison(
       supplierStatus: response.supplierStatus === "complete" ? "complete" : "skipped",
       supplierSkipReason: response.supplierSkipReason,
     },
+    partial: null,
     debug,
   };
 }
