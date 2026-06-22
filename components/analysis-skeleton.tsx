@@ -45,7 +45,7 @@ export function AnalysisSkeleton({ step, progress }: AnalysisSkeletonProps) {
             aria-label="Analysis progress"
           >
             <div
-              className="bg-primary h-full rounded-full transition-all duration-500 ease-out"
+              className="bg-primary h-full rounded-full transition-[width] duration-500 ease-out"
               style={{ width: `${progress}%` }}
             />
           </div>

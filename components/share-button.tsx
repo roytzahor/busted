@@ -98,21 +98,27 @@ export function ShareButton(props: ShareButtonProps) {
       aria-label="Share this result"
       data-og-preview={buildOgPreviewUrl(props)}
       className={cn(
-        "h-9 gap-1.5 border-white/12 bg-white/[0.04] backdrop-blur-sm transition-colors hover:border-primary/30 hover:bg-primary/8",
+        "h-9 gap-1.5 border-white/12 bg-white/[0.04] backdrop-blur-sm transition-[border-color,background-color,box-shadow,opacity,scale] hover:border-primary/30 hover:bg-primary/8",
         className,
       )}
     >
-      {copied ? (
-        <>
-          <Check className="size-3.5 text-success" aria-hidden="true" />
-          Link copied
-        </>
-      ) : (
-        <>
-          <Share2 className="size-3.5" aria-hidden="true" />
-          Share
-        </>
-      )}
+      <span className="relative inline-flex size-3.5 shrink-0">
+        <Check
+          className={cn(
+            "absolute inset-0 size-3.5 text-success transition-[opacity,transform,filter] duration-200 ease-[cubic-bezier(0.2,0,0,1)]",
+            copied ? "opacity-100 scale-100 blur-0" : "opacity-0 scale-[0.25] blur-[4px]",
+          )}
+          aria-hidden="true"
+        />
+        <Share2
+          className={cn(
+            "absolute inset-0 size-3.5 transition-[opacity,transform,filter] duration-200 ease-[cubic-bezier(0.2,0,0,1)]",
+            copied ? "opacity-0 scale-[0.25] blur-[4px]" : "opacity-100 scale-100 blur-0",
+          )}
+          aria-hidden="true"
+        />
+      </span>
+      {copied ? "Link copied" : "Share"}
     </Button>
   );
 }

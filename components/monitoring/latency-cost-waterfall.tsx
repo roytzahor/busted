@@ -201,7 +201,7 @@ export function LatencyCostWaterfall({
               <div className="relative h-2 overflow-hidden rounded-full bg-white/[0.04]">
                 <div
                   className={cn(
-                    "absolute inset-y-0 left-0 rounded-full transition-all duration-500",
+                    "absolute inset-y-0 left-0 rounded-full transition-[width] duration-500",
                     bucketColour(bucket),
                     isError && "bg-destructive",
                     isSkip && "opacity-30",

@@ -354,7 +354,7 @@ export function SearchHub() {
                   type="button"
                   onClick={() => void handleClipboardPaste()}
                   aria-label="Paste link from clipboard"
-                  className="absolute top-1/2 right-2 inline-flex h-8 -translate-y-1/2 items-center gap-1 rounded-md border border-white/10 bg-white/[0.04] px-2 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/30 hover:bg-primary/8 hover:text-foreground"
+                  className="absolute top-1/2 right-2 inline-flex h-10 -translate-y-1/2 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 text-[11px] font-medium text-muted-foreground transition-[color,background-color,border-color] hover:border-primary/30 hover:bg-primary/8 hover:text-foreground active:scale-[0.96]"
                 >
                   <ClipboardPaste className="size-3.5" aria-hidden="true" />
                   Paste
@@ -391,7 +391,7 @@ export function SearchHub() {
               type="submit"
               size="lg"
               disabled={!canSubmit}
-              className="glow-primary relative h-12 w-full overflow-hidden bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/40 disabled:opacity-40 disabled:shadow-none"
+              className="glow-primary relative h-12 w-full overflow-hidden bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-[color,background-color,box-shadow,opacity,scale] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/40 disabled:opacity-40 disabled:shadow-none active:scale-[0.96]"
             >
               {isAnalyzing ? (
                 "Scanning…"
@@ -437,7 +437,7 @@ export function SearchHub() {
                   }}
                   disabled={isAnalyzing}
                   aria-label={`Try the ${ex.label} example`}
-                  className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/8 disabled:opacity-40 disabled:hover:translate-y-0"
+                  className="group inline-flex min-h-[40px] items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-xs backdrop-blur-sm transition-[color,background-color,border-color,transform,scale] hover:-translate-y-0.5 hover:border-primary/30 hover:bg-primary/8 disabled:opacity-40 disabled:hover:translate-y-0 active:scale-[0.96]"
                 >
                   <span className="font-semibold text-foreground/90">{ex.label}</span>
                   <span className="text-muted-foreground/70 group-hover:text-success">
@@ -509,7 +509,7 @@ export function SearchHub() {
               return (
                 <article
                   key={item.step}
-                  className="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] p-6 text-left backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-white/14 hover:bg-white/[0.055] hover:shadow-xl hover:shadow-black/20"
+                  className="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] p-6 text-left backdrop-blur-sm transition-[border-color,background-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-white/14 hover:bg-white/[0.055] hover:shadow-xl hover:shadow-black/20"
                 >
                   {/* Color-coded ambient glow */}
                   <div
@@ -528,7 +528,7 @@ export function SearchHub() {
                     {item.step}
                   </span>
 
-                  <div className="relative z-10 mb-4 inline-flex rounded-xl border border-white/10 bg-white/5 p-3 transition-colors duration-300 group-hover:border-white/15 group-hover:bg-white/8">
+                  <div className="relative z-10 mb-4 inline-flex rounded-lg border border-white/10 bg-white/5 p-3 transition-colors duration-300 group-hover:border-white/15 group-hover:bg-white/8">
                     <Icon className={cn("size-5", item.colorClass)} aria-hidden="true" />
                   </div>
 

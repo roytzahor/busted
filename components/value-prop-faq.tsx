@@ -62,7 +62,7 @@ export function ValuePropFaq({ className }: { className?: string }) {
                 role="region"
                 aria-hidden={!open}
                 className={cn(
-                  "grid transition-all duration-300 ease-out",
+                  "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
                   open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
                 )}
               >

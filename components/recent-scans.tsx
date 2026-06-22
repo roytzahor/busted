@@ -123,7 +123,7 @@ export function RecentScans() {
             size="icon"
             onClick={() => setOpen(false)}
             aria-label="Close recent scans"
-            className="size-8"
+            className="size-10"
           >
             <X className="size-4" aria-hidden="true" />
           </Button>
@@ -180,7 +180,7 @@ export function RecentScans() {
                     {typeof entry.savingsPercent === "number" ? (
                       <span className="inline-flex items-center gap-0.5 text-success">
                         <TrendingDown className="size-3" aria-hidden="true" />
-                        {entry.savingsPercent}%
+                        <span className="tabular-nums">{entry.savingsPercent}%</span>
                       </span>
                     ) : null}
                   </p>

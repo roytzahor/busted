@@ -143,7 +143,7 @@ export function Nav() {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="size-10 md:hidden"
             onClick={() => setMobileOpen((open) => !open)}
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav"

@@ -82,7 +82,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                     matchQuality === "low" && "border-destructive/30 text-destructive",
                   )}
                 >
-                  {matchPct}% match · {matchQuality}
+                  <span className="tabular-nums">{matchPct}%</span> match · {matchQuality}
                 </Badge>
               ) : null}
               {isImageVerified ? (
@@ -105,7 +105,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                 {formatUsd(savingsUsd)}
               </span>
             </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 tabular-nums text-sm text-muted-foreground">
               {formatUsd(storeProduct.priceUsd)} retail vs{" "}
               {formatUsd(supplierProduct.priceUsd)} on AliExpress
             </p>
@@ -185,7 +185,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
           <div className="space-y-1">
             <p className="font-semibold">Best-guess match — verify before buying</p>
             <p className="text-muted-foreground">
-              Our match confidence is only {matchPct}%. Open the AliExpress link and
+              Our match confidence is only <span className="tabular-nums">{matchPct}%</span>. Open the AliExpress link and
               compare images + specs to confirm it’s the same product.
             </p>
             {result.imageMatchReasoning ? (
@@ -234,7 +234,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
             <Button
               asChild
               size="lg"
-              className="glow-success h-11 w-full bg-success text-success-foreground shadow-lg shadow-success/20 transition-all hover:bg-success/90 hover:shadow-xl hover:shadow-success/35 sm:w-auto sm:min-w-[260px]"
+              className="glow-success h-11 w-full bg-success text-success-foreground shadow-lg shadow-success/20 transition-[color,background-color,box-shadow,scale] hover:bg-success/90 hover:shadow-xl hover:shadow-success/35 active:scale-[0.96] sm:w-auto sm:min-w-[260px]"
             >
               <a
                 href={supplierProduct.affiliateUrl}
@@ -387,9 +387,9 @@ function ProductCard({
         typeof shippingCostUsd === "number" &&
         shippingCostUsd > 0 &&
         typeof totalCostUsd === "number" ? (
-          <p className="text-xs text-muted-foreground">
+          <p className="tabular-nums text-xs text-muted-foreground">
             Total with shipping:{" "}
-            <span className="font-semibold tabular-nums text-foreground">
+            <span className="font-semibold text-foreground">
               {formatUsd(totalCostUsd)}
             </span>{" "}
             <span className="text-muted-foreground/70">
