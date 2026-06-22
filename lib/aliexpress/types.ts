@@ -36,6 +36,12 @@ export interface SupplierMatchResult {
   variantMatchScore?: number;
   variantHardMismatch?: boolean;
   variantMatchReasons?: string[];
+  /**
+   * True when no confident match was found but we're returning the closest
+   * candidate anyway. The UI should present it as "similar product" rather
+   * than "exact supplier found".
+   */
+  bestEffortOnly?: boolean;
   searchMeta: {
     keywords: string;
     provider: "aliexpress_api" | "firecrawl_scrape";

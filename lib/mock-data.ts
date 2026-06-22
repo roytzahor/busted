@@ -40,6 +40,8 @@ export interface ProductComparisonResult {
   imageMatchScore?: number;
   imageMatchSameFunction?: boolean;
   imageMatchReasoning?: string;
+  /** True when no confident match was found — link is shown as "similar product" not exact match. */
+  bestEffortOnly?: boolean;
 }
 
 export interface ScanHistoryItem {

@@ -53,6 +53,8 @@ interface AnalyzeSuccessBase {
   supplierImageMatchScore?: number;
   supplierImageMatchSameFunction?: boolean;
   supplierImageMatchReasoning?: string;
+  /** True when the link is the closest candidate found, not a confident exact match. */
+  supplierBestEffortOnly?: boolean;
   sourceType: ProductSourceType;
   dropshipPrediction: DropshipPrediction | null;
   lastScrapedAt: string;

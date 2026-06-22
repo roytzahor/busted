@@ -42,7 +42,8 @@ function formatOrders(count: number): string {
 export function AnalysisResults({ result }: AnalysisResultsProps) {
   const { storeProduct, supplierProduct, savingsUsd, savingsPercent, cache } = result;
   const matchQuality = result.matchQuality ?? "high";
-  const isUncertainMatch = matchQuality === "medium" || matchQuality === "low";
+  const isBestEffort = result.bestEffortOnly === true;
+  const isUncertainMatch = isBestEffort || matchQuality === "medium" || matchQuality === "low";
   const matchPct =
     typeof result.matchConfidence === "number"
       ? Math.round(result.matchConfidence * 100)
@@ -58,21 +59,31 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
       className="animate-in fade-in slide-in-from-bottom-6 w-full space-y-4 duration-700"
     >
       {/* ── Savings hero banner ──────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl border border-success/20 bg-success/8 p-6 backdrop-blur-sm">
+      <div className={cn(
+        "relative overflow-hidden rounded-2xl border p-6 backdrop-blur-sm",
+        isBestEffort ? "border-primary/20 bg-primary/8" : "border-success/20 bg-success/8",
+      )}>
         {/* Top-edge shine */}
         <div aria-hidden="true" className="shine-top pointer-events-none absolute inset-x-0 top-0 h-px" />
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="mb-2 flex flex-wrap gap-2">
-              <Badge className="border-success/30 bg-success/15 text-success">
-                <TrendingDown className="mr-1 size-3" aria-hidden="true" />
-                Save {savingsPercent}%
-              </Badge>
+              {isBestEffort ? (
+                <Badge className="border-primary/30 bg-primary/15 text-primary-foreground">
+                  <Package className="mr-1 size-3" aria-hidden="true" />
+                  Similar product found
+                </Badge>
+              ) : (
+                <Badge className="border-success/30 bg-success/15 text-success">
+                  <TrendingDown className="mr-1 size-3" aria-hidden="true" />
+                  Save {savingsPercent}%
+                </Badge>
+              )}
               <Badge variant="outline" className="border-white/15 text-muted-foreground">
                 {cache === "HIT" ? "Cached result" : "Fresh analysis"}
               </Badge>
-              {matchPct !== null ? (
+              {matchPct !== null && !isBestEffort ? (
                 <Badge
                   variant="outline"
                   className={cn(
@@ -85,7 +96,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                   <span className="tabular-nums">{matchPct}%</span> match · {matchQuality}
                 </Badge>
               ) : null}
-              {isImageVerified ? (
+              {isImageVerified && !isBestEffort ? (
                 <Badge
                   variant="outline"
                   className="border-success/30 bg-success/10 text-success"
@@ -96,35 +107,65 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                 </Badge>
               ) : null}
             </div>
-            <h2
-              id="comparison-heading"
-              className="text-2xl font-black tracking-tight sm:text-3xl"
-            >
-              They&apos;re overcharging you{" "}
-              <span className="bg-gradient-to-r from-success to-emerald-400 bg-clip-text text-transparent">
-                {formatUsd(savingsUsd)}
-              </span>
-            </h2>
-            <p className="mt-1 tabular-nums text-sm text-muted-foreground">
-              {formatUsd(storeProduct.priceUsd)} retail vs{" "}
-              {formatUsd(supplierProduct.priceUsd)} on AliExpress
-            </p>
+            {isBestEffort ? (
+              <>
+                <h2
+                  id="comparison-heading"
+                  className="text-2xl font-black tracking-tight sm:text-3xl"
+                >
+                  Closest match on{" "}
+                  <span className="bg-gradient-to-r from-primary to-amber-400 bg-clip-text text-transparent">
+                    AliExpress
+                  </span>
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  May not be the exact same product — compare before buying
+                </p>
+              </>
+            ) : (
+              <>
+                <h2
+                  id="comparison-heading"
+                  className="text-2xl font-black tracking-tight sm:text-3xl"
+                >
+                  They&apos;re overcharging you{" "}
+                  <span className="bg-gradient-to-r from-success to-emerald-400 bg-clip-text text-transparent">
+                    {formatUsd(savingsUsd)}
+                  </span>
+                </h2>
+                <p className="mt-1 tabular-nums text-sm text-muted-foreground">
+                  {formatUsd(storeProduct.priceUsd)} retail vs{" "}
+                  {formatUsd(supplierProduct.priceUsd)} on AliExpress
+                </p>
+              </>
+            )}
           </div>
 
-          {/* Savings percentage — large display */}
-          <div className="text-right">
-            <div className="bg-gradient-to-br from-success via-emerald-400 to-green-300 bg-clip-text text-6xl font-black tabular-nums leading-none text-transparent">
-              {savingsPercent}
-              <span className="text-3xl">%</span>
+          {isBestEffort ? (
+            <div className="text-right">
+              <div className="bg-gradient-to-br from-primary to-amber-400 bg-clip-text text-5xl font-black tabular-nums leading-none text-transparent">
+                {formatUsd(supplierProduct.priceUsd)}
+              </div>
+              <div className="text-xs text-muted-foreground">on AliExpress</div>
             </div>
-            <div className="text-xs text-muted-foreground">markup detected</div>
-          </div>
+          ) : (
+            <div className="text-right">
+              <div className="bg-gradient-to-br from-success via-emerald-400 to-green-300 bg-clip-text text-6xl font-black tabular-nums leading-none text-transparent">
+                {savingsPercent}
+                <span className="text-3xl">%</span>
+              </div>
+              <div className="text-xs text-muted-foreground">markup detected</div>
+            </div>
+          )}
         </div>
 
         {/* Decorative glow */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute -right-20 -bottom-20 h-48 w-48 rounded-full bg-success/15 blur-3xl"
+          className={cn(
+            "pointer-events-none absolute -right-20 -bottom-20 h-48 w-48 rounded-full blur-3xl",
+            isBestEffort ? "bg-primary/10" : "bg-success/15",
+          )}
         />
       </div>
 
@@ -155,7 +196,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
         {/* Supplier product — glass card, green tint */}
         <ProductCard
           variant="supplier"
-          label="Original AliExpress Supplier"
+          label={isBestEffort ? "Closest match on AliExpress" : "Original AliExpress Supplier"}
           title={supplierProduct.title}
           price={supplierProduct.priceUsd}
           imageUrl={supplierProduct.imageUrl}
@@ -183,10 +224,14 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
             !
           </span>
           <div className="space-y-1">
-            <p className="font-semibold">Best-guess match — verify before buying</p>
+            <p className="font-semibold">
+              {isBestEffort ? "Closest match we could find — verify before buying" : "Best-guess match — verify before buying"}
+            </p>
             <p className="text-muted-foreground">
-              Our match confidence is only <span className="tabular-nums">{matchPct}%</span>. Open the AliExpress link and
-              compare images + specs to confirm it’s the same product.
+              {isBestEffort
+                ? "We couldn’t confirm this is the exact same product. Open the AliExpress link and compare images + specs before buying."
+                : <>Our match confidence is only <span className="tabular-nums">{matchPct}%</span>. Open the AliExpress link and compare images + specs to confirm it&apos;s the same product.</>
+              }
             </p>
             {result.imageMatchReasoning ? (
               <p className="mt-2 rounded-md border border-white/8 bg-white/[0.03] px-2.5 py-1.5 text-xs">
@@ -214,10 +259,12 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
       <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] p-5 backdrop-blur-sm sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
-            <p className="font-semibold">Ready to skip the markup?</p>
+            <p className="font-semibold">
+              {isBestEffort ? "Shop similar on AliExpress" : "Ready to skip the markup?"}
+            </p>
             <p className="text-sm text-muted-foreground">
-              Verified supplier with {formatOrders(supplierProduct.orderCount)} and{" "}
-              {supplierProduct.sellerRating}★ rating.
+              {formatOrders(supplierProduct.orderCount)} sold ·{" "}
+              {supplierProduct.sellerRating}★ seller rating.
             </p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
@@ -253,7 +300,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                   })
                 }
               >
-                Buy Original on AliExpress &amp; Save
+                {isBestEffort ? "View on AliExpress" : "Buy Original on AliExpress & Save"}
                 <ExternalLink className="ml-1.5 size-4" aria-hidden="true" />
               </a>
             </Button>

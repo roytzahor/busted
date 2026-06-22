@@ -495,6 +495,7 @@ async function runAnalysisPipeline(
   let supplierImageMatchScore: number | undefined;
   let supplierImageMatchSameFunction: boolean | undefined;
   let supplierImageMatchReasoning: string | undefined;
+  let supplierBestEffortOnly: boolean | undefined;
   let supplierDebug: AnalyzeDebugInfo["supplier"] | undefined;
 
   // ── 5. Supplier match ────────────────────────────────────────────────────────
@@ -543,6 +544,7 @@ async function runAnalysisPipeline(
     supplierImageMatchScore = match.imageMatchScore;
     supplierImageMatchSameFunction = match.imageMatchSameFunction;
     supplierImageMatchReasoning = match.imageMatchReasoning;
+    supplierBestEffortOnly = match.bestEffortOnly;
 
     const imgNote =
       typeof match.imageMatchScore === "number"
@@ -654,6 +656,7 @@ async function runAnalysisPipeline(
     supplierImageMatchScore,
     supplierImageMatchSameFunction,
     supplierImageMatchReasoning,
+    supplierBestEffortOnly,
     sourceType,
     dropshipPrediction: aiResult.prediction,
     lastScrapedAt: persisted.lastScrapedAt.toISOString(),

@@ -123,6 +123,7 @@ export function mapAnalyzeResponseToComparison(
         imageMatchScore: response.supplierImageMatchScore,
         imageMatchSameFunction: response.supplierImageMatchSameFunction,
         imageMatchReasoning: response.supplierImageMatchReasoning,
+        bestEffortOnly: response.supplierBestEffortOnly,
       },
       dropshipAnalysis: null,
       partial: null,

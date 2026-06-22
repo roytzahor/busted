@@ -626,6 +626,8 @@ export async function findAliExpressSupplier(params: {
     params.attributes.mainImageUrl !== null &&
     scored[0].confidence.score < TEXT_SCORE_SKIP_IMAGE_THRESHOLD;
 
+  let bestEffortOnly = false;
+
   if (shouldRunImageMatch) {
     const imageOutcome = await runImageMatch(params.attributes, scored);
 
@@ -655,18 +657,14 @@ export async function findAliExpressSupplier(params: {
         if (!retryImageOutcome.rejected) {
           scored.splice(0, scored.length, ...retryScored);
         } else {
-          throw new AliExpressSearchError(
-            "ALIEXPRESS_NO_CONFIDENT_MATCH",
-            `Image-match AI rejected all candidates for "${params.attributes.title}" even after keyword retry. ${retryImageOutcome.rejectionReason ?? imageOutcome.rejectionReason ?? "No match found."}`,
-            422,
-          );
+          // Both image-match rounds rejected — surface the best text-scored
+          // candidate as a "closest match" rather than returning nothing.
+          scored.splice(0, scored.length, ...retryScored);
+          bestEffortOnly = true;
         }
       } else {
-        throw new AliExpressSearchError(
-          "ALIEXPRESS_NO_CONFIDENT_MATCH",
-          `Image-match AI rejected all top candidates for "${params.attributes.title}". ${imageOutcome.rejectionReason ?? "None visually matched the source product."}`,
-          422,
-        );
+        // No retry keywords available — surface best text-scored as closest match.
+        bestEffortOnly = true;
       }
     }
 
@@ -721,11 +719,8 @@ export async function findAliExpressSupplier(params: {
   const best = scored[0];
 
   if (best.confidence.score < MATCH_CONFIDENCE_MIN) {
-    throw new AliExpressSearchError(
-      "ALIEXPRESS_NO_CONFIDENT_MATCH",
-      `Found ${candidates.length} candidates but none match "${params.attributes.title}" confidently. Best score: ${best.confidence.score.toFixed(2)} (${best.confidence.reasons.join("; ")}).`,
-      422,
-    );
+    // Score below confident threshold — surface as closest match rather than returning nothing.
+    bestEffortOnly = true;
   }
 
   const winner = best.candidate;
@@ -800,6 +795,7 @@ export async function findAliExpressSupplier(params: {
   return {
     aliexpressUrl: productUrlWithVariant,
     aliexpressData,
+    bestEffortOnly: bestEffortOnly || undefined,
     matchConfidence: best.confidence.score,
     matchQuality: best.confidence.quality,
     matchReasons: best.confidence.reasons,
