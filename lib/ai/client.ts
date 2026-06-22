@@ -220,10 +220,22 @@ async function callGoogleOnce(
 
       const result = await model.generateContent({ contents: history });
       const response = result.response;
-      const text = response.text();
+      let text: string;
+      try {
+        text = response.text();
+      } catch (textErr) {
+        const textErrMsg = textErr instanceof Error ? textErr.message : String(textErr);
+        lastError = `${modelName} response blocked: ${textErrMsg}`;
+        continue;
+      }
 
+      const finishReason = response.candidates?.[0]?.finishReason;
+      if (!text || finishReason === "MAX_TOKENS") {
+        lastError = `Model ${modelName} hit token limit (${text.length} chars, finishReason: MAX_TOKENS) — increase maxOutputTokens.`;
+        continue;
+      }
       if (!text) {
-        lastError = `Model ${modelName} returned an empty response.`;
+        lastError = `Model ${modelName} returned an empty response (finishReason: ${finishReason ?? "unknown"}).`;
         continue;
       }
 

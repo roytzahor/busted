@@ -330,7 +330,7 @@ export async function verifyDropshipLikelihood(params: {
           ),
         },
       ],
-      maxTokens: 2048,
+      maxTokens: 8192,
       temperature: 0.1,
       jsonMode: true,
     });
