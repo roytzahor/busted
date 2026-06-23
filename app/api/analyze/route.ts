@@ -13,7 +13,7 @@ import { isSupplierSearchEnabled } from "@/lib/aliexpress/supplier-enabled";
 import { AliExpressSearchError } from "@/lib/aliexpress/types";
 import { findValidCachedProduct, normalizeProductUrl } from "@/lib/cache/product-cache";
 import { recordMatchOutcome } from "@/lib/learning/record-outcome";
-import { resolveCategoryVocab } from "@/lib/aliexpress/category-map";
+import { deriveOutcomeVertical } from "@/lib/aliexpress/category-map";
 import {
   patchCachedAliExpressData,
   persistScannedProduct,
@@ -283,8 +283,7 @@ async function runAnalysisPipeline(
           scanId: cached.id,
           originalUrl: cached.originalUrl,
           category: ai.prediction?.productCategory ?? null,
-          vertical:
-            resolveCategoryVocab(ai.prediction?.productCategory ?? null)?.vertical ?? null,
+          vertical: deriveOutcomeVertical(ai.prediction?.productCategory ?? null),
           scrapeProvider: scrape.provider ?? null,
           verdict: ai.prediction?.verdict ?? null,
           matchConfidence: resolvedMatchConfidence ?? null,
@@ -721,8 +720,7 @@ async function runAnalysisPipeline(
     scanId: persisted.id,
     originalUrl: normalizedUrl,
     category: aiResult.prediction?.productCategory ?? null,
-    vertical:
-      resolveCategoryVocab(aiResult.prediction?.productCategory ?? null)?.vertical ?? null,
+    vertical: deriveOutcomeVertical(aiResult.prediction?.productCategory ?? null),
     scrapeProvider: scrapeOut.provider ?? null,
     verdict: aiResult.prediction?.verdict ?? null,
     matchConfidence: supplierMatchConfidence ?? null,

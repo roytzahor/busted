@@ -16,6 +16,7 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { invalidatePriorsCache } from "@/lib/learning/priors";
+import { deriveOutcomeVertical } from "@/lib/aliexpress/category-map";
 
 const LOOKBACK_DAYS = 14;
 const MIN_PROVIDER_SAMPLES = 3;
@@ -33,6 +34,7 @@ interface OutcomeRow {
   id: string;
   scanId: string | null;
   domain: string;
+  category: string | null;
   vertical: string | null;
   scrapeProvider: string | null;
   matchConfidence: number | null;
@@ -77,6 +79,7 @@ export async function recomputePriors(): Promise<RecomputeResult> {
         id: true,
         scanId: true,
         domain: true,
+        category: true,
         vertical: true,
         scrapeProvider: true,
         matchConfidence: true,
@@ -329,8 +332,12 @@ function aggregateVerticals(
   >();
 
   for (const o of outcomes) {
-    if (!o.vertical) continue;
-    let bucket = verticalBuckets.get(o.vertical);
+    // Back-fill nulls by re-deriving from the raw category. Recovers
+    // historical rows that were written before deriveOutcomeVertical
+    // shipped — they have category but no vertical.
+    const vertical = o.vertical ?? deriveOutcomeVertical(o.category);
+    if (!vertical) continue;
+    let bucket = verticalBuckets.get(vertical);
     if (!bucket) {
       bucket = {
         total: 0,
@@ -340,7 +347,7 @@ function aggregateVerticals(
         bestEffortTotal: 0,
         bestEffortClicks: 0,
       };
-      verticalBuckets.set(o.vertical, bucket);
+      verticalBuckets.set(vertical, bucket);
     }
     bucket.total += 1;
     const success = isOutcomeSuccessful(o, feedbackByScan);

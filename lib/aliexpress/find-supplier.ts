@@ -33,6 +33,7 @@ import { matchVariantToSku, type VariantMatchResult } from "@/lib/aliexpress/mat
 import { fetchAliExpressProductDetail } from "@/lib/aliexpress/sku";
 import { searchAliExpressViaScrape } from "@/lib/aliexpress/search-scrape-fallback";
 import {
+  deriveOutcomeVertical,
   filterByNegativeKeywords,
   resolveCategoryVocab,
 } from "@/lib/aliexpress/category-map";
@@ -268,7 +269,14 @@ export async function findAliExpressSupplier(params: {
   // Used to (a) seed additional keyword arms with proven winners, (b) filter
   // out historically-bad keywords, (c) override IMAGE_MATCH_MIN per vertical.
   // The lookup hits an in-memory 5-min cache so warm scans pay nothing.
-  const verticalKey = categoryVocab?.vertical ?? null;
+  //
+  // Use deriveOutcomeVertical so the lookup key matches what the cron wrote
+  // into VerticalKeywordPrior — covers both vocab-matched verticals and the
+  // tokenised-fallback verticals (e.g. "led galaxy projector") that exist
+  // only because the loop has been collecting outcomes for them.
+  const verticalKey = deriveOutcomeVertical(
+    params.identity?.category ?? params.productCategory ?? null,
+  );
   const verticalPrior = verticalKey ? await getVerticalPrior(verticalKey) : null;
   const bannedKeywordSet = new Set(
     verticalPrior?.bannedKeywords.map((k) => k.toLowerCase()) ?? [],

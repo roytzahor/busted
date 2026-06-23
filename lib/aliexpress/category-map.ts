@@ -537,7 +537,17 @@ const VERTICAL_SYNONYMS: Array<{ patterns: RegExp[]; vertical: string }> = [
     vertical: "phone cases",
   },
   {
-    patterns: [/shower steamer/i, /shower tablet/i, /aroma tablet/i, /aromatherapy shower/i, /shower bomb/i],
+    patterns: [
+      /shower steamer/i,
+      /shower tablet/i,
+      /shower spa/i,
+      /spa tablet/i,
+      /aroma tablet/i,
+      /aromatherapy shower/i,
+      /aromatherapy.*tablet/i,
+      /shower bomb/i,
+      /shower fizz/i,
+    ],
     vertical: "shower steamer",
   },
   {
@@ -633,6 +643,41 @@ const VERTICAL_SYNONYMS: Array<{ patterns: RegExp[]; vertical: string }> = [
 ];
 
 /**
+ * Stop tokens stripped before token-overlap matching and before deriving
+ * fallback vertical keys. Kept tight — over-stripping makes "phone case"
+ * indistinguishable from "case". Add a token here only when you've seen
+ * it cause a documented miss in production logs.
+ */
+const CATEGORY_STOP_TOKENS = new Set([
+  // articles / connectives
+  "a", "an", "the", "and", "or", "of", "for", "with", "from", "by", "to", "in",
+  // generic descriptors that don't narrow a vertical
+  "product", "products", "item", "items", "thing", "things",
+  "set", "kit", "pack", "lot", "bundle", "collection",
+  "premium", "quality", "best", "new", "modern", "classic", "deluxe",
+  "luxury", "professional", "pro",
+  // common AI-tacked suffixes
+  "online", "shop", "store",
+]);
+
+/**
+ * Tokenize a free-form category string for matching + grouping.
+ *   "Shower Steamer Tablets" → ["shower", "steamer", "tablets"]
+ *   "Premium Sterling Silver Necklace" → ["sterling", "silver", "necklace"]
+ *
+ * Stripping is deliberate — preserves "what kind of thing" tokens while
+ * dropping filler the AI tacks on. Lowercased, hyphen-preserving.
+ */
+function tokenizeCategoryString(input: string): string[] {
+  return input
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, " ")
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 1 && !CATEGORY_STOP_TOKENS.has(t));
+}
+
+/**
  * In-memory miss counter. Resets on cold start — purpose is to surface
  * coverage gaps in Vercel function logs, not to persist across deploys.
  * Call `getCategoryMissCounts()` from debug endpoints to inspect.
@@ -652,6 +697,21 @@ export function getCategoryMissCounts(): Record<string, number> {
  * Emits a `[category-map]` warning on every miss so production logs surface
  * coverage gaps without any extra instrumentation.
  */
+/**
+ * Pre-computed token sets for every CATEGORY_MAP key, sorted longest-first
+ * so the most specific multi-token key wins token-overlap matching.
+ * Computed lazily on first call to keep module load cheap.
+ */
+let _categoryKeyTokens: Array<{ key: string; tokens: string[] }> | null = null;
+function categoryKeyTokens(): Array<{ key: string; tokens: string[] }> {
+  if (_categoryKeyTokens) return _categoryKeyTokens;
+  _categoryKeyTokens = Object.keys(CATEGORY_MAP)
+    .map((key) => ({ key, tokens: tokenizeCategoryString(key) }))
+    .filter((entry) => entry.tokens.length > 0)
+    .sort((a, b) => b.tokens.length - a.tokens.length);
+  return _categoryKeyTokens;
+}
+
 export function resolveCategoryVocab(
   productCategory: string | null | undefined,
 ): CategoryVocabEntry | null {
@@ -659,15 +719,29 @@ export function resolveCategoryVocab(
   const input = productCategory.trim();
   if (!input) return null;
 
-  // Direct lookup first (case-insensitive)
+  // 1. Direct lookup first (case-insensitive)
   const directKey = input.toLowerCase();
   if (CATEGORY_MAP[directKey]) return CATEGORY_MAP[directKey];
 
-  // Synonym scan
+  // 2. Synonym scan
   for (const { patterns, vertical } of VERTICAL_SYNONYMS) {
     if (patterns.some((p) => p.test(input))) {
       const entry = CATEGORY_MAP[vertical];
       if (entry) return entry;
+    }
+  }
+
+  // 3. Token-overlap fallback — match when every token of a CATEGORY_MAP
+  // key appears in the input. Handles AI-emitted strings like
+  // "Shower steamer tablets" → key "shower steamer", or
+  // "Sterling silver baby necklace" → key "necklace".
+  // Iterates longest-key-first so a more specific multi-token key wins.
+  const inputTokens = new Set(tokenizeCategoryString(input));
+  if (inputTokens.size > 0) {
+    for (const { key, tokens } of categoryKeyTokens()) {
+      if (tokens.every((t) => inputTokens.has(t))) {
+        return CATEGORY_MAP[key];
+      }
     }
   }
 
@@ -682,6 +756,35 @@ export function resolveCategoryVocab(
   );
 
   return null;
+}
+
+/**
+ * Build a stable vertical key for learning-loop grouping. Returns the
+ * canonical CATEGORY_MAP vertical when a vocab entry resolves; otherwise
+ * a normalised token-stripped fallback (capped at 3 tokens to keep
+ * cardinality bounded).
+ *
+ * Examples:
+ *   "Shower steamer tablets" → "shower steamer" (vocab match)
+ *   "LED galaxy projector"   → "led galaxy projector" (fallback)
+ *   "Premium Sterling Silver Necklace" → "necklace" (vocab via token-overlap)
+ *   "" / null                → null
+ *
+ * Used by /api/analyze to populate MatchOutcome.vertical so the cron can
+ * aggregate priors per vertical even for categories not yet in CATEGORY_MAP.
+ * Frequent fallback keys are the natural candidates for the next vocab
+ * additions — surface them via getCategoryMissCounts().
+ */
+export function deriveOutcomeVertical(
+  productCategory: string | null | undefined,
+): string | null {
+  if (!productCategory) return null;
+  const matched = resolveCategoryVocab(productCategory);
+  if (matched) return matched.vertical;
+
+  const tokens = tokenizeCategoryString(productCategory);
+  if (tokens.length === 0) return null;
+  return tokens.slice(0, 3).join(" ");
 }
 
 /**
