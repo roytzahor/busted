@@ -28,6 +28,7 @@ import {
   foldImageMatchIntoConfidence,
   foldVariantIntoConfidence,
 } from "@/lib/aliexpress/match-confidence";
+import { getVerticalPrior } from "@/lib/learning/priors";
 import { matchVariantToSku, type VariantMatchResult } from "@/lib/aliexpress/match-variant";
 import { fetchAliExpressProductDetail } from "@/lib/aliexpress/sku";
 import { searchAliExpressViaScrape } from "@/lib/aliexpress/search-scrape-fallback";
@@ -177,6 +178,7 @@ function mergeAndDeduplicateCandidates(
 async function runImageMatch(
   attributes: ScrapedProductAttributes,
   scored: Array<{ candidate: AliExpressProductCandidate; confidence: ReturnType<typeof computeMatchConfidence> }>,
+  imageMatchMin: number = IMAGE_MATCH_MIN,
 ): Promise<{ bestId: string | null; rejected: boolean; rejectionReason: string | null }> {
   const topForImage = scored.slice(0, Math.min(3, scored.length));
   const imageResult = await compareProductImagesWithAI({
@@ -193,7 +195,7 @@ async function runImageMatch(
     return { bestId: null, rejected: false, rejectionReason: null };
   }
 
-  if (imageResult.bestCandidateId === null || imageResult.bestScore < IMAGE_MATCH_MIN) {
+  if (imageResult.bestCandidateId === null || imageResult.bestScore < imageMatchMin) {
     return {
       bestId: null,
       rejected: true,
@@ -253,13 +255,40 @@ export async function findAliExpressSupplier(params: {
     ?.filter((k) => k.trim().length > 3) ?? [];
   const legacyAi = params.aiKeywords?.filter((k) => k.trim().length > 3) ?? [];
 
-  // Merge identity + legacy AI keywords, deduplicating by lowercase.
-  // Identity always wins ordering — its first item is the most specific.
+  // Resolve locale + category vocab before any search so keyword arms use the
+  // same geo + category context as the smartmatch arm. Locale is derived from
+  // the source-store TLD (co.il → IL/ILS) so all AliExpress price quotes
+  // reflect the buyer's actual market, not env-default-US.
+  const locale = resolveLocaleFromSourceUrl(params.attributes.sourceUrl);
+  const categoryVocab = resolveCategoryVocab(
+    params.identity?.category ?? params.productCategory ?? null,
+  );
+
+  // ── Sprint 13: pull learned prior for this vertical (if any) ──────────────
+  // Used to (a) seed additional keyword arms with proven winners, (b) filter
+  // out historically-bad keywords, (c) override IMAGE_MATCH_MIN per vertical.
+  // The lookup hits an in-memory 5-min cache so warm scans pay nothing.
+  const verticalKey = categoryVocab?.vertical ?? null;
+  const verticalPrior = verticalKey ? await getVerticalPrior(verticalKey) : null;
+  const bannedKeywordSet = new Set(
+    verticalPrior?.bannedKeywords.map((k) => k.toLowerCase()) ?? [],
+  );
+  const effectiveImageMatchMin =
+    verticalPrior?.imageMatchThreshold ?? IMAGE_MATCH_MIN;
+
+  // Sprint 13: seed `aiKeywords` from the learned vertical prior (when present).
+  // Learned winners come first because they've already converted on real users.
+  // We then merge identity + legacy AI keywords, deduplicating by lowercase
+  // and dropping any banned keywords surfaced by the prior.
+  const learnedPriorKeywords = (verticalPrior?.topKeywords ?? [])
+    .map((entry) => entry.kw)
+    .filter((kw) => kw.trim().length > 3);
+
   const seenKw = new Set<string>();
   const aiKeywords: string[] = [];
-  for (const kw of [...identityPrimary, ...identityVisual, ...legacyAi]) {
+  for (const kw of [...learnedPriorKeywords, ...identityPrimary, ...identityVisual, ...legacyAi]) {
     const norm = kw.toLowerCase();
-    if (!seenKw.has(norm)) {
+    if (!seenKw.has(norm) && !bannedKeywordSet.has(norm)) {
       seenKw.add(norm);
       aiKeywords.push(kw);
     }
@@ -285,15 +314,6 @@ export async function findAliExpressSupplier(params: {
   const provider: "aliexpress_api" | "firecrawl_scrape" = isAliExpressApiConfigured()
     ? "aliexpress_api"
     : "firecrawl_scrape";
-
-  // Resolve locale + category vocab before any search so keyword arms use the
-  // same geo + category context as the smartmatch arm. Locale is derived from
-  // the source-store TLD (co.il → IL/ILS) so all AliExpress price quotes
-  // reflect the buyer's actual market, not env-default-US.
-  const locale = resolveLocaleFromSourceUrl(params.attributes.sourceUrl);
-  const categoryVocab = resolveCategoryVocab(
-    params.identity?.category ?? params.productCategory ?? null,
-  );
 
   // Shared options for every keyword search call — locale + category filter +
   // price band. Price band is derived from the source retail price and the
@@ -629,7 +649,7 @@ export async function findAliExpressSupplier(params: {
   let bestEffortOnly = false;
 
   if (shouldRunImageMatch) {
-    const imageOutcome = await runImageMatch(params.attributes, scored);
+    const imageOutcome = await runImageMatch(params.attributes, scored, effectiveImageMatchMin);
 
     if (imageOutcome.rejected) {
       // Image AI rejected the current pool.
@@ -653,7 +673,7 @@ export async function findAliExpressSupplier(params: {
         }));
         retryScored.sort((a, b) => b.confidence.score - a.confidence.score);
 
-        const retryImageOutcome = await runImageMatch(params.attributes, retryScored);
+        const retryImageOutcome = await runImageMatch(params.attributes, retryScored, effectiveImageMatchMin);
         if (!retryImageOutcome.rejected) {
           scored.splice(0, scored.length, ...retryScored);
         } else {

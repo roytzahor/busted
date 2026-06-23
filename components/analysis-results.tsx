@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { MatchFeedback } from "@/components/match-feedback";
 import { ShareButton } from "@/components/share-button";
 import { trackAffiliateClick } from "@/lib/clicks";
 import type { ProductComparisonResult } from "@/lib/mock-data";
@@ -313,6 +314,14 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
           className="pointer-events-none absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl"
         />
       </div>
+
+      {/* ── Match feedback (Sprint 13 learning loop) ─────────────── */}
+      {result.scanId ? (
+        <MatchFeedback
+          scanId={result.scanId}
+          variant={isBestEffort ? "best-effort" : "confident"}
+        />
+      ) : null}
     </section>
   );
 }

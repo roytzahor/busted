@@ -12,6 +12,8 @@ import { findAliExpressSupplier } from "@/lib/aliexpress/find-supplier";
 import { isSupplierSearchEnabled } from "@/lib/aliexpress/supplier-enabled";
 import { AliExpressSearchError } from "@/lib/aliexpress/types";
 import { findValidCachedProduct, normalizeProductUrl } from "@/lib/cache/product-cache";
+import { recordMatchOutcome } from "@/lib/learning/record-outcome";
+import { resolveCategoryVocab } from "@/lib/aliexpress/category-map";
 import {
   patchCachedAliExpressData,
   persistScannedProduct,
@@ -276,6 +278,23 @@ async function runAnalysisPipeline(
             : {}),
         };
 
+        // Learning loop — record outcome for the cron aggregator (fire-and-forget).
+        recordMatchOutcome({
+          scanId: cached.id,
+          originalUrl: cached.originalUrl,
+          category: ai.prediction?.productCategory ?? null,
+          vertical:
+            resolveCategoryVocab(ai.prediction?.productCategory ?? null)?.vertical ?? null,
+          scrapeProvider: scrape.provider ?? null,
+          verdict: ai.prediction?.verdict ?? null,
+          matchConfidence: resolvedMatchConfidence ?? null,
+          matchQuality: resolvedMatchQuality ?? null,
+          bestEffortOnly: false, // cache hits keep the original matchQuality
+          winningKeywords: ai.prediction?.aliexpressKeywords ?? [],
+          imageMatchScore: resolvedImageMatchScore ?? null,
+          sameFunction: resolvedImageMatchSameFunction ?? null,
+        });
+
         return { response: hitResponse, cacheHeader: "HIT" };
       }
     }
@@ -483,6 +502,16 @@ async function runAnalysisPipeline(
     };
     emit({ type: "stage", stage: "supplier-search", status: "skipped", message: "Skipped — AI verdict unavailable" });
     emit({ type: "stage", stage: "persist", status: "skipped", message: "Partial result — not cached" });
+
+    // Learning loop — record partial outcome so the cron can learn which
+    // domains/providers tend to produce AI failures.
+    recordMatchOutcome({
+      originalUrl: normalizedUrl,
+      scrapeProvider: scrapeOut.provider ?? null,
+      verdict: "ai_unavailable",
+      bestEffortOnly: false,
+    });
+
     return { response: partialResponse, cacheHeader: "MISS" };
   }
 
@@ -686,6 +715,24 @@ async function runAnalysisPipeline(
         }
       : {}),
   };
+
+  // Learning loop — record outcome for the cron aggregator (fire-and-forget).
+  recordMatchOutcome({
+    scanId: persisted.id,
+    originalUrl: normalizedUrl,
+    category: aiResult.prediction?.productCategory ?? null,
+    vertical:
+      resolveCategoryVocab(aiResult.prediction?.productCategory ?? null)?.vertical ?? null,
+    scrapeProvider: scrapeOut.provider ?? null,
+    verdict: aiResult.prediction?.verdict ?? null,
+    matchConfidence: supplierMatchConfidence ?? null,
+    matchQuality: supplierMatchQuality ?? null,
+    bestEffortOnly: supplierBestEffortOnly ?? false,
+    winningKeywords:
+      supplierDebug?.keywords?.split(" / ").filter((s) => s.trim().length > 0) ?? [],
+    imageMatchScore: supplierImageMatchScore ?? null,
+    sameFunction: supplierImageMatchSameFunction ?? null,
+  });
 
   return { response: successResponse, cacheHeader: "MISS" };
 }

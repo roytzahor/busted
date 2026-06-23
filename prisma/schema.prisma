@@ -194,6 +194,141 @@ model AffiliateClick {
   @@index([createdAt])
 }
 
+/// Per-scan outcome record — Sprint 13 self-improving loop.
+///
+/// One row per completed pipeline run. The recompute cron aggregates over
+/// these (joined with MatchFeedback + AffiliateClick) to produce the prior
+/// tables below. Written fire-and-forget at the end of /api/analyze so a
+/// DB hiccup never breaks the response path.
+model MatchOutcome {
+  id              String   @id @default(cuid())
+  /// Linked ScannedProduct.id when the pipeline persisted the scan.
+  scanId          String?
+  /// Source URL domain (e.g. "calmo.co.il"). Lowercased, no port.
+  domain          String
+  /// Verdict-emitted productCategory string (free-form Gemini output).
+  category        String?
+  /// Resolved vertical key from category-map (e.g. "shower steamer"). Null
+  /// when the category didn't match any vocab entry — useful for learning
+  /// which uncovered categories are common enough to add to the vocab.
+  vertical        String?
+  /// Scrape provider that produced the winning page (crawlbase|firecrawl|playwright).
+  scrapeProvider  String?
+  /// AI verdict ("dropship"|"legit"|"insufficient_evidence"|"not_a_product"|"unavailable").
+  verdict         String?
+  /// Final supplier-match confidence 0..1. Null when supplier search was skipped.
+  matchConfidence Float?
+  /// Quality bucket: high|medium|low|none.
+  matchQuality    String?
+  /// True when we surfaced the closest candidate without a confident match
+  /// (the bestEffortOnly path from find-supplier.ts).
+  bestEffortOnly  Boolean  @default(false)
+  /// Keywords that produced the winning candidate, deduped + lowercased.
+  /// Empty array when no supplier was matched.
+  winningKeywords String[] @default([])
+  /// Image-match score for the winner (0..1). Null when image-match was skipped.
+  imageMatchScore Float?
+  /// True if image-AI marked sameFunction=true on the winner.
+  sameFunction    Boolean?
+  createdAt       DateTime @default(now())
+
+  feedback        MatchFeedback?
+
+  @@index([domain, createdAt])
+  @@index([vertical, createdAt])
+  @@index([scrapeProvider, createdAt])
+  @@index([createdAt])
+}
+
+/// Explicit user feedback on a match — Sprint 13 self-improving loop.
+///
+/// Submitted via the thumbs widget on the results page. We allow one
+/// feedback row per scanId; subsequent submissions update the same row.
+model MatchFeedback {
+  id          String        @id @default(cuid())
+  /// ScannedProduct.id (also indexes MatchOutcome via outcomeId).
+  scanId      String        @unique
+  /// FK to the outcome — nullable because feedback may arrive before the
+  /// outcome row is written (race condition we tolerate by SetNull).
+  outcomeId   String?       @unique
+  outcome     MatchOutcome? @relation(fields: [outcomeId], references: [id], onDelete: SetNull)
+  /// "right"   — same product, correctly matched
+  /// "similar" — close enough but not identical
+  /// "wrong"   — different product entirely
+  verdict     String
+  /// Optional free-form note (≤280 chars). Captured at the API boundary.
+  note        String?       @db.VarChar(280)
+  /// Anonymous session UUID — same one TelemetryEvent uses.
+  sessionId   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([verdict, createdAt])
+  @@index([createdAt])
+}
+
+/// Per-domain learned scrape hints — Sprint 13.
+///
+/// Recomputed by the learning cron. The router reads these via the priors
+/// cache to pick the most reliable provider for each domain and skip ones
+/// that fail consistently.
+model DomainScrapeRecipe {
+  id                String   @id @default(cuid())
+  /// Lowercased host (e.g. "calmo.co.il").
+  domain            String   @unique
+  /// Provider with the highest historical success rate on this domain.
+  /// One of: "crawlbase" | "firecrawl" | "playwright". Null when no clear winner.
+  preferredProvider String?
+  /// Provider to skip outright when its failure rate > 50% with ≥3 samples.
+  /// One of: "crawlbase" | "firecrawl" | "playwright". Null when no banned provider.
+  skipProvider      String?
+  /// Win rate per provider (e.g. {"crawlbase":0.95,"firecrawl":0.6}).
+  /// Stored as Json for cheap inspection.
+  providerWinRates  Json?
+  /// Total scans observed for this domain in the lookback window.
+  totalScans        Int      @default(0)
+  /// Scans whose verdict was successful (matchConfidence ≥ 0.4 or feedback=right).
+  successfulScans   Int      @default(0)
+  lastComputedAt    DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([domain])
+}
+
+/// Per-vertical learned keyword priors + adaptive thresholds — Sprint 13.
+///
+/// One row per category vertical (resolved via the category-map). Drives:
+///   - keyword seeding in find-supplier (proven winners pushed to front)
+///   - per-vertical image-match threshold (tighter for jewelry, looser for novelty)
+///   - per-vertical text confidence floor
+model VerticalKeywordPrior {
+  id                  String   @id @default(cuid())
+  vertical            String   @unique
+  /// Top winning keywords: [{ kw: string, winRate: number, sampleSize: number, clickRate: number }].
+  /// Sorted by (clickRate * winRate) desc. Used as additional aiKeywords in find-supplier.
+  topKeywords         Json?
+  /// Keywords that produced rejected/wrong candidates ≥ 60% of the time
+  /// with sample ≥ 3. Filtered out of the keyword chain before search.
+  bannedKeywords      Json?
+  /// Learned image-match minimum (default 0.65). Verticals where users
+  /// frequently mark "wrong" raise this; verticals where users accept
+  /// loose matches lower it.
+  imageMatchThreshold Float    @default(0.65)
+  /// Learned text confidence minimum (default 0.4).
+  textConfidenceMin   Float    @default(0.4)
+  /// Total MatchOutcome rows feeding this prior.
+  totalSamples        Int      @default(0)
+  /// Outcomes where the user did not click "wrong" (or clicked the affiliate link).
+  positiveSamples     Int      @default(0)
+  /// Affiliate CTR among bestEffortOnly matches in this vertical. Useful for
+  /// deciding whether to keep showing closest-match suggestions in this category.
+  bestEffortClickRate Float?
+  lastComputedAt      DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([vertical])
+}
+
 /// Client-side error capture — Sprint 11 Stage 29.
 ///
 /// Holds at most one row per (sessionId, errorHash, hour) so a runaway
