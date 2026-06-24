@@ -83,6 +83,8 @@ interface AnalyzeSuccessBase {
   lastScrapedAt: string;
   storeProduct: {
     title: string;
+    /** English translation when the original title was non-Latin. */
+    translatedTitle?: string;
     priceUsd: number;
     imageUrl: string | null;
     storeName: string;

@@ -107,6 +107,11 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
             </div>
             <div className="space-y-2">
               <p className="font-semibold">{storeProduct.title}</p>
+              {storeProduct.translatedTitle ? (
+                <p className="text-muted-foreground/80 text-xs italic">
+                  → {storeProduct.translatedTitle}
+                </p>
+              ) : null}
               {storeProduct.priceUsd > 0 ? (
                 <p className="text-success text-2xl font-bold tabular-nums">
                   {formatMoney(storeProduct.priceUsd)}
@@ -141,6 +146,11 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
                 </div>
                 <div className="space-y-1">
                   <p className="font-semibold">{storeProduct.title}</p>
+                  {storeProduct.translatedTitle ? (
+                    <p className="text-muted-foreground/80 text-xs italic">
+                      → {storeProduct.translatedTitle}
+                    </p>
+                  ) : null}
                   <p className="text-muted-foreground text-sm">
                     Sold by {storeProduct.storeName}
                   </p>

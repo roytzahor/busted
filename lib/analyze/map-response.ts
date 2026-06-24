@@ -57,6 +57,7 @@ function buildStoreProduct(response: AnalyzeResponse & { status: "success" }): S
   const store = response.storeProduct;
   return {
     title: store.title,
+    ...(store.translatedTitle ? { translatedTitle: store.translatedTitle } : {}),
     priceUsd: store.priceUsd,
     imageUrl:
       store.imageUrl ??

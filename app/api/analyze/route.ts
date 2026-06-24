@@ -349,6 +349,9 @@ async function runAnalysisPipeline(
           lastScrapedAt: cached.lastScrapedAt.toISOString(),
           storeProduct: {
             title: scrape.attributes.title,
+            ...(scrape.attributes.translatedTitle
+              ? { translatedTitle: scrape.attributes.translatedTitle }
+              : {}),
             priceUsd: storePrice,
             imageUrl: scrape.attributes.mainImageUrl,
             storeName: scrape.storeName,
@@ -556,6 +559,9 @@ async function runAnalysisPipeline(
       scrapeProvider: scrapeOut.provider,
       storeProduct: {
         title: scrapeOut.attributes.title,
+        ...(scrapeOut.attributes.translatedTitle
+          ? { translatedTitle: scrapeOut.attributes.translatedTitle }
+          : {}),
         priceUsd: storePriceUsd ?? null,
         imageUrl: scrapeOut.attributes.mainImageUrl,
         storeName,
@@ -797,6 +803,9 @@ async function runAnalysisPipeline(
     scrapeProvider: scrapeOut.provider,
     storeProduct: {
       title: scrapeOut.attributes.title,
+      ...(scrapeOut.attributes.translatedTitle
+        ? { translatedTitle: scrapeOut.attributes.translatedTitle }
+        : {}),
       priceUsd: storePrice,
       imageUrl: scrapeOut.attributes.mainImageUrl,
       storeName,

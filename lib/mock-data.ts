@@ -1,5 +1,7 @@
 export interface StoreProduct {
   title: string;
+  /** English translation when the original title was non-Latin script. */
+  translatedTitle?: string;
   priceUsd: number;
   imageUrl: string;
   storeName: string;

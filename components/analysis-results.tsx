@@ -173,6 +173,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
           variant="store"
           label="Overpriced Store Product"
           title={storeProduct.title}
+          translatedTitle={storeProduct.translatedTitle}
           price={storeProduct.priceUsd}
           imageUrl={storeProduct.imageUrl}
           storeName={storeProduct.storeName}
@@ -326,6 +327,8 @@ interface ProductCardProps {
   variant: "store" | "supplier";
   label: string;
   title: string;
+  /** English translation when original title was non-Latin. */
+  translatedTitle?: string;
   price: number;
   imageUrl: string;
   storeName?: string;
@@ -343,6 +346,7 @@ function ProductCard({
   variant,
   label,
   title,
+  translatedTitle,
   price,
   imageUrl,
   storeName,
@@ -405,6 +409,11 @@ function ProductCard({
         <p className="line-clamp-2 text-sm font-semibold leading-snug sm:text-base">
           {title}
         </p>
+        {translatedTitle ? (
+          <p className="text-xs italic text-muted-foreground/80">
+            → {translatedTitle}
+          </p>
+        ) : null}
         {storeName ? (
           <p className="text-xs text-muted-foreground">Sold by {storeName}</p>
         ) : null}

@@ -183,11 +183,20 @@ function buildUserPrompt(
   markdownExcerpt: string,
   storePriceUsd: number | null,
 ): string {
+  // For non-Latin-script titles, an English translation is precomputed in
+  // lib/scraping/router.ts. We surface it as `titleTranslation` (alongside
+  // the original) so the verdict can read both — the original preserves
+  // brand voice for legit-detection while the translation prevents the
+  // model from misclassifying Hebrew/Arabic/CJK pages as "insufficient
+  // evidence" simply because it can't parse them.
   return JSON.stringify(
     {
       sourceUrl: attributes.sourceUrl,
       scrapeProvider: attributes.provider,
       title: attributes.title,
+      ...(attributes.translatedTitle
+        ? { titleTranslation: attributes.translatedTitle }
+        : {}),
       description: attributes.description.slice(0, 600),
       mainImageUrl: attributes.mainImageUrl,
       detectedStorePriceUsd: storePriceUsd,
