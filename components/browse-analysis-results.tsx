@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useMoney } from "@/components/currency-provider";
+import { useT } from "@/components/locale-provider";
 import { trackAffiliateClick } from "@/lib/clicks";
 import type { BrowseAnalysisResult } from "@/lib/analyze/map-response";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ function buildVibeLabel(result: BrowseAnalysisResult): string {
 }
 
 export function BrowseAnalysisResults({ result }: BrowseAnalysisResultsProps) {
+  const t = useT();
   const { storeProduct, candidates, query, productCategory, styleTokens, materialPriors, cache } =
     result;
   const vibeLabel = buildVibeLabel(result);
@@ -63,14 +65,14 @@ export function BrowseAnalysisResults({ result }: BrowseAnalysisResultsProps) {
           <div>
             <div className="mb-2 flex flex-wrap gap-2">
               <Badge className="border-sky-400/30 bg-sky-400/15 text-sky-200">
-                <Layers className="mr-1 size-3" aria-hidden="true" />
-                Browse mode
+                <Layers className="me-1 size-3" aria-hidden="true" />
+                {t("browse.badge")}
               </Badge>
               <Badge variant="outline" className="border-white/15 text-muted-foreground">
                 {cache === "HIT" ? "Cached scrape" : "Fresh analysis"}
               </Badge>
               <Badge variant="outline" className="border-white/15 text-muted-foreground">
-                <Package className="mr-1 size-3" aria-hidden="true" />
+                <Package className="me-1 size-3" aria-hidden="true" />
                 {productCategory}
               </Badge>
             </div>
@@ -78,24 +80,22 @@ export function BrowseAnalysisResults({ result }: BrowseAnalysisResultsProps) {
               id="browse-heading"
               className="text-2xl font-black tracking-tight sm:text-3xl"
             >
-              Browsing a collection? Here are{" "}
+              {t("browse.bannerLead")}{" "}
               <span className="bg-gradient-to-r from-sky-300 to-slate-200 bg-clip-text text-transparent">
-                popular {vibeLabel}
+                {vibeLabel}
               </span>{" "}
-              alternatives on AliExpress
+              {t("browse.bannerTail")}
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              We detected a catalog page on{" "}
-              <span className="font-semibold text-foreground/90">{storeProduct.storeName}</span>.
-              {" "}Pick a piece you like — direct from the source.
+              {t("browse.subtext", { store: storeProduct.storeName })}
             </p>
           </div>
 
-          <div className="hidden shrink-0 text-right sm:block">
+          <div className="hidden shrink-0 text-end sm:block">
             <div className="bg-gradient-to-br from-sky-300 via-slate-200 to-slate-400 bg-clip-text text-5xl font-black tabular-nums leading-none text-transparent">
               {candidates.length}
             </div>
-            <div className="text-xs text-muted-foreground">picks shown</div>
+            <div className="text-xs text-muted-foreground">{t("browse.picksShown")}</div>
           </div>
         </div>
 
@@ -104,7 +104,7 @@ export function BrowseAnalysisResults({ result }: BrowseAnalysisResultsProps) {
           <div className="mt-4 flex flex-wrap items-center gap-1.5 text-xs">
             <Sparkles className="size-3.5 text-sky-300/80" aria-hidden="true" />
             <span className="font-semibold uppercase tracking-wider text-muted-foreground">
-              Vibe:
+              {t("browse.vibe")}
             </span>
             {[...materialPriors, ...styleTokens].slice(0, 6).map((token) => (
               <span
@@ -140,10 +140,9 @@ export function BrowseAnalysisResults({ result }: BrowseAnalysisResultsProps) {
             aria-hidden="true"
           />
           <div className="space-y-1">
-            <p className="font-semibold">No browse candidates available right now</p>
+            <p className="font-semibold">{t("browse.empty.title")}</p>
             <p className="text-muted-foreground">
-              {result.skipReason ??
-                "We couldn’t fetch AliExpress alternatives for this collection. Try a specific product link from this store for a 1:1 supplier match."}
+              {result.skipReason ?? t("browse.empty.body")}
             </p>
           </div>
         </div>
@@ -174,6 +173,7 @@ interface BrowseCardProps {
 
 function BrowseCard({ candidate, scanId }: BrowseCardProps) {
   const formatMoney = useMoney();
+  const t = useT();
   const handleClick = () =>
     trackAffiliateClick({ scanId, targetUrl: candidate.affiliateUrl });
 
@@ -234,10 +234,10 @@ function BrowseCard({ candidate, scanId }: BrowseCardProps) {
             rel="noopener noreferrer"
             onClick={handleClick}
             onAuxClick={handleClick}
-            aria-label={`View ${candidate.title} on AliExpress`}
+            aria-label={`${t("browse.cta")} — ${candidate.title}`}
           >
-            View on AliExpress
-            <ExternalLink className="ml-1.5 size-3.5" aria-hidden="true" />
+            {t("browse.cta")}
+            <ExternalLink className="ms-1.5 size-3.5" aria-hidden="true" />
           </a>
         </Button>
       </div>

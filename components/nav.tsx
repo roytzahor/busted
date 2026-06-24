@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BRAND_NAME } from "@/lib/brand";
 import { CurrencyPicker } from "@/components/currency-picker";
+import { LanguagePicker } from "@/components/language-picker";
+import { useT } from "@/components/locale-provider";
 import { RecentScans } from "@/components/recent-scans";
 import { cn } from "@/lib/utils";
 import {
@@ -29,13 +31,20 @@ import {
   X,
 } from "lucide-react";
 
-const NAV_LINKS = [
-  { href: "/", label: "Scan", icon: Search },
-  { href: "/monitoring", label: "Monitor", icon: Activity },
-] as const;
+type NavLink = {
+  href: string;
+  labelKey: "nav.scan" | "nav.monitor";
+  icon: typeof Search;
+};
+
+const NAV_LINKS: ReadonlyArray<NavLink> = [
+  { href: "/", labelKey: "nav.scan", icon: Search },
+  { href: "/monitoring", labelKey: "nav.monitor", icon: Activity },
+];
 
 export function Nav() {
   const pathname = usePathname();
+  const t = useT();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -59,7 +68,7 @@ export function Nav() {
           className="hidden items-center gap-1 md:flex"
           aria-label="Main navigation"
         >
-          {NAV_LINKS.map(({ href, label, icon: Icon }) => {
+          {NAV_LINKS.map(({ href, labelKey, icon: Icon }) => {
             const active = pathname === href;
             return (
               <Link
@@ -74,13 +83,14 @@ export function Nav() {
                 aria-current={active ? "page" : undefined}
               >
                 <Icon className="size-4" aria-hidden="true" />
-                {label}
+                {t(labelKey)}
               </Link>
             );
           })}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <LanguagePicker />
           <CurrencyPicker />
           <RecentScans />
           {isAuthenticated ? (
@@ -138,7 +148,7 @@ export function Nav() {
               onClick={() => setIsAuthenticated(true)}
             >
               <User aria-hidden="true" />
-              Log in
+              {t("nav.login")}
             </Button>
           )}
 
@@ -149,7 +159,7 @@ export function Nav() {
             onClick={() => setMobileOpen((open) => !open)}
             aria-expanded={mobileOpen}
             aria-controls="mobile-nav"
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-label={mobileOpen ? t("nav.closeMenu") : t("nav.openMenu")}
           >
             {mobileOpen ? (
               <X className="size-5" aria-hidden="true" />
@@ -167,7 +177,7 @@ export function Nav() {
           aria-label="Mobile navigation"
         >
           <ul className="space-y-1">
-            {NAV_LINKS.map(({ href, label, icon: Icon }) => {
+            {NAV_LINKS.map(({ href, labelKey, icon: Icon }) => {
               const active = pathname === href;
               return (
                 <li key={href}>
@@ -183,7 +193,7 @@ export function Nav() {
                     aria-current={active ? "page" : undefined}
                   >
                     <Icon className="size-4" aria-hidden="true" />
-                    {label}
+                    {t(labelKey)}
                   </Link>
                 </li>
               );

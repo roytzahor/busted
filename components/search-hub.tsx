@@ -4,17 +4,19 @@ import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnalysisSkeleton } from "@/components/analysis-skeleton";
 import { AnalysisTabs } from "@/components/analysis-tabs";
+import { BulkPaste } from "@/components/bulk-paste";
 import { PartialResult } from "@/components/partial-result";
 import { LivePipelineView } from "@/components/live-pipeline-view";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   analyzeProductUrl,
-  getProductUrlHint,
+  getProductUrlHintKey,
   validateProductUrl,
   type AnalyzeProgress,
   type LiveStageUpdate,
   type SSEStageId,
+  type UrlHintKey,
 } from "@/lib/analyze/client";
 import type { ProductComparisonResult } from "@/lib/mock-data";
 import type {
@@ -32,14 +34,9 @@ import { appendScan } from "@/lib/scan-history";
 import { track } from "@/lib/track";
 import { TrendingNow } from "@/components/trending-now";
 import { TrustCounter } from "@/components/trust-counter";
+import { useT } from "@/components/locale-provider";
 import { ValuePropFaq } from "@/components/value-prop-faq";
-import {
-  BRAND_DESCRIPTION,
-  BRAND_HOOK_BUSTED,
-  BRAND_HOOK_RELIEF,
-  BRAND_TAGLINE,
-  DISCLAIMER_SHORT,
-} from "@/lib/brand";
+import { DISCLAIMER_SHORT } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import {
   AlertCircle,
@@ -54,11 +51,12 @@ import {
 } from "lucide-react";
 
 type SearchPhase = "idle" | "analyzing" | "complete" | "error";
+type SearchMode = "single" | "bulk";
 
-const STATS = [
-  { icon: Zap, label: "Avg scan", value: "~20s" },
-  { icon: Shield, label: "Detection", value: "AI-powered" },
-  { icon: Clock, label: "Cache", value: "14 days" },
+const STAT_KEYS = [
+  { icon: Zap, key: "stats.avgScan" as const, value: "~20s" },
+  { icon: Shield, key: "stats.detection" as const, value: "AI-powered" },
+  { icon: Clock, key: "stats.cache" as const, value: "14 days" },
 ];
 
 const HOW_IT_WORKS = [
@@ -90,10 +88,12 @@ const HOW_IT_WORKS = [
 
 export function SearchHub() {
   const searchParams = useSearchParams();
+  const t = useT();
+  const [mode, setMode] = useState<SearchMode>("single");
   const [url, setUrl] = useState("");
   const [phase, setPhase] = useState<SearchPhase>("idle");
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [urlHint, setUrlHint] = useState<string | null>(null);
+  const [urlHintKey, setUrlHintKey] = useState<UrlHintKey | null>(null);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [progress, setProgress] = useState<AnalyzeProgress>({
     step: "Checking 7-day cache…",
@@ -117,10 +117,10 @@ export function SearchHub() {
     setUrl(value);
     if (value.trim()) {
       setValidationError(validateProductUrl(value));
-      setUrlHint(getProductUrlHint(value));
+      setUrlHintKey(getProductUrlHintKey(value));
     } else {
       setValidationError(null);
-      setUrlHint(null);
+      setUrlHintKey(null);
     }
   }, []);
 
@@ -291,21 +291,21 @@ export function SearchHub() {
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">
           <span className="animate-live size-1.5 rounded-full bg-primary" aria-hidden="true" />
           <Flame className="size-3.5" aria-hidden="true" />
-          {BRAND_TAGLINE}
+          {t("hero.tagline")}
         </div>
 
         {/* Headline */}
         <h1 className="mb-5 text-4xl font-black tracking-tight sm:text-5xl md:text-6xl lg:text-7xl md:leading-[1.05]">
           <span className="bg-gradient-to-br from-primary via-orange-400 to-amber-300 bg-clip-text text-transparent">
-            {BRAND_HOOK_BUSTED}
+            {t("hero.headline.busted")}
           </span>{" "}
           <span className="bg-gradient-to-br from-success via-emerald-400 to-green-300 bg-clip-text text-transparent">
-            {BRAND_HOOK_RELIEF}
+            {t("hero.headline.relief")}
           </span>
         </h1>
 
         <p className="mx-auto mb-6 max-w-lg text-base text-muted-foreground sm:text-lg">
-          {BRAND_DESCRIPTION}
+          {t("hero.description")}
         </p>
 
         {/* Live trust counter — real DB aggregate, cached server-side 1h */}
@@ -315,15 +315,55 @@ export function SearchHub() {
 
         {/* Stats bar — glass pill */}
         <div className="mb-10 inline-flex items-center justify-center divide-x divide-white/10 overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] backdrop-blur-sm">
-          {STATS.map(({ icon: Icon, label, value }) => (
-            <div key={label} className="flex items-center gap-1 px-3 py-2.5 text-xs sm:gap-2 sm:px-5 sm:text-sm">
+          {STAT_KEYS.map(({ icon: Icon, key, value }) => (
+            <div key={key} className="flex items-center gap-1 px-3 py-2.5 text-xs sm:gap-2 sm:px-5 sm:text-sm">
               <Icon className="size-3.5 shrink-0 text-primary sm:size-4" aria-hidden="true" />
-              <span className="hidden text-muted-foreground sm:inline">{label}:</span>
+              <span className="hidden text-muted-foreground sm:inline">{t(key)}:</span>
               <span className="font-semibold">{value}</span>
             </div>
           ))}
         </div>
 
+        {/* ── Mode tabs: Single URL / Bulk paste ───────────────────── */}
+        <div
+          role="tablist"
+          aria-label={t("hero.howItWorks")}
+          className="mx-auto mb-3 inline-flex w-full max-w-xl items-center justify-center gap-1 rounded-full border border-white/8 bg-white/[0.03] p-1 text-xs backdrop-blur-sm"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "single"}
+            onClick={() => setMode("single")}
+            className={cn(
+              "flex-1 rounded-full px-3 py-1.5 font-medium transition-colors",
+              mode === "single"
+                ? "bg-primary/90 text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t("bulk.tab.single")}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mode === "bulk"}
+            onClick={() => setMode("bulk")}
+            className={cn(
+              "flex-1 rounded-full px-3 py-1.5 font-medium transition-colors",
+              mode === "bulk"
+                ? "bg-primary/90 text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {t("bulk.tab.bulk")}
+          </button>
+        </div>
+
+        {mode === "bulk" ? (
+          <BulkPaste className="mx-auto w-full max-w-2xl" />
+        ) : (
+        <>
         {/* ── Glass search card ────────────────────────────────────── */}
         <div className="relative mx-auto w-full max-w-xl overflow-hidden rounded-2xl border border-white/8 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-xl">
           {/* Top-edge shine */}
@@ -339,7 +379,7 @@ export function SearchHub() {
                 Product URL
               </label>
               <Link2
-                className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-muted-foreground"
+                className="pointer-events-none absolute top-1/2 start-3.5 size-4 -translate-y-1/2 text-muted-foreground"
                 aria-hidden="true"
               />
               <Input
@@ -347,6 +387,7 @@ export function SearchHub() {
                 type="url"
                 inputMode="url"
                 autoComplete="url"
+                dir="ltr"
                 placeholder="https://store.com/products/..."
                 value={url}
                 onChange={(e) => handleUrlChange(e.target.value)}
@@ -354,15 +395,15 @@ export function SearchHub() {
                 aria-describedby={
                   validationError
                     ? "url-error"
-                    : urlHint
+                    : urlHintKey
                       ? "url-hint-warn"
                       : "url-hint"
                 }
                 className={cn(
-                  "h-12 border-white/10 bg-white/5 pl-10 text-base placeholder:text-muted-foreground/50 focus-visible:border-primary/50 focus-visible:ring-primary/20",
+                  "h-12 border-white/10 bg-white/5 ps-10 text-base placeholder:text-muted-foreground/50 focus-visible:border-primary/50 focus-visible:ring-primary/20",
                   validationError && "border-destructive/60 ring-2 ring-destructive/20",
-                  urlHint && !validationError && "border-primary/40",
-                  canClipboard && !url && "pr-24",
+                  urlHintKey && !validationError && "border-primary/40",
+                  canClipboard && !url && "pe-24",
                 )}
                 disabled={isAnalyzing}
               />
@@ -370,26 +411,26 @@ export function SearchHub() {
                 <button
                   type="button"
                   onClick={() => void handleClipboardPaste()}
-                  aria-label="Paste link from clipboard"
-                  className="absolute top-1/2 right-2 inline-flex h-10 -translate-y-1/2 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 text-[11px] font-medium text-muted-foreground transition-[color,background-color,border-color] hover:border-primary/30 hover:bg-primary/8 hover:text-foreground active:scale-[0.96]"
+                  aria-label={t("hero.paste")}
+                  className="absolute top-1/2 end-2 inline-flex h-10 -translate-y-1/2 items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 text-[11px] font-medium text-muted-foreground transition-[color,background-color,border-color] hover:border-primary/30 hover:bg-primary/8 hover:text-foreground active:scale-[0.96]"
                 >
                   <ClipboardPaste className="size-3.5" aria-hidden="true" />
-                  Paste
+                  {t("hero.paste")}
                 </button>
               ) : null}
             </div>
 
-            {urlHint && !validationError ? (
+            {urlHintKey && !validationError ? (
               <p
                 id="url-hint-warn"
-                className="flex items-start gap-1.5 text-left text-sm text-accent-foreground"
+                className="flex items-start gap-1.5 text-start text-sm text-accent-foreground"
               >
                 <Flame className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                {urlHint}
+                {t(urlHintKey)}
               </p>
             ) : (
-              <p id="url-hint" className="text-left text-xs text-muted-foreground">
-                Any product link works — repeat lookups are instant thanks to 14-day caching.
+              <p id="url-hint" className="text-start text-xs text-muted-foreground">
+                {t("hero.hint")}
               </p>
             )}
 
@@ -397,7 +438,7 @@ export function SearchHub() {
               <p
                 id="url-error"
                 role="alert"
-                className="flex items-center gap-1.5 text-left text-sm text-destructive"
+                className="flex items-center gap-1.5 text-start text-sm text-destructive"
               >
                 <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
                 {validationError}
@@ -411,11 +452,12 @@ export function SearchHub() {
               className="glow-primary relative h-12 w-full overflow-hidden bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-[color,background-color,box-shadow,opacity,scale] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/40 disabled:opacity-40 disabled:shadow-none active:scale-[0.96]"
             >
               {isAnalyzing ? (
-                "Scanning…"
+                t("hero.cta.scanning")
               ) : (
                 <>
-                  Run Busted Scan
-                  <ArrowRight className="ml-1 size-4" aria-hidden="true" />
+                  {t("hero.cta.scan")}
+                  {/* Arrow rotates in RTL so it always points in the reading direction. */}
+                  <ArrowRight className="ms-1 size-4 rtl:rotate-180" aria-hidden="true" />
                 </>
               )}
             </Button>
@@ -426,7 +468,7 @@ export function SearchHub() {
         <p
           role="note"
           className={cn(
-            "mx-auto mt-4 flex max-w-xl items-start gap-2 px-2 text-left text-[11px] leading-relaxed text-muted-foreground/70 transition-opacity duration-300 sm:text-xs",
+            "mx-auto mt-4 flex max-w-xl items-start gap-2 px-2 text-start text-[11px] leading-relaxed text-muted-foreground/70 transition-opacity duration-300 sm:text-xs",
             isAnalyzing && "opacity-40",
           )}
         >
@@ -441,7 +483,7 @@ export function SearchHub() {
         {isIdle ? (
           <div className="mt-6 flex flex-col items-center gap-2">
             <p className="text-xs uppercase tracking-widest text-muted-foreground/50">
-              Try one
+              {t("hero.tryOne")}
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               {examples.map((ex) => (
@@ -465,6 +507,8 @@ export function SearchHub() {
             </div>
           </div>
         ) : null}
+        </>
+        )}
       </section>
 
       {/* ── Progress ──────────────────────────────────────────────── */}
@@ -527,9 +571,9 @@ export function SearchHub() {
       {/* ── How it works — bento grid (idle only) ─────────────────── */}
       {isIdle ? (
         <>
-        <section aria-label="How it works" className="mb-12">
+        <section aria-label={t("hero.howItWorks")} className="mb-12">
           <p className="mb-5 text-center text-xs font-bold uppercase tracking-widest text-muted-foreground/50">
-            How it works
+            {t("hero.howItWorks")}
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
             {HOW_IT_WORKS.map((item) => {

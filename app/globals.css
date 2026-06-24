@@ -138,6 +138,17 @@
     @apply font-sans;
     overflow-x: hidden;
   }
+  /* Hebrew (RTL) — switch the font stack to Heebo so Hebrew glyphs render
+     with proper weights/metrics. Geist's Latin coverage is fine, but its
+     Hebrew fallback is the system font, which looks inconsistent. */
+  html[dir="rtl"] {
+    font-family:
+      var(--font-heebo),
+      var(--font-geist-sans),
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+  }
   h1, h2, h3, h4, h5, h6 {
     text-wrap: balance;
   }

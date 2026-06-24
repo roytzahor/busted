@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { useMoney } from "@/components/currency-provider";
+import { useT } from "@/components/locale-provider";
 import { cn } from "@/lib/utils";
 import { Flame, TrendingDown } from "lucide-react";
 
@@ -52,6 +53,7 @@ interface TrendingNowProps {
 
 export function TrendingNow({ className }: TrendingNowProps) {
   const formatMoney = useMoney();
+  const t = useT();
   const [data, setData] = useState<TrendingPayload | null>(null);
   const [errored, setErrored] = useState(false);
 
@@ -85,10 +87,10 @@ export function TrendingNow({ className }: TrendingNowProps) {
             className="flex items-center gap-2 text-base font-bold tracking-tight sm:text-lg"
           >
             <Flame className="size-4 text-primary" aria-hidden="true" />
-            Trending now
+            {t("trending.title")}
           </h2>
           <p className="text-xs text-muted-foreground">
-            Recently scanned · live from the last {data?.windowHours ?? 72} hours
+            {t("trending.subtitle", { hours: data?.windowHours ?? 72 })}
           </p>
         </div>
       </div>
@@ -130,7 +132,11 @@ export function TrendingNow({ className }: TrendingNowProps) {
               key={item.scanId}
               className="min-w-[200px] flex-shrink-0 snap-start sm:min-w-0"
             >
-              <TrendingCard item={item} formatMoney={formatMoney} />
+              <TrendingCard
+                item={item}
+                formatMoney={formatMoney}
+                savePctLabel={t("trending.savePct", { pct: item.savingsPercent })}
+              />
             </li>
           ))}
         </ul>
@@ -142,9 +148,10 @@ export function TrendingNow({ className }: TrendingNowProps) {
 interface TrendingCardProps {
   item: TrendingItem;
   formatMoney: (usdAmount: number, opts?: { whole?: boolean; compact?: boolean }) => string;
+  savePctLabel: string;
 }
 
-function TrendingCard({ item, formatMoney }: TrendingCardProps) {
+function TrendingCard({ item, formatMoney, savePctLabel }: TrendingCardProps) {
   return (
     <Link
       href={`/scan/${item.scanId}`}
@@ -167,10 +174,10 @@ function TrendingCard({ item, formatMoney }: TrendingCardProps) {
           </div>
         )}
 
-        {/* Savings badge — corner overlay */}
-        <Badge className="absolute right-2 top-2 border-success/40 bg-success/90 text-success-foreground shadow-md backdrop-blur-sm">
-          <TrendingDown className="mr-0.5 size-3" aria-hidden="true" />
-          Save {item.savingsPercent}%
+        {/* Savings badge — corner overlay (RTL-aware via end-2). */}
+        <Badge className="absolute end-2 top-2 border-success/40 bg-success/90 text-success-foreground shadow-md backdrop-blur-sm">
+          <TrendingDown className="me-0.5 size-3" aria-hidden="true" />
+          {savePctLabel}
         </Badge>
       </div>
 

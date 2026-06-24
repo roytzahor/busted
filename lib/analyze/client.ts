@@ -83,9 +83,15 @@ export function validateProductUrl(value: string): string | null {
   return null;
 }
 
-export function getProductUrlHint(url: string): string | null {
+/**
+ * Returns a message-key the caller can pass to t(), or null when no hint
+ * applies. Returning a key (not English copy) keeps this lib locale-free.
+ */
+export type UrlHintKey = "hero.hint.supplier";
+
+export function getProductUrlHintKey(url: string): UrlHintKey | null {
   if (isSupplierMarketplaceUrl(url)) {
-    return "This is a supplier marketplace link. Paste the retail store URL (Shopify, etc.) where you saw a markup to detect dropshipping.";
+    return "hero.hint.supplier";
   }
   return null;
 }

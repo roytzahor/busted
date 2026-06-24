@@ -21,12 +21,34 @@ import {
   isCurrencyCode,
   type CurrencyCode,
 } from "@/lib/currency";
+import {
+  DEFAULT_LOCALE,
+  isLocaleCode,
+  localeForCountry,
+  LOCALE_COOKIE_NAME,
+  LOCALES,
+  type LocaleCode,
+  type LocaleMeta,
+} from "@/lib/i18n/locale";
 
 export interface DetectedLocale {
   currency: CurrencyCode;
   country: string | null;
   /** True when currency came from the cookie (user override). */
   fromOverride: boolean;
+  language: LocaleCode;
+  /** True when language came from the cookie (user override). */
+  languageFromOverride: boolean;
+  languageMeta: LocaleMeta;
+}
+
+/** Extract the language code (e.g. "he") from an Accept-Language header. */
+function languageFromAcceptLanguage(header: string | null): LocaleCode | null {
+  if (!header) return null;
+  // Examples: "he-IL,he;q=0.9,en-US;q=0.8" → "he"
+  const match = header.match(/^\s*([a-z]{2,3})/);
+  if (!match) return null;
+  return isLocaleCode(match[1]) ? match[1] : null;
 }
 
 /** Pull the first 2-letter region code we can find from `Accept-Language`. */
@@ -40,41 +62,41 @@ function regionFromAcceptLanguage(header: string | null): string | null {
 export async function detectServerLocale(): Promise<DetectedLocale> {
   const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
 
-  const cookieOverride = cookieStore.get(CURRENCY_COOKIE_NAME)?.value;
-  if (isCurrencyCode(cookieOverride)) {
-    return {
-      currency: cookieOverride,
-      country: headerStore.get("x-vercel-ip-country"),
-      fromOverride: true,
-    };
-  }
+  const currencyOverride = cookieStore.get(CURRENCY_COOKIE_NAME)?.value;
+  const languageOverrideRaw = cookieStore.get(LOCALE_COOKIE_NAME)?.value;
+  const languageOverride = isLocaleCode(languageOverrideRaw) ? languageOverrideRaw : null;
 
   const vercelCountry =
     headerStore.get("x-vercel-ip-country") ??
     headerStore.get("cf-ipcountry") ??
     headerStore.get("x-country-code");
 
-  if (vercelCountry) {
-    return {
-      currency: currencyForCountry(vercelCountry),
-      country: vercelCountry,
-      fromOverride: false,
-    };
-  }
-
   const acceptLang = headerStore.get("accept-language");
-  const region = regionFromAcceptLanguage(acceptLang);
-  if (region) {
-    return {
-      currency: currencyForCountry(region),
-      country: region,
-      fromOverride: false,
-    };
-  }
+  const acceptRegion = regionFromAcceptLanguage(acceptLang);
+  const acceptLanguage = languageFromAcceptLanguage(acceptLang);
+
+  const inferredCountry = vercelCountry ?? acceptRegion ?? null;
+
+  // Currency: cookie wins; else country-driven default; else USD.
+  const currency: CurrencyCode = isCurrencyCode(currencyOverride)
+    ? currencyOverride
+    : inferredCountry
+      ? currencyForCountry(inferredCountry)
+      : DEFAULT_CURRENCY;
+
+  // Language: cookie wins; else country-driven (IL → he); else Accept-Language;
+  // else English. The IL→he default is the highest-impact rule for this launch.
+  const language: LocaleCode = languageOverride
+    ?? (inferredCountry ? localeForCountry(inferredCountry) : null)
+    ?? acceptLanguage
+    ?? DEFAULT_LOCALE;
 
   return {
-    currency: DEFAULT_CURRENCY,
-    country: null,
-    fromOverride: false,
+    currency,
+    country: inferredCountry,
+    fromOverride: isCurrencyCode(currencyOverride),
+    language,
+    languageFromOverride: languageOverride !== null,
+    languageMeta: LOCALES[language],
   };
 }

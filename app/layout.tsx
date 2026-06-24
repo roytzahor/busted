@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Heebo } from "next/font/google";
 import { Nav } from "@/components/nav";
 import { AnalyticsMount } from "@/components/analytics-mount";
 import { CurrencyProvider } from "@/components/currency-provider";
+import { LocaleProvider } from "@/components/locale-provider";
 import { detectServerLocale } from "@/lib/locale/detect";
 import {
   BRAND_DESCRIPTION,
@@ -24,6 +25,14 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+// Heebo — used for Hebrew (RTL) rendering. Latin fallback covered by Geist
+// so the variable can sit in `font-family` alongside Geist without harming
+// English layouts.
+const heebo = Heebo({
+  variable: "--font-heebo",
+  subsets: ["hebrew", "latin"],
 });
 
 export const metadata: Metadata = {
@@ -69,37 +78,46 @@ export default async function RootLayout({
   const locale = await detectServerLocale();
 
   return (
-    <html lang="en" className="dark">
+    <html
+      lang={locale.languageMeta.htmlLang}
+      dir={locale.languageMeta.dir}
+      className="dark"
+    >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} min-h-screen antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${heebo.variable} min-h-screen antialiased`}
       >
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
         <AnalyticsMount />
-        <CurrencyProvider
-          initialCurrency={locale.currency}
-          initialCountry={locale.country}
-          initialFromOverride={locale.fromOverride}
+        <LocaleProvider
+          initialLocale={locale.language}
+          initialFromOverride={locale.languageFromOverride}
         >
-          <div className="flex min-h-screen flex-col">
-            <Nav />
-            <main id="main-content" className="flex-1">
-              {children}
-            </main>
-            <footer className="mt-auto border-t border-white/8 py-6">
-              <div className="mx-auto max-w-3xl space-y-2 px-4 text-center text-xs text-muted-foreground sm:px-6">
-                <p className="font-medium text-foreground/70">
-                  {BRAND_NAME} — {BRAND_TAGLINE} Spot the fire, skip the markup.
-                </p>
-                <p className="text-[11px] leading-relaxed text-muted-foreground/70 sm:text-xs">
-                  {DISCLAIMER_LONG}
-                </p>
-              </div>
-            </footer>
-          </div>
-        </CurrencyProvider>
+          <CurrencyProvider
+            initialCurrency={locale.currency}
+            initialCountry={locale.country}
+            initialFromOverride={locale.fromOverride}
+          >
+            <div className="flex min-h-screen flex-col">
+              <Nav />
+              <main id="main-content" className="flex-1">
+                {children}
+              </main>
+              <footer className="mt-auto border-t border-white/8 py-6">
+                <div className="mx-auto max-w-3xl space-y-2 px-4 text-center text-xs text-muted-foreground sm:px-6">
+                  <p className="font-medium text-foreground/70">
+                    {BRAND_NAME} — {BRAND_TAGLINE} Spot the fire, skip the markup.
+                  </p>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground/70 sm:text-xs">
+                    {DISCLAIMER_LONG}
+                  </p>
+                </div>
+              </footer>
+            </div>
+          </CurrencyProvider>
+        </LocaleProvider>
       </body>
     </html>
   );
