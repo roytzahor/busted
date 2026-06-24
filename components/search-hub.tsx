@@ -30,6 +30,7 @@ import {
 } from "@/lib/examples";
 import { appendScan } from "@/lib/scan-history";
 import { track } from "@/lib/track";
+import { TrendingNow } from "@/components/trending-now";
 import { TrustCounter } from "@/components/trust-counter";
 import { ValuePropFaq } from "@/components/value-prop-faq";
 import {
@@ -516,6 +517,11 @@ export function SearchHub() {
         <div className="mb-16">
           <PartialResult result={partialResult} onRetry={() => void handleAnalyze(partialResult.originalUrl)} />
         </div>
+      ) : null}
+
+      {/* ── Trending now — social proof rail (idle only) ──────────── */}
+      {isIdle ? (
+        <TrendingNow className="mb-12" />
       ) : null}
 
       {/* ── How it works — bento grid (idle only) ─────────────────── */}
