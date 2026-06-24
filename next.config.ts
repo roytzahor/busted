@@ -33,8 +33,8 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       // Inline scripts are needed by Next.js runtime; nonces not used so allow unsafe-inline
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      // Images: self + data URIs + AliExpress CDN + Shopify CDN + placeholder service
-      "img-src 'self' data: blob: https://ae01.alicdn.com https://cdn.shopify.com https://placehold.co https://*.aliexpress.com",
+      // Images: any HTTPS source — scraped product images come from arbitrary store domains
+      "img-src 'self' data: blob: https:",
       // Fonts: self + Google Fonts (via next/font — loaded as data URIs, but keep for safety)
       "font-src 'self' data:",
       // API calls from client go to same origin only
@@ -51,24 +51,9 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "placehold.co",
-      },
-      {
-        protocol: "https",
-        hostname: "cdn.shopify.com",
-      },
-      {
-        protocol: "https",
-        hostname: "ae01.alicdn.com",
-      },
-      {
-        protocol: "https",
-        hostname: "**.aliexpress.com",
-      },
-    ],
+    // Scraped product images come from arbitrary store domains; we render them
+    // via <Image unoptimized> so this only gates dev-time URL validation.
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
   async headers() {
     return [
