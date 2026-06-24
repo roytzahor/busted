@@ -1,5 +1,7 @@
 "use client";
 
+import { useCurrency } from "@/components/currency-provider";
+import { convertUsd } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 import { Flame, TrendingDown } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -56,14 +58,17 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-function formatUsd(n: number): string {
+function formatMoneyCompact(usdAmount: number, currency: { symbol: string; fxFromUsd: number; locale: string }): string {
+  const n = convertUsd(usdAmount, "USD") * currency.fxFromUsd;
   if (n >= 1_000_000)
-    return `$${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
-  if (n >= 1_000) return `$${(n / 1_000).toFixed(1).replace(/\.0$/, "")}k`;
-  return `$${n.toLocaleString()}`;
+    return `${currency.symbol}${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (n >= 1_000)
+    return `${currency.symbol}${(n / 1_000).toFixed(1).replace(/\.0$/, "")}k`;
+  return `${currency.symbol}${n.toLocaleString(currency.locale, { maximumFractionDigits: 0 })}`;
 }
 
 export function TrustCounter({ className }: { className?: string }) {
+  const { meta } = useCurrency();
   const [data, setData] = useState<TotalsPayload | null>(null);
   const [errored, setErrored] = useState(false);
 
@@ -108,7 +113,7 @@ export function TrustCounter({ className }: { className?: string }) {
         "mx-auto inline-flex items-center gap-3 rounded-full border border-white/8 bg-white/[0.04] px-4 py-1.5 text-xs backdrop-blur-sm tabular-nums sm:text-sm",
         className,
       )}
-      aria-label={`${data!.scansThisWeek} scans this week, $${data!.totalSavingsUsd.toLocaleString()} in savings exposed`}
+      aria-label={`${data!.scansThisWeek} scans this week, ${formatMoneyCompact(data!.totalSavingsUsd, meta)} in savings exposed`}
     >
       <span className="inline-flex items-center gap-1.5">
         <Flame className="size-3.5 text-primary" aria-hidden="true" />
@@ -122,7 +127,7 @@ export function TrustCounter({ className }: { className?: string }) {
           </span>
           <span className="inline-flex items-center gap-1.5">
             <TrendingDown className="size-3.5 text-success" aria-hidden="true" />
-            <span className="font-bold text-success">{formatUsd(savings)}</span>
+            <span className="font-bold text-success">{formatMoneyCompact(savings, meta)}</span>
             <span className="text-muted-foreground">saved</span>
           </span>
         </>

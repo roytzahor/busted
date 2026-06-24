@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { BRAND_NAME } from "@/lib/brand";
+import { CurrencyPicker } from "@/components/currency-picker";
 import { RecentScans } from "@/components/recent-scans";
 import { cn } from "@/lib/utils";
 import {
@@ -80,6 +81,7 @@ export function Nav() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <CurrencyPicker />
           <RecentScans />
           {isAuthenticated ? (
             <DropdownMenu>

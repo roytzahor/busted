@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useMoney } from "@/components/currency-provider";
 import { trackAffiliateClick } from "@/lib/clicks";
 import type { BrowseAnalysisResult } from "@/lib/analyze/map-response";
 import { cn } from "@/lib/utils";
@@ -10,12 +11,6 @@ import Image from "next/image";
 
 interface BrowseAnalysisResultsProps {
   result: BrowseAnalysisResult;
-}
-
-function formatUsd(value: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-    value,
-  );
 }
 
 function formatOrders(count: number): string {
@@ -178,6 +173,7 @@ interface BrowseCardProps {
 }
 
 function BrowseCard({ candidate, scanId }: BrowseCardProps) {
+  const formatMoney = useMoney();
   const handleClick = () =>
     trackAffiliateClick({ scanId, targetUrl: candidate.affiliateUrl });
 
@@ -215,7 +211,7 @@ function BrowseCard({ candidate, scanId }: BrowseCardProps) {
 
         <div className="flex items-center justify-between gap-2">
           <p className="text-2xl font-black tabular-nums text-sky-200">
-            {formatUsd(candidate.priceUsd)}
+            {formatMoney(candidate.priceUsd)}
           </p>
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-0.5">

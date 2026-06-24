@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Nav } from "@/components/nav";
 import { AnalyticsMount } from "@/components/analytics-mount";
+import { CurrencyProvider } from "@/components/currency-provider";
+import { detectServerLocale } from "@/lib/locale/detect";
 import {
   BRAND_DESCRIPTION,
   BRAND_NAME,
@@ -59,11 +61,13 @@ const organizationJsonLd = {
   sameAs: [],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await detectServerLocale();
+
   return (
     <html lang="en" className="dark">
       <body
@@ -74,22 +78,28 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
         <AnalyticsMount />
-        <div className="flex min-h-screen flex-col">
-          <Nav />
-          <main id="main-content" className="flex-1">
-            {children}
-          </main>
-          <footer className="mt-auto border-t border-white/8 py-6">
-            <div className="mx-auto max-w-3xl space-y-2 px-4 text-center text-xs text-muted-foreground sm:px-6">
-              <p className="font-medium text-foreground/70">
-                {BRAND_NAME} — {BRAND_TAGLINE} Spot the fire, skip the markup.
-              </p>
-              <p className="text-[11px] leading-relaxed text-muted-foreground/70 sm:text-xs">
-                {DISCLAIMER_LONG}
-              </p>
-            </div>
-          </footer>
-        </div>
+        <CurrencyProvider
+          initialCurrency={locale.currency}
+          initialCountry={locale.country}
+          initialFromOverride={locale.fromOverride}
+        >
+          <div className="flex min-h-screen flex-col">
+            <Nav />
+            <main id="main-content" className="flex-1">
+              {children}
+            </main>
+            <footer className="mt-auto border-t border-white/8 py-6">
+              <div className="mx-auto max-w-3xl space-y-2 px-4 text-center text-xs text-muted-foreground sm:px-6">
+                <p className="font-medium text-foreground/70">
+                  {BRAND_NAME} — {BRAND_TAGLINE} Spot the fire, skip the markup.
+                </p>
+                <p className="text-[11px] leading-relaxed text-muted-foreground/70 sm:text-xs">
+                  {DISCLAIMER_LONG}
+                </p>
+              </div>
+            </footer>
+          </div>
+        </CurrencyProvider>
       </body>
     </html>
   );

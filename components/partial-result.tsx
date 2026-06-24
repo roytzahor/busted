@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { useMoney } from "@/components/currency-provider";
 import type { PartialResult as PartialResultData } from "@/lib/analyze/map-response";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, RotateCcw } from "lucide-react";
@@ -19,14 +20,6 @@ interface PartialResultProps {
   result: PartialResultData;
   onRetry: () => void;
   className?: string;
-}
-
-function formatUsd(v: number | null | undefined): string {
-  if (typeof v !== "number" || v <= 0) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(v);
 }
 
 function reasonCopy(reason: PartialResultData["degradedReason"]): {
@@ -48,7 +41,11 @@ function reasonCopy(reason: PartialResultData["degradedReason"]): {
 }
 
 export function PartialResult({ result, onRetry, className }: PartialResultProps) {
+  const formatMoney = useMoney();
   const copy = reasonCopy(result.degradedReason);
+  const price = result.storeProduct.priceUsd;
+  const priceLabel =
+    typeof price === "number" && price > 0 ? formatMoney(price) : "—";
 
   return (
     <section
@@ -106,9 +103,7 @@ export function PartialResult({ result, onRetry, className }: PartialResultProps
             <p className="text-sm text-muted-foreground">
               Sold by {result.storeProduct.storeName}
             </p>
-            <p className="text-2xl font-black tabular-nums">
-              {formatUsd(result.storeProduct.priceUsd)}
-            </p>
+            <p className="text-2xl font-black tabular-nums">{priceLabel}</p>
           </div>
         </div>
       </article>

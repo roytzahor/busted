@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useMoney } from "@/components/currency-provider";
 import { MatchFeedback } from "@/components/match-feedback";
 import { ShareButton } from "@/components/share-button";
 import { trackAffiliateClick } from "@/lib/clicks";
@@ -27,12 +28,6 @@ interface AnalysisResultsProps {
   result: ProductComparisonResult;
 }
 
-function formatUsd(value: number): string {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
-    value,
-  );
-}
-
 function formatOrders(count: number): string {
   if (count >= 1000) {
     return `${(count / 1000).toFixed(1).replace(/\.0$/, "")}k+ orders`;
@@ -41,6 +36,7 @@ function formatOrders(count: number): string {
 }
 
 export function AnalysisResults({ result }: AnalysisResultsProps) {
+  const formatMoney = useMoney();
   const { storeProduct, supplierProduct, savingsUsd, savingsPercent, cache } = result;
   const matchQuality = result.matchQuality ?? "high";
   const isBestEffort = result.bestEffortOnly === true;
@@ -131,12 +127,12 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                 >
                   They&apos;re overcharging you{" "}
                   <span className="bg-gradient-to-r from-success to-emerald-400 bg-clip-text text-transparent">
-                    {formatUsd(savingsUsd)}
+                    {formatMoney(savingsUsd)}
                   </span>
                 </h2>
                 <p className="mt-1 tabular-nums text-sm text-muted-foreground">
-                  {formatUsd(storeProduct.priceUsd)} retail vs{" "}
-                  {formatUsd(supplierProduct.priceUsd)} on AliExpress
+                  {formatMoney(storeProduct.priceUsd)} retail vs{" "}
+                  {formatMoney(supplierProduct.priceUsd)} on AliExpress
                 </p>
               </>
             )}
@@ -145,7 +141,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
           {isBestEffort ? (
             <div className="text-right">
               <div className="bg-gradient-to-br from-primary to-amber-400 bg-clip-text text-5xl font-black tabular-nums leading-none text-transparent">
-                {formatUsd(supplierProduct.priceUsd)}
+                {formatMoney(supplierProduct.priceUsd)}
               </div>
               <div className="text-xs text-muted-foreground">on AliExpress</div>
             </div>
@@ -359,6 +355,7 @@ function ProductCard({
   warehouseCountry,
   variantWarning,
 }: ProductCardProps) {
+  const formatMoney = useMoney();
   const isStore = variant === "store";
 
   return (
@@ -435,7 +432,7 @@ function ProductCard({
             isStore ? "text-destructive" : "text-success",
           )}
         >
-          {formatUsd(price)}
+          {formatMoney(price)}
         </p>
 
         {/* Total with shipping — only when shipping cost is known */}
@@ -446,10 +443,10 @@ function ProductCard({
           <p className="tabular-nums text-xs text-muted-foreground">
             Total with shipping:{" "}
             <span className="font-semibold text-foreground">
-              {formatUsd(totalCostUsd)}
+              {formatMoney(totalCostUsd)}
             </span>{" "}
             <span className="text-muted-foreground/70">
-              (+{formatUsd(shippingCostUsd)} ship)
+              (+{formatMoney(shippingCostUsd)} ship)
             </span>
           </p>
         ) : null}

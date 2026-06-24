@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useMoney } from "@/components/currency-provider";
 import type { DropshipAnalysisResult } from "@/lib/analyze/map-response";
 import { cn } from "@/lib/utils";
 import {
@@ -17,13 +18,6 @@ import Image from "next/image";
 
 interface DropshipAnalysisResultsProps {
   result: DropshipAnalysisResult;
-}
-
-function formatUsd(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
 }
 
 const VERDICT_COPY: Record<
@@ -53,6 +47,7 @@ const VERDICT_COPY: Record<
 };
 
 export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps) {
+  const formatMoney = useMoney();
   const { storeProduct, dropshipPrediction, cache, supplierSkipReason, sourceType } =
     result;
   const prediction = dropshipPrediction;
@@ -114,7 +109,7 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
               <p className="font-semibold">{storeProduct.title}</p>
               {storeProduct.priceUsd > 0 ? (
                 <p className="text-success text-2xl font-bold tabular-nums">
-                  {formatUsd(storeProduct.priceUsd)}
+                  {formatMoney(storeProduct.priceUsd)}
                 </p>
               ) : null}
               <p className="text-muted-foreground text-sm leading-relaxed">
@@ -150,7 +145,7 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
                     Sold by {storeProduct.storeName}
                   </p>
                   <p className="text-destructive text-2xl font-bold tabular-nums">
-                    {formatUsd(storeProduct.priceUsd)}
+                    {formatMoney(storeProduct.priceUsd)}
                   </p>
                 </div>
               </CardContent>
@@ -181,7 +176,7 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
                         Est. supplier price
                       </dt>
                       <dd className="text-success font-medium tabular-nums">
-                        {formatUsd(prediction.estimatedSupplierPriceUsd)}
+                        {formatMoney(prediction.estimatedSupplierPriceUsd)}
                       </dd>
                     </div>
                   ) : null}
