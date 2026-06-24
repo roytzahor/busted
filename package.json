@@ -17,7 +17,10 @@
     "eval": "tsx --env-file=.env scripts/eval/run-fixtures.ts",
     "eval:capture": "tsx --env-file=.env scripts/eval/capture-fixture.ts",
     "eval:list": "tsx scripts/eval/list-fixtures.ts",
-    "verify:categories": "tsx --env-file=.env scripts/verify-category-ids.ts"
+    "verify:categories": "tsx --env-file=.env scripts/verify-category-ids.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -39,11 +42,14 @@
     "@types/node": "^22.15.29",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19.1.5",
+    "@vitest/ui": "^4.1.9",
     "eslint": "^9.28.0",
     "eslint-config-next": "^15.3.3",
     "prisma": "^6.9.0",
     "tailwindcss": "^4.1.8",
     "tsx": "^4.22.4",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.9"
   }
 }
