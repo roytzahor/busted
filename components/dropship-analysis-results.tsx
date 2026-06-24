@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useMoney } from "@/components/currency-provider";
+import { ProductImage } from "@/components/product-image";
 import type { DropshipAnalysisResult } from "@/lib/analyze/map-response";
 import { cn } from "@/lib/utils";
 import {
@@ -14,7 +15,6 @@ import {
   ShieldAlert,
   Store,
 } from "lucide-react";
-import Image from "next/image";
 
 interface DropshipAnalysisResultsProps {
   result: DropshipAnalysisResult;
@@ -96,19 +96,16 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
         <Card>
           <CardContent className="flex flex-col gap-4 pt-6 sm:flex-row">
             <div className="relative mx-auto aspect-square w-full max-w-[200px] shrink-0 overflow-hidden rounded-xl border bg-background">
-              <Image
+              <ProductImage
                 src={storeProduct.imageUrl}
                 alt={storeProduct.title}
-                fill
-                className="object-cover"
                 sizes="200px"
-                unoptimized
               />
             </div>
             <div className="space-y-2">
-              <p className="font-semibold">{storeProduct.title}</p>
+              <p dir="auto" className="font-semibold">{storeProduct.title}</p>
               {storeProduct.translatedTitle ? (
-                <p className="text-muted-foreground/80 text-xs italic">
+                <p dir="auto" className="text-muted-foreground/80 text-xs italic">
                   → {storeProduct.translatedTitle}
                 </p>
               ) : null}
@@ -135,19 +132,16 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="relative mx-auto aspect-square w-full max-w-[240px] overflow-hidden rounded-xl border bg-background">
-                  <Image
+                  <ProductImage
                     src={storeProduct.imageUrl}
                     alt={storeProduct.title}
-                    fill
-                    className="object-cover"
                     sizes="240px"
-                    unoptimized
                   />
                 </div>
                 <div className="space-y-1">
-                  <p className="font-semibold">{storeProduct.title}</p>
+                  <p dir="auto" className="font-semibold">{storeProduct.title}</p>
                   {storeProduct.translatedTitle ? (
-                    <p className="text-muted-foreground/80 text-xs italic">
+                    <p dir="auto" className="text-muted-foreground/80 text-xs italic">
                       → {storeProduct.translatedTitle}
                     </p>
                   ) : null}

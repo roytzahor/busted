@@ -4,11 +4,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useMoney } from "@/components/currency-provider";
 import { useT } from "@/components/locale-provider";
+import { ProductImage } from "@/components/product-image";
 import { trackAffiliateClick } from "@/lib/clicks";
 import type { BrowseAnalysisResult } from "@/lib/analyze/map-response";
 import { cn } from "@/lib/utils";
 import { ExternalLink, Layers, Package, ShoppingBag, Sparkles, Star } from "lucide-react";
-import Image from "next/image";
 
 interface BrowseAnalysisResultsProps {
   result: BrowseAnalysisResult;
@@ -187,25 +187,17 @@ function BrowseCard({ candidate, scanId }: BrowseCardProps) {
     >
       {/* Image */}
       <div className="relative aspect-square w-full overflow-hidden border-b border-white/8 bg-black/20">
-        {candidate.imageUrl ? (
-          <Image
-            src={candidate.imageUrl}
-            alt={candidate.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <Package className="size-10" aria-hidden="true" />
-          </div>
-        )}
+        <ProductImage
+          src={candidate.imageUrl}
+          alt={candidate.title}
+          className="transition-transform duration-500 group-hover:scale-[1.03]"
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        />
       </div>
 
       {/* Body */}
       <div className="flex flex-1 flex-col gap-3 p-4">
-        <p className="line-clamp-2 text-sm font-semibold leading-snug">
+        <p dir="auto" className="line-clamp-2 text-sm font-semibold leading-snug">
           {candidate.title}
         </p>
 

@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { useMoney } from "@/components/currency-provider";
 import { useT } from "@/components/locale-provider";
+import { ProductImage } from "@/components/product-image";
 import { cn } from "@/lib/utils";
 import { Flame, TrendingDown } from "lucide-react";
 
@@ -159,20 +159,12 @@ function TrendingCard({ item, formatMoney, savePctLabel }: TrendingCardProps) {
     >
       {/* Image */}
       <div className="relative aspect-square w-full overflow-hidden border-b border-white/8 bg-black/20">
-        {item.imageUrl ? (
-          <Image
-            src={item.imageUrl}
-            alt={item.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-            sizes="(max-width: 640px) 200px, (max-width: 1024px) 33vw, 25vw"
-            unoptimized
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <Flame className="size-8" aria-hidden="true" />
-          </div>
-        )}
+        <ProductImage
+          src={item.imageUrl}
+          alt={item.title}
+          className="transition-transform duration-500 group-hover:scale-[1.03]"
+          sizes="(max-width: 640px) 200px, (max-width: 1024px) 33vw, 25vw"
+        />
 
         {/* Savings badge — corner overlay (RTL-aware via end-2). */}
         <Badge className="absolute end-2 top-2 border-success/40 bg-success/90 text-success-foreground shadow-md backdrop-blur-sm">
@@ -183,10 +175,10 @@ function TrendingCard({ item, formatMoney, savePctLabel }: TrendingCardProps) {
 
       {/* Body */}
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <p className="line-clamp-2 text-xs font-semibold leading-snug">
+        <p dir="auto" className="line-clamp-2 text-xs font-semibold leading-snug">
           {item.title}
         </p>
-        <p className="text-[11px] text-muted-foreground">{item.storeName}</p>
+        <p dir="auto" className="text-[11px] text-muted-foreground">{item.storeName}</p>
         <div className="mt-1 flex items-baseline gap-1.5">
           <span className="text-sm font-black tabular-nums text-success">
             {formatMoney(item.supplierPriceUsd, { whole: true })}

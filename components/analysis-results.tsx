@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useMoney } from "@/components/currency-provider";
 import { MatchFeedback } from "@/components/match-feedback";
+import { ProductImage } from "@/components/product-image";
 import { ShareButton } from "@/components/share-button";
 import { trackAffiliateClick } from "@/lib/clicks";
 import type { ProductComparisonResult } from "@/lib/mock-data";
@@ -22,7 +23,6 @@ import {
   Truck,
   Warehouse,
 } from "lucide-react";
-import Image from "next/image";
 
 interface AnalysisResultsProps {
   result: ProductComparisonResult;
@@ -394,28 +394,31 @@ function ProductCard({
 
       {/* Product image */}
       <div className="relative z-10 mx-auto aspect-square w-full max-w-[260px] overflow-hidden rounded-xl border border-white/10 bg-black/20 shadow-sm sm:max-w-none">
-        <Image
+        <ProductImage
           src={imageUrl}
           alt={title}
-          fill
-          className="object-cover"
           sizes="(max-width: 768px) 260px, 45vw"
-          unoptimized
         />
       </div>
 
-      {/* Product info */}
+      {/* Product info — dir="auto" lets Hebrew/Arabic/CJK titles render
+          right-to-left even when the surrounding layout is LTR. */}
       <div className="relative z-10 space-y-1.5">
-        <p className="line-clamp-2 text-sm font-semibold leading-snug sm:text-base">
+        <p
+          dir="auto"
+          className="line-clamp-2 text-sm font-semibold leading-snug sm:text-base"
+        >
           {title}
         </p>
         {translatedTitle ? (
-          <p className="text-xs italic text-muted-foreground/80">
+          <p dir="auto" className="text-xs italic text-muted-foreground/80">
             → {translatedTitle}
           </p>
         ) : null}
         {storeName ? (
-          <p className="text-xs text-muted-foreground">Sold by {storeName}</p>
+          <p dir="auto" className="text-xs text-muted-foreground">
+            Sold by {storeName}
+          </p>
         ) : null}
 
         {/* Variant chip — supplier only, when we matched a SKU */}

@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { useMoney } from "@/components/currency-provider";
+import { ProductImage } from "@/components/product-image";
 import type { PartialResult as PartialResultData } from "@/lib/analyze/map-response";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, RotateCcw } from "lucide-react";
-import Image from "next/image";
 
 /**
  * Sprint 12 Stage 31 — partial result UI.
@@ -84,20 +84,17 @@ export function PartialResult({ result, onRetry, className }: PartialResultProps
       <article className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.04] p-5 backdrop-blur-sm sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative aspect-square w-full max-w-[180px] shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/20">
-            <Image
+            <ProductImage
               src={result.storeProduct.imageUrl}
               alt={result.storeProduct.title}
-              fill
-              className="object-cover"
               sizes="180px"
-              unoptimized
             />
           </div>
           <div className="min-w-0 flex-1 space-y-2">
             <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
               Scraped product
             </p>
-            <h2 className="text-xl font-bold leading-tight sm:text-2xl">
+            <h2 dir="auto" className="text-xl font-bold leading-tight sm:text-2xl">
               {result.storeProduct.title}
             </h2>
             <p className="text-sm text-muted-foreground">

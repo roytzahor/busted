@@ -10,8 +10,8 @@ import {
 } from "@/lib/scan-history";
 import { track } from "@/lib/track";
 import { cn } from "@/lib/utils";
+import { ProductImage } from "@/components/product-image";
 import { Clock, ExternalLink, History, TrendingDown, X } from "lucide-react";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 /**
@@ -111,13 +111,15 @@ export function RecentScans() {
         />
       ) : null}
 
-      {/* Drawer — z-[70] so it sits above the backdrop and the sticky nav. */}
+      {/* Drawer — z-[70] so it sits above the backdrop and the sticky nav.
+          bg-card (fully opaque) — earlier bg-card/95 let bright chips/glows
+          from the page behind bleed through on mobile. */}
       <aside
         role="dialog"
         aria-label="Recent scans"
         aria-modal="true"
         className={cn(
-          "fixed inset-y-0 end-0 z-[70] flex w-full max-w-sm flex-col border-s border-white/10 bg-card/95 backdrop-blur-xl shadow-2xl transition-transform duration-300 ease-out",
+          "fixed inset-y-0 end-0 z-[70] flex w-full max-w-sm flex-col border-s border-white/10 bg-card shadow-2xl transition-transform duration-300 ease-out",
           // rtl:translate-x-(-full) auto-flips: in RTL the drawer is anchored
           // to the start (left) and slides in from the left edge.
           open ? "translate-x-0" : "translate-x-full rtl:-translate-x-full pointer-events-none",
@@ -172,13 +174,10 @@ export function RecentScans() {
               >
                 {entry.imageUrl ? (
                   <div className="relative size-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/20">
-                    <Image
+                    <ProductImage
                       src={entry.imageUrl}
                       alt=""
-                      fill
                       sizes="48px"
-                      className="object-cover"
-                      unoptimized
                     />
                   </div>
                 ) : (
@@ -190,7 +189,7 @@ export function RecentScans() {
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="line-clamp-1 text-sm font-semibold">
+                  <p dir="auto" className="line-clamp-1 text-sm font-semibold">
                     {entry.title || entry.url}
                   </p>
                   <p className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">

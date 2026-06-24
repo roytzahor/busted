@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useMoney } from "@/components/currency-provider";
 import { useT } from "@/components/locale-provider";
+import { ProductImage } from "@/components/product-image";
 import {
   analyzeProductUrl,
   type AnalyzeClientResult,
@@ -296,13 +296,11 @@ function BulkResultCard({ row, formatMoney }: BulkResultCardProps) {
       {/* Image / placeholder */}
       <div className="relative aspect-square w-full overflow-hidden border-b border-white/8 bg-black/20">
         {result?.imageUrl ? (
-          <Image
+          <ProductImage
             src={result.imageUrl}
             alt={result.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            className="transition-transform duration-500 group-hover:scale-[1.03]"
             sizes="(max-width: 640px) 100vw, 33vw"
-            unoptimized
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
@@ -339,11 +337,11 @@ function BulkResultCard({ row, formatMoney }: BulkResultCardProps) {
 
       {/* Body */}
       <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <p className="line-clamp-2 text-xs font-semibold leading-snug">
+        <p dir="auto" className="line-clamp-2 text-xs font-semibold leading-snug">
           {result?.title ?? row.url}
         </p>
         {result?.storeName ? (
-          <p className="text-[11px] text-muted-foreground">{result.storeName}</p>
+          <p dir="auto" className="text-[11px] text-muted-foreground">{result.storeName}</p>
         ) : null}
 
         {row.status === "done" &&
