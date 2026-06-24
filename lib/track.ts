@@ -20,7 +20,9 @@ export type TrackEventName =
   | "share_click"
   | "faq_open"
   | "paste_click"
-  | "permalink_view";
+  | "permalink_view"
+  | "bulk_scan_start"
+  | "bulk_scan_done";
 
 interface TrackArgs {
   /** Optional persisted ScannedProduct.id. */
