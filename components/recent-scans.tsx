@@ -63,6 +63,17 @@ export function RecentScans() {
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // Mobile: lock body scroll while drawer is open so the page behind doesn't
+  // scroll under the user's finger. The drawer has its own internal scroll.
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
   if (history.length === 0) return null;
 
   const handleSelect = (url: string) => {
@@ -79,35 +90,37 @@ export function RecentScans() {
         size="sm"
         onClick={() => setOpen(true)}
         aria-label={`Open recent scans (${history.length})`}
-        className="h-8 gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 text-xs backdrop-blur-sm hover:bg-white/[0.06]"
+        className="h-9 gap-1.5 rounded-lg border border-white/8 bg-white/[0.03] px-2.5 text-xs backdrop-blur-sm hover:border-white/15 hover:bg-white/[0.06] sm:px-3"
       >
         <History className="size-3.5" aria-hidden="true" />
-        Recent
+        <span className="hidden sm:inline">Recent</span>
         <Badge
           variant="outline"
-          className="ml-0.5 border-white/15 bg-white/8 px-1.5 text-[10px] font-bold leading-none"
+          className="ms-0 border-white/15 bg-white/8 px-1.5 text-[10px] font-bold leading-none sm:ms-0.5"
         >
           {history.length}
         </Badge>
       </Button>
 
-      {/* Backdrop */}
+      {/* Backdrop — z-[60] so it sits above the sticky nav (z-50). */}
       {open ? (
         <div
           role="presentation"
           onClick={() => setOpen(false)}
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
         />
       ) : null}
 
-      {/* Drawer */}
+      {/* Drawer — z-[70] so it sits above the backdrop and the sticky nav. */}
       <aside
         role="dialog"
         aria-label="Recent scans"
         aria-modal="true"
         className={cn(
-          "fixed inset-y-0 right-0 z-50 flex w-full max-w-sm flex-col border-l border-white/10 bg-card/95 backdrop-blur-xl shadow-2xl transition-transform duration-300 ease-out",
-          open ? "translate-x-0" : "translate-x-full pointer-events-none",
+          "fixed inset-y-0 end-0 z-[70] flex w-full max-w-sm flex-col border-s border-white/10 bg-card/95 backdrop-blur-xl shadow-2xl transition-transform duration-300 ease-out",
+          // rtl:translate-x-(-full) auto-flips: in RTL the drawer is anchored
+          // to the start (left) and slides in from the left edge.
+          open ? "translate-x-0" : "translate-x-full rtl:-translate-x-full pointer-events-none",
         )}
       >
         <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
@@ -133,6 +146,11 @@ export function RecentScans() {
           {history.map((entry) => (
             <li key={entry.id} className="group relative">
               {entry.scanId ? (
+                // Desktop-only hover affordance. On mobile the row itself
+                // (the <button> below) is the primary action — the previous
+                // opacity-0 + group-hover combo on mobile rendered the pill
+                // invisible-but-tappable, so taps near the row corner could
+                // misfire to the permalink instead of the row's re-scan.
                 <a
                   href={`/scan/${entry.scanId}`}
                   onClick={(e) => {
@@ -141,7 +159,7 @@ export function RecentScans() {
                     track("history_click", { props: { url: entry.url, target: "permalink" } });
                   }}
                   aria-label={`Open permanent link for ${entry.title}`}
-                  className="absolute top-3 right-5 inline-flex items-center gap-1 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                  className="absolute top-3 end-5 hidden items-center gap-1 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] text-muted-foreground opacity-0 transition-opacity sm:inline-flex sm:group-hover:opacity-100"
                 >
                   <ExternalLink className="size-3" aria-hidden="true" />
                   View
@@ -150,7 +168,7 @@ export function RecentScans() {
               <button
                 type="button"
                 onClick={() => handleSelect(entry.url)}
-                className="flex w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-white/[0.04]"
+                className="flex w-full items-center gap-3 px-5 py-3 text-start transition-colors hover:bg-white/[0.04]"
               >
                 {entry.imageUrl ? (
                   <div className="relative size-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/20">
