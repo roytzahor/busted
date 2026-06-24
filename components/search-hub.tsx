@@ -18,6 +18,7 @@ import {
 } from "@/lib/analyze/client";
 import type { ProductComparisonResult } from "@/lib/mock-data";
 import type {
+  BrowseAnalysisResult,
   DropshipAnalysisResult,
   PartialResult as PartialResultData,
 } from "@/lib/analyze/map-response";
@@ -99,6 +100,7 @@ export function SearchHub() {
   });
   const [comparison, setComparison] = useState<ProductComparisonResult | null>(null);
   const [dropshipResult, setDropshipResult] = useState<DropshipAnalysisResult | null>(null);
+  const [browseResult, setBrowseResult] = useState<BrowseAnalysisResult | null>(null);
   const [partialResult, setPartialResult] = useState<PartialResultData | null>(null);
   const [debugInfo, setDebugInfo] = useState<AnalyzeDebugInfo | null>(null);
   // Stage 17 — live pipeline state
@@ -133,6 +135,7 @@ export function SearchHub() {
     setAnalysisError(null);
     setComparison(null);
     setDropshipResult(null);
+    setBrowseResult(null);
     setPartialResult(null);
     setDebugInfo(null);
     setLiveStages(new Map()); // reset stage view for new scan
@@ -154,6 +157,7 @@ export function SearchHub() {
       });
       setComparison(result.comparison);
       setDropshipResult(result.dropshipAnalysis);
+      setBrowseResult(result.browse);
       setPartialResult(result.partial);
       setDebugInfo(result.debug);
       setPhase("complete");
@@ -169,12 +173,19 @@ export function SearchHub() {
       } else {
         track("scan_complete", {
           scanId:
-            result.comparison?.scanId ?? result.dropshipAnalysis?.scanId,
+            result.comparison?.scanId ??
+            result.dropshipAnalysis?.scanId ??
+            result.browse?.scanId,
           props: {
             savingsPercent: result.comparison?.savingsPercent ?? null,
             fromCache:
               result.comparison?.cache === "HIT" ||
-              result.dropshipAnalysis?.cache === "HIT",
+              result.dropshipAnalysis?.cache === "HIT" ||
+              result.browse?.cache === "HIT",
+            mode: result.mode,
+            ...(result.browse
+              ? { browseCandidates: result.browse.candidates.length }
+              : {}),
             durationMs: Math.round(performance.now() - scanStartedAt),
           },
         });
@@ -188,14 +199,18 @@ export function SearchHub() {
           appendScan({
             url: targetUrl,
             scanId:
-              result.comparison?.scanId ?? result.dropshipAnalysis?.scanId,
+              result.comparison?.scanId ??
+              result.dropshipAnalysis?.scanId ??
+              result.browse?.scanId,
             title:
               result.comparison?.storeProduct.title ??
               result.dropshipAnalysis?.storeProduct.title ??
+              result.browse?.storeProduct.title ??
               targetUrl,
             imageUrl:
               result.comparison?.storeProduct.imageUrl ??
               result.dropshipAnalysis?.storeProduct.imageUrl ??
+              result.browse?.storeProduct.imageUrl ??
               null,
             savingsPercent: result.comparison?.savingsPercent ?? null,
           });
@@ -263,7 +278,8 @@ export function SearchHub() {
   const isAnalyzing = phase === "analyzing";
   const canSubmit = url.trim().length > 0 && !validationError && !isAnalyzing;
   const hasResults =
-    phase === "complete" && (comparison !== null || dropshipResult !== null);
+    phase === "complete" &&
+    (comparison !== null || dropshipResult !== null || browseResult !== null);
   const isIdle = phase === "idle";
 
   return (
@@ -476,7 +492,12 @@ export function SearchHub() {
 
       {/* ── Results ───────────────────────────────────────────────── */}
       {phase === "error" && debugInfo ? (
-        <AnalysisTabs comparison={null} dropshipResult={null} debugInfo={debugInfo} />
+        <AnalysisTabs
+          comparison={null}
+          dropshipResult={null}
+          browseResult={null}
+          debugInfo={debugInfo}
+        />
       ) : null}
 
       {hasResults ? (
@@ -484,6 +505,7 @@ export function SearchHub() {
           <AnalysisTabs
             comparison={comparison}
             dropshipResult={dropshipResult}
+            browseResult={browseResult}
             debugInfo={debugInfo}
           />
         </div>

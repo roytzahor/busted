@@ -19,6 +19,8 @@ export function buildSupplierMarketplacePrediction(
     missingSignals: [],
     redFlags: [],
     aliexpressKeywords: [],
+    styleTokens: [],
+    materialPriors: [],
     estimatedStorePriceUsd: storePriceUsd,
     estimatedSupplierPriceUsd: storePriceUsd,
     estimatedMarkupPercent: 0,

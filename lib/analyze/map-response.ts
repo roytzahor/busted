@@ -1,6 +1,10 @@
 import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
 import type { ProductComparisonResult, StoreProduct } from "@/lib/mock-data";
-import type { ProductSourceType, AnalyzeResponse } from "@/lib/types/analyze";
+import type {
+  AliExpressBrowseCandidate,
+  ProductSourceType,
+  AnalyzeResponse,
+} from "@/lib/types/analyze";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
 
 export interface DropshipAnalysisResult {
@@ -15,6 +19,23 @@ export interface DropshipAnalysisResult {
   supplierSkipReason?: string;
 }
 
+export interface BrowseAnalysisResult {
+  originalUrl: string;
+  scanId?: string;
+  cache: "HIT" | "MISS";
+  storeProduct: StoreProduct;
+  /** Always === "collection_page" by construction. */
+  dropshipPrediction: DropshipPrediction;
+  productCategory: string;
+  styleTokens: string[];
+  materialPriors: string[];
+  /** The actual keyword string sent to AliExpress (for transparency). */
+  query: string;
+  candidates: AliExpressBrowseCandidate[];
+  /** Set when the browse fetch returned zero candidates (e.g. API keys missing). */
+  skipReason?: string;
+}
+
 export interface PartialResult {
   /** Sprint 12 Stage 31 — scrape worked, AI didn't. */
   storeProduct: StoreProduct;
@@ -24,9 +45,10 @@ export interface PartialResult {
 }
 
 export interface AnalyzeClientResult {
-  mode: "full" | "dropship_only" | "partial";
+  mode: "full" | "dropship_only" | "browse" | "partial";
   comparison: ProductComparisonResult | null;
   dropshipAnalysis: DropshipAnalysisResult | null;
+  browse: BrowseAnalysisResult | null;
   partial: PartialResult | null;
   debug: AnalyzeDebugInfo | null;
 }
@@ -52,6 +74,7 @@ export function mapAnalyzeResponseToComparison(
       mode: "partial",
       comparison: null,
       dropshipAnalysis: null,
+      browse: null,
       partial: {
         originalUrl: response.originalUrl,
         degradedReason: response.degradedReason,
@@ -75,6 +98,40 @@ export function mapAnalyzeResponseToComparison(
 
   const debug = response.debug ?? null;
   const storeProduct = buildStoreProduct(response);
+
+  // Browse mode — surfaced when AI verdict is `collection_page`. The
+  // candidates array may be empty (browse search skipped on permalink
+  // re-renders since we don't persist candidates; the empty state in the
+  // UI nudges the user to re-scan for a fresh fetch).
+  if (response.dropshipPrediction?.verdict === "collection_page") {
+    const candidates = response.browseCandidates ?? [];
+    return {
+      mode: "browse",
+      comparison: null,
+      dropshipAnalysis: null,
+      browse: {
+        originalUrl: response.originalUrl,
+        scanId: response.scanId,
+        cache: response.cache,
+        storeProduct,
+        dropshipPrediction: response.dropshipPrediction,
+        productCategory: response.dropshipPrediction.productCategory,
+        styleTokens: response.dropshipPrediction.styleTokens,
+        materialPriors: response.dropshipPrediction.materialPriors,
+        query: response.browseQuery ?? "",
+        candidates,
+        ...(candidates.length === 0
+          ? {
+              skipReason:
+                response.supplierSkipReason ??
+                "Re-scan this page to fetch fresh browse candidates.",
+            }
+          : {}),
+      },
+      partial: null,
+      debug,
+    };
+  }
 
   if (response.aliexpressData && response.supplierStatus === "complete") {
     const supplier = response.aliexpressData;
@@ -126,6 +183,7 @@ export function mapAnalyzeResponseToComparison(
         bestEffortOnly: response.supplierBestEffortOnly,
       },
       dropshipAnalysis: null,
+      browse: null,
       partial: null,
       debug,
     };
@@ -148,6 +206,7 @@ export function mapAnalyzeResponseToComparison(
       supplierStatus: response.supplierStatus === "complete" ? "complete" : "skipped",
       supplierSkipReason: response.supplierSkipReason,
     },
+    browse: null,
     partial: null,
     debug,
   };

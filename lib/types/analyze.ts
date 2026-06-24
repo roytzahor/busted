@@ -2,6 +2,21 @@ import { Prisma } from "@prisma/client";
 import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
 
+/**
+ * Browse-mode candidate — a lightweight AliExpress product entry rendered
+ * in the collection-page grid. Carries the minimum fields needed for the
+ * card UI; no image-AI or variant matching is run for these.
+ */
+export interface AliExpressBrowseCandidate {
+  productId: string;
+  title: string;
+  priceUsd: number;
+  imageUrl: string | null;
+  affiliateUrl: string;
+  orderCount: number;
+  sellerRating: number;
+}
+
 /** Shape of AliExpress product data stored in ScannedProduct.aliexpressData */
 export interface AliExpressProductData {
   title: string;
@@ -57,6 +72,14 @@ interface AnalyzeSuccessBase {
   supplierBestEffortOnly?: boolean;
   sourceType: ProductSourceType;
   dropshipPrediction: DropshipPrediction | null;
+  /**
+   * Browse-mode candidates — present only when the AI verdict is
+   * `collection_page`. Populated by a single keyword search against the
+   * AliExpress Affiliate API; no per-candidate image AI is run.
+   */
+  browseCandidates?: AliExpressBrowseCandidate[];
+  /** Enriched query that was sent to AliExpress (debug + UI banner copy). */
+  browseQuery?: string;
   lastScrapedAt: string;
   storeProduct: {
     title: string;

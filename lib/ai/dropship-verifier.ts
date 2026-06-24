@@ -5,7 +5,8 @@ export type DropshipVerdict =
   | "dropship"
   | "legit"
   | "insufficient_evidence"
-  | "not_a_product";
+  | "not_a_product"
+  | "collection_page";
 
 export interface DropshipPrediction {
   verdict: DropshipVerdict;
@@ -17,6 +18,19 @@ export interface DropshipPrediction {
   missingSignals: string[];
   redFlags: string[];
   aliexpressKeywords: string[];
+  /**
+   * Browse-mode aesthetic tokens — short descriptors capturing the
+   * collection's vibe (e.g. ["minimalist", "dainty", "layering"]).
+   * Populated only when verdict === "collection_page".
+   */
+  styleTokens: string[];
+  /**
+   * Browse-mode material/finish tokens — concrete material or finish
+   * cues lifted from item names/descriptions (e.g. ["14k gold",
+   * "sterling silver", "stainless steel"]). Populated only when
+   * verdict === "collection_page".
+   */
+  materialPriors: string[];
   estimatedStorePriceUsd: number | null;
   estimatedSupplierPriceUsd: number | null;
   estimatedMarkupPercent: number | null;
@@ -33,14 +47,16 @@ export interface DropshipVerificationResult {
 const SYSTEM_PROMPT = `You are a dropshipping detection engine for Busted.
 Analyze scraped e-commerce product data and return ONLY valid JSON matching this schema:
 {
-  "verdict": "dropship" | "legit" | "insufficient_evidence" | "not_a_product",
+  "verdict": "dropship" | "legit" | "insufficient_evidence" | "not_a_product" | "collection_page",
   "confidence": number (0..1),
   "productCategory": string,
   "reasoning": string (2-3 sentences citing the scrape),
   "reasoningSignals": string[] (concrete evidence FROM the scrape — never invent),
   "missingSignals": string[] (what data would have raised confidence),
   "redFlags": string[],
-  "aliexpressKeywords": string[] (2-5 short functional search phrases a buyer would use to find this product on AliExpress — describe WHAT IT DOES, not the brand name. E.g. ["bottle cap launcher", "beer cap shooter", "cap catapult opener"]. Empty array for not_a_product.),
+  "aliexpressKeywords": string[] (2-5 short functional search phrases a buyer would use to find this product on AliExpress — describe WHAT IT DOES, not the brand name. E.g. ["bottle cap launcher", "beer cap shooter", "cap catapult opener"]. Empty array for not_a_product and collection_page.),
+  "styleTokens": string[] (collection_page ONLY — 2-6 short aesthetic descriptors capturing the store's vibe, lifted from collection title/description/visible item names. E.g. ["minimalist", "dainty", "layering", "boho"]. Empty array for other verdicts.),
+  "materialPriors": string[] (collection_page ONLY — 1-4 concrete material or finish cues drawn from visible item names (e.g. ["14k gold", "sterling silver"], or ["resin", "porcelain"]). Empty array when no material is evident or for other verdicts.),
   "estimatedStorePriceUsd": number | null,
   "estimatedSupplierPriceUsd": number | null,
   "estimatedMarkupPercent": number | null
@@ -50,7 +66,8 @@ VERDICT DEFINITIONS — pick exactly one:
 - "dropship" — strong evidence this retail page resells a generic supplier product with markup. Requires at least 2 concrete signals in reasoningSignals[].
 - "legit" — established brand, real inventory, original product, or supplier marketplace itself.
 - "insufficient_evidence" — page IS a product page but the scrape is too sparse (missing title/price/description/images) to judge. Be honest and pick this when you don't have enough.
-- "not_a_product" — the scraped content is NOT a product page (blog post, homepage, category listing, search results, 404, about page).
+- "not_a_product" — the scraped content is NOT a product page AND not a shoppable catalog either (blog post, 404, about page, search results, generic homepage with no products).
+- "collection_page" — page is a shoppable catalog / collection / category / homepage of an online STORE that lists MULTIPLE distinct products in one vertical (e.g. "All Necklaces", "Bestselling Apparel", a jewelry brand homepage with featured items). Set productCategory to the central vertical (e.g. "necklace", "kitchen gadget", "athleisure"). Populate styleTokens and materialPriors from the visible item names. aliexpressKeywords MUST be empty (we'll build the search query from styleTokens + materialPriors + productCategory downstream).
 
 HARD RULES (violating these = wrong output):
 1. Base productCategory and reasoning strictly on the scraped title/description — NEVER invent products that aren't in the data.
@@ -62,6 +79,8 @@ HARD RULES (violating these = wrong output):
 7. If scrape has fewer than 3 of {title >5 chars, price detected, description >50 chars, mainImageUrl, brand mention} → you MUST use "insufficient_evidence" or "not_a_product".
 8. If a store price is provided, estimate supplier cost at 15-35% of store price for typical dropship markups (only when verdict="dropship").
 9. confidence reflects YOUR certainty given available data. Do not output high confidence on weak data.
+10. "collection_page" REQUIRES: (a) the scrape mentions multiple distinct product names that share a vertical, AND (b) no single dominant price/PDP. If only ONE product is described, this is a PDP — use dropship/legit/insufficient_evidence instead. Set estimated prices to null. Confidence 0.7+ when the page clearly lists multiple items.
+11. styleTokens/materialPriors MUST be empty arrays for any verdict OTHER than "collection_page".
 
 EXAMPLES:
 
@@ -135,6 +154,25 @@ Output: {
   "missingSignals": ["No price", "No description", "No product image"],
   "redFlags": [],
   "aliexpressKeywords": [],
+  "styleTokens": [],
+  "materialPriors": [],
+  "estimatedStorePriceUsd": null,
+  "estimatedSupplierPriceUsd": null,
+  "estimatedMarkupPercent": null
+}
+
+Input: { title: "All Necklaces — Lume Studio", description: "Dainty layering necklaces in 14k gold-filled and sterling silver. Shop the collection.", markdownExcerpt: "Featured: Petal Pendant Necklace · Mini Bar Necklace · Layered Curb Chain · Tiny Star Charm Necklace · Pearl Drop Necklace · Initial Disc Necklace ..." }
+Output: {
+  "verdict": "collection_page",
+  "confidence": 0.9,
+  "productCategory": "necklace",
+  "reasoning": "Page lists six distinct necklace items under one collection title with no single price — clearly a catalog/category page, not a PDP. Vibe is dainty/minimalist layered jewelry in gold-fill and silver.",
+  "reasoningSignals": ["Title 'All Necklaces' is a collection name", "Six distinct item names listed (Petal Pendant, Mini Bar, Layered Curb Chain, ...)", "Description references 'shop the collection', not a single product"],
+  "missingSignals": ["No individual product prices on this page"],
+  "redFlags": [],
+  "aliexpressKeywords": [],
+  "styleTokens": ["minimalist", "dainty", "layering"],
+  "materialPriors": ["14k gold", "sterling silver"],
   "estimatedStorePriceUsd": null,
   "estimatedSupplierPriceUsd": null,
   "estimatedMarkupPercent": null
@@ -177,7 +215,8 @@ function isValidVerdict(value: unknown): value is DropshipVerdict {
     value === "dropship" ||
     value === "legit" ||
     value === "insufficient_evidence" ||
-    value === "not_a_product"
+    value === "not_a_product" ||
+    value === "collection_page"
   );
 }
 
@@ -206,12 +245,30 @@ function applyClamps(
     confidence = Math.min(0.5, Math.max(0.2, confidence));
   }
 
-  // not_a_product clears price estimates and keywords
+  // not_a_product clears price estimates, keywords, and style/material tokens
   if (verdict === "not_a_product") {
     return {
       ...prediction,
       verdict,
       confidence,
+      isLikelyDropship: false,
+      aliexpressKeywords: [],
+      styleTokens: [],
+      materialPriors: [],
+      estimatedStorePriceUsd: null,
+      estimatedSupplierPriceUsd: null,
+      estimatedMarkupPercent: null,
+    };
+  }
+
+  // collection_page clears keywords and prices (browse path builds its own
+  // query from category + styleTokens + materialPriors). Enforce rule 10
+  // confidence floor and rule 11 (clear keywords).
+  if (verdict === "collection_page") {
+    return {
+      ...prediction,
+      verdict,
+      confidence: Math.max(0.7, confidence),
       isLikelyDropship: false,
       aliexpressKeywords: [],
       estimatedStorePriceUsd: null,
@@ -220,11 +277,14 @@ function applyClamps(
     };
   }
 
+  // Non-collection verdicts must NOT carry browse-mode tokens (rule 11).
   return {
     ...prediction,
     verdict,
     confidence,
     isLikelyDropship: verdict === "dropship",
+    styleTokens: [],
+    materialPriors: [],
   };
 }
 
@@ -274,6 +334,14 @@ function parsePrediction(
       ? parsed.aliexpressKeywords.filter((s): s is string => typeof s === "string")
       : [];
 
+    const styleTokens = Array.isArray(parsed.styleTokens)
+      ? parsed.styleTokens.filter((s): s is string => typeof s === "string")
+      : [];
+
+    const materialPriors = Array.isArray(parsed.materialPriors)
+      ? parsed.materialPriors.filter((s): s is string => typeof s === "string")
+      : [];
+
     const prediction: DropshipPrediction = {
       verdict,
       isLikelyDropship: verdict === "dropship",
@@ -286,6 +354,8 @@ function parsePrediction(
         ? parsed.redFlags.filter((f): f is string => typeof f === "string")
         : [],
       aliexpressKeywords,
+      styleTokens,
+      materialPriors,
       estimatedStorePriceUsd:
         typeof parsed.estimatedStorePriceUsd === "number"
           ? parsed.estimatedStorePriceUsd

@@ -26,7 +26,8 @@ function parseVerdict(value: unknown, isLikelyDropship: boolean): DropshipVerdic
     value === "dropship" ||
     value === "legit" ||
     value === "insufficient_evidence" ||
-    value === "not_a_product"
+    value === "not_a_product" ||
+    value === "collection_page"
   ) {
     return value;
   }
@@ -141,6 +142,12 @@ export function parseCachedAiPrediction(
           : [],
         aliexpressKeywords: Array.isArray(p.aliexpressKeywords)
           ? p.aliexpressKeywords.filter((s): s is string => typeof s === "string")
+          : [],
+        styleTokens: Array.isArray(p.styleTokens)
+          ? p.styleTokens.filter((s): s is string => typeof s === "string")
+          : [],
+        materialPriors: Array.isArray(p.materialPriors)
+          ? p.materialPriors.filter((s): s is string => typeof s === "string")
           : [],
         redFlags: Array.isArray(p.redFlags)
           ? p.redFlags.filter((flag): flag is string => typeof flag === "string")

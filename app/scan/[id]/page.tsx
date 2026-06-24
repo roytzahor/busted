@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AnalysisResults } from "@/components/analysis-results";
+import { BrowseAnalysisResults } from "@/components/browse-analysis-results";
 import { DropshipAnalysisResults } from "@/components/dropship-analysis-results";
 import { Button } from "@/components/ui/button";
 import { loadScanById } from "@/lib/cache/lookup-by-id";
@@ -88,7 +89,7 @@ export default async function ScanPermalinkPage({ params }: PageProps) {
     notFound();
   }
 
-  const { comparison, dropshipAnalysis, debug } = loaded.comparison;
+  const { comparison, dropshipAnalysis, browse, debug } = loaded.comparison;
 
   return (
     <div className="relative">
@@ -128,6 +129,12 @@ export default async function ScanPermalinkPage({ params }: PageProps) {
           </Button>
         </div>
 
+        {browse ? (
+          <div className="mb-4">
+            <BrowseAnalysisResults result={browse} />
+          </div>
+        ) : null}
+
         {dropshipAnalysis ? (
           <div className="mb-4">
             <DropshipAnalysisResults result={dropshipAnalysis} />
@@ -136,11 +143,11 @@ export default async function ScanPermalinkPage({ params }: PageProps) {
 
         {comparison ? (
           <AnalysisResults result={comparison} />
-        ) : (
+        ) : !browse && !dropshipAnalysis ? (
           <p className="rounded-2xl border border-dashed border-white/10 p-8 text-center text-sm text-muted-foreground">
             Nothing to display for this scan.
           </p>
-        )}
+        ) : null}
 
         <p className="mt-10 text-center text-xs text-muted-foreground/60">
           Scanned {new Date(loaded.lastScrapedAt).toLocaleString()} ·{" "}

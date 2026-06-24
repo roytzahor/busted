@@ -9,6 +9,10 @@ import { checkRateLimit, resolveClientIp } from "@/lib/api/rate-limit";
 import { isValidProductUrl } from "@/lib/api/validate-url";
 import { PipelineWaterfall } from "@/lib/analyze/pipeline-waterfall";
 import { findAliExpressSupplier } from "@/lib/aliexpress/find-supplier";
+import {
+  searchBrowseCandidates,
+  BROWSE_CANDIDATE_LIMIT,
+} from "@/lib/aliexpress/browse-search";
 import { isSupplierSearchEnabled } from "@/lib/aliexpress/supplier-enabled";
 import { AliExpressSearchError } from "@/lib/aliexpress/types";
 import { findValidCachedProduct, normalizeProductUrl } from "@/lib/cache/product-cache";
@@ -35,6 +39,7 @@ import {
 } from "@/lib/types/cache";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
 import {
+  type AliExpressBrowseCandidate,
   type AnalyzeResponse,
   type ProductSourceType,
   parseAliExpressData,
@@ -152,6 +157,63 @@ function resolveStorePrice(
   );
 }
 
+interface BrowseSearchOutcome {
+  candidates: AliExpressBrowseCandidate[];
+  query: string;
+  skipReason?: string;
+}
+
+/**
+ * Browse-mode candidate fetch. Cache HIT and MISS paths both call this when
+ * the AI verdict is `collection_page`. We intentionally re-run the search on
+ * every request (no candidate persistence) — browse inventory rotation is a
+ * feature here, and the call is a single keyword query.
+ */
+async function runBrowseSearch(
+  prediction: NonNullable<CachedAiPrediction["prediction"]>,
+  emit: PipelineEmitFn,
+  waterfall: PipelineWaterfall,
+): Promise<BrowseSearchOutcome> {
+  if (!isSupplierSearchEnabled()) {
+    const reason = "AliExpress Affiliate API keys are not configured";
+    emit({ type: "stage", stage: "supplier-search", status: "skipped", message: reason });
+    waterfall.mark("supplier", `Browse-mode skipped — ${reason}.`, "skipped");
+    return { candidates: [], query: "", skipReason: reason };
+  }
+
+  emit({
+    type: "stage",
+    stage: "supplier-search",
+    status: "active",
+    message: `Browse mode — searching AliExpress for "${prediction.productCategory}"…`,
+  });
+
+  try {
+    const result = await searchBrowseCandidates({
+      productCategory: prediction.productCategory,
+      styleTokens: prediction.styleTokens,
+      materialPriors: prediction.materialPriors,
+    });
+    emit({
+      type: "stage",
+      stage: "supplier-search",
+      status: "done",
+      message: `${result.candidates.length} browse candidates · query: "${result.query}"`,
+    });
+    waterfall.mark(
+      "supplier",
+      `Browse mode: ${result.candidates.length} candidates returned for "${result.query}" (capped at ${BROWSE_CANDIDATE_LIMIT}).`,
+      "complete",
+    );
+    return result;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Browse search failed.";
+    emit({ type: "stage", stage: "supplier-search", status: "error", message: msg });
+    waterfall.mark("supplier", `Browse search failed: ${msg}`, "error");
+    return { candidates: [], query: "", skipReason: msg };
+  }
+}
+
 // ── Core pipeline (shared by JSON and SSE paths) ──────────────────────────────
 
 async function runAnalysisPipeline(
@@ -181,8 +243,11 @@ async function runAnalysisPipeline(
         const sourceType = detectProductSource(cached.originalUrl);
         const isSupplierListing = sourceType === "supplier_marketplace";
         const aiVerdict = ai.prediction?.verdict;
+        const isCollectionPage = aiVerdict === "collection_page";
         const verdictBlocksSupplier =
-          aiVerdict === "not_a_product" || aiVerdict === "insufficient_evidence";
+          aiVerdict === "not_a_product" ||
+          aiVerdict === "insufficient_evidence" ||
+          isCollectionPage;
 
         let resolvedAliexpressData = aliexpressData;
         let resolvedAliexpressUrl: string | null = cached.aliexpressUrl;
@@ -194,8 +259,19 @@ async function runAnalysisPipeline(
         let resolvedImageMatchScore: number | undefined;
         let resolvedImageMatchSameFunction: boolean | undefined;
         let resolvedImageMatchReasoning: string | undefined;
+        let resolvedBrowseCandidates: AliExpressBrowseCandidate[] | undefined;
+        let resolvedBrowseQuery: string | undefined;
 
-        if (!aliexpressData && isSupplierSearchEnabled() && !isSupplierListing && !verdictBlocksSupplier) {
+        // Browse mode — collection_page verdict re-runs the lightweight
+        // keyword search on every request (we never persist candidates).
+        if (isCollectionPage && ai.prediction) {
+          const browse = await runBrowseSearch(ai.prediction, emit, waterfall);
+          resolvedBrowseCandidates = browse.candidates;
+          resolvedBrowseQuery = browse.query || undefined;
+          resolvedSupplierSkipReason =
+            browse.skipReason ?? `Browse mode (${browse.candidates.length} candidates)`;
+          waterfall.mark("persist", "Served from database — no live scrape", "skipped");
+        } else if (!aliexpressData && isSupplierSearchEnabled() && !isSupplierListing && !verdictBlocksSupplier) {
           emit({ type: "stage", stage: "supplier-search", status: "active", message: "No cached supplier — running live search…" });
           waterfall.mark("supplier", "Cache had no supplier data — running live search…");
           try {
@@ -266,6 +342,10 @@ async function runAnalysisPipeline(
           supplierImageMatchReasoning: resolvedImageMatchReasoning,
           sourceType,
           dropshipPrediction: ai.prediction,
+          ...(resolvedBrowseCandidates !== undefined
+            ? { browseCandidates: resolvedBrowseCandidates }
+            : {}),
+          ...(resolvedBrowseQuery !== undefined ? { browseQuery: resolvedBrowseQuery } : {}),
           lastScrapedAt: cached.lastScrapedAt.toISOString(),
           storeProduct: {
             title: scrape.attributes.title,
@@ -525,19 +605,42 @@ async function runAnalysisPipeline(
   let supplierImageMatchReasoning: string | undefined;
   let supplierBestEffortOnly: boolean | undefined;
   let supplierDebug: AnalyzeDebugInfo["supplier"] | undefined;
+  let browseCandidates: AliExpressBrowseCandidate[] | undefined;
+  let browseQuery: string | undefined;
 
-  // ── 5. Supplier match ────────────────────────────────────────────────────────
-  emit({
-    type: "stage",
-    stage: "supplier-search",
-    status: "active",
-    message: identity ? `Searching: "${identity.canonicalName}"…` : "Searching AliExpress…",
-  });
-  pipelineSteps.push(
-    identity
-      ? `Searching AliExpress (identity: ${identity.canonicalName})`
-      : "Searching AliExpress for matching supplier",
-  );
+  // ── 5a. Browse-mode branch ───────────────────────────────────────────────────
+  // When the AI verdict is `collection_page` we skip the full supplier-match
+  // pipeline (no identity, no image AI, no rerank) and instead run ONE keyword
+  // search built from category + styleTokens + materialPriors. Lightweight by
+  // design: typical ~1 API call, returns up to BROWSE_CANDIDATE_LIMIT.
+  if (aiResult.prediction?.verdict === "collection_page") {
+    pipelineSteps.push(
+      `Browse mode — collection page detected (${aiResult.prediction.productCategory})`,
+    );
+    const browse = await runBrowseSearch(aiResult.prediction, emit, waterfall);
+    browseCandidates = browse.candidates;
+    browseQuery = browse.query || undefined;
+    supplierStatus = "skipped";
+    supplierSkipReason =
+      browse.skipReason ?? `Browse mode — ${browse.candidates.length} candidates surfaced`;
+    pipelineSteps.push(
+      browse.skipReason
+        ? `Browse search skipped: ${browse.skipReason}`
+        : `Browse search: ${browse.candidates.length} candidates for "${browse.query}"`,
+    );
+  } else {
+    // ── 5b. Standard supplier match ────────────────────────────────────────────
+    emit({
+      type: "stage",
+      stage: "supplier-search",
+      status: "active",
+      message: identity ? `Searching: "${identity.canonicalName}"…` : "Searching AliExpress…",
+    });
+    pipelineSteps.push(
+      identity
+        ? `Searching AliExpress (identity: ${identity.canonicalName})`
+        : "Searching AliExpress for matching supplier",
+    );
 
   const supplierRes = await supplierService({
     attributes: scrapeOut.attributes,
@@ -649,6 +752,7 @@ async function runAnalysisPipeline(
     waterfall.mark("supplier", supplierOut.reason, "skipped");
     pipelineSteps.push(`Supplier search skipped — ${supplierOut.reason}`);
   }
+  } // ── end 5b: standard supplier match ───────────────────────────────────────
 
   // ── 6. Persist ───────────────────────────────────────────────────────────────
   emit({ type: "stage", stage: "persist", status: "active" });
@@ -687,6 +791,8 @@ async function runAnalysisPipeline(
     supplierBestEffortOnly,
     sourceType,
     dropshipPrediction: aiResult.prediction,
+    ...(browseCandidates !== undefined ? { browseCandidates } : {}),
+    ...(browseQuery !== undefined ? { browseQuery } : {}),
     lastScrapedAt: persisted.lastScrapedAt.toISOString(),
     scrapeProvider: scrapeOut.provider,
     storeProduct: {
