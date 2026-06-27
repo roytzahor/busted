@@ -1,0 +1,44 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.5,
+    "productCategory": "Menstrual pain relief device",
+    "reasoning": "The page describes a generic menstrual pain relief strap using common dropshipping marketing tactics like hyperbolic claims ('#1 solution', 'revolutionary strap'), generic social proof ('2000+ satisfied customers'), and a focus on benefits ('saves time and money') without providing specific brand details or unique selling propositions beyond the product's basic function. The repetition of features also suggests a typical dropship landing page.",
+    "reasoningSignals": [
+      "Description states 'פתרון #1 לכאבי המחזור' (#1 solution for menstrual pain)",
+      "Product is called 'רצועה מהפכנית' (revolutionary strap)",
+      "Repeated mention of '2000+ לקוחות מרוצות' (2000+ satisfied customers)",
+      "Features listed as '3 מצבי חימום 4 מצבי רטט' (3 heating modes 4 vibration modes)",
+      "Marketing emphasizes 'חוסך זמן חוסף כסף מקל על הכאב' (saves time saves money relieves pain)",
+      "Offers 'משלוחים חינם' (Free shipping)"
+    ],
+    "missingSignals": [
+      "No detected store price",
+      "No specific shipping timeframe mentioned",
+      "No brand backstory or unique product development details"
+    ],
+    "redFlags": [
+      "Hyperbolic claims",
+      "Generic social proof",
+      "Benefit-driven marketing without unique brand identity",
+      "Repetitive feature listing",
+      "Free shipping"
+    ],
+    "aliexpressKeywords": [
+      "menstrual heating pad",
+      "period pain relief massager",
+      "portable heating pad vibration",
+      "electric period cramp relief"
+    ],
+    "styleTokens": [],
+    "materialPriors": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\n  \"verdict\": \"dropship\",\n  \"confidence\": 0.85,\n  \"productCategory\": \"Menstrual pain relief device\",\n  \"reasoning\": \"The page describes a generic menstrual pain relief strap using common dropshipping marketing tactics like hyperbolic claims ('#1 solution', 'revolutionary strap'), generic social proof ('2000+ satisfied customers'), and a focus on benefits ('saves time and money') without providing specific brand details or unique selling propositions beyond the product's basic function. The repetition of features also suggests a typical dropship landing page.\",\n  \"reasoningSignals\": [\n    \"Description states 'פתרון #1 לכאבי המחזור' (#1 solution for menstrual pain)\",\n    \"Product is called 'רצועה מהפכנית' (revolutionary strap)\",\n    \"Repeated mention of '2000+ לקוחות מרוצות' (2000+ satisfied customers)\",\n    \"Features listed as '3 מצבי חימום 4 מצבי רטט' (3 heating modes 4 vibration modes)\",\n    \"Marketing emphasizes 'חוסך זמן חוסף כסף מקל על הכאב' (saves time saves money relieves pain)\",\n    \"Offers 'משלוחים חינם' (Free shipping)\"\n  ],\n  \"missingSignals\": [\n    \"No detected store price\",\n    \"No specific shipping timeframe mentioned\",\n    \"No brand backstory or unique product development details\"\n  ],\n  \"redFlags\": [\n    \"Hyperbolic claims\",\n    \"Generic social proof\",\n    \"Benefit-driven marketing without unique brand identity\",\n    \"Repetitive feature listing\",\n    \"Free shipping\"\n  ],\n  \"aliexpressKeywords\": [\n    \"menstrual heating pad\",\n    \"period pain relief massager\",\n    \"portable heating pad vibration\",\n    \"electric period cramp relief\"\n  ],\n  \"styleTokens\": [],\n  \"materialPriors\": [],\n  \"estimatedStorePriceUsd\": null,\n  \"estimatedSupplierPriceUsd\": null,\n  \"estimatedMarkupPercent\": null\n}",
+  "model": "gemini-2.5-flash",
+  "provider": "google",
+  "error": null
+}

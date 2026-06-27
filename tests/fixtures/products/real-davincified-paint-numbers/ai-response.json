@@ -1,0 +1,39 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.88,
+    "productCategory": "Paint by numbers kit",
+    "reasoning": "This page is a collection of paint-by-numbers kits, a product category overwhelmingly associated with dropshipping from Chinese suppliers. The store is a regional Shopify site with no verifiable brand history or manufacturer, and the listed prices (starting from ~24 USD) represent a typical dropship markup for these generic kits.",
+    "reasoningSignals": [
+      "Product category (paint-by-numbers kits) is a top-tier dropship niche",
+      "URL is a /collections/ path on a regional Shopify store (.il domain, cdn.shopify.com image URL)",
+      "No verifiable brand history or manufacturer mentioned in the scrape",
+      "Multiple product listings with prices (e.g., ₪122.00, ₪92.00) indicate a catalog of generic items"
+    ],
+    "missingSignals": [
+      "No independent brand history or 'About Us' page details",
+      "No specific manufacturer cited for the kits"
+    ],
+    "redFlags": [
+      "Dropship-saturated product category",
+      "Regional Shopify store with generic products",
+      "No verifiable brand identity"
+    ],
+    "aliexpressKeywords": [
+      "paint by numbers kit adults",
+      "diy oil painting canvas numbers",
+      "number painting kit custom",
+      "paint by numbers landscape"
+    ],
+    "styleTokens": [],
+    "materialPriors": [],
+    "estimatedStorePriceUsd": 32.5,
+    "estimatedSupplierPriceUsd": 10,
+    "estimatedMarkupPercent": 225
+  },
+  "rawResponse": "{\n  \"verdict\": \"dropship\",\n  \"confidence\": 0.88,\n  \"productCategory\": \"Paint by numbers kit\",\n  \"reasoning\": \"This page is a collection of paint-by-numbers kits, a product category overwhelmingly associated with dropshipping from Chinese suppliers. The store is a regional Shopify site with no verifiable brand history or manufacturer, and the listed prices (starting from ~24 USD) represent a typical dropship markup for these generic kits.\",\n  \"reasoningSignals\": [\n    \"Product category (paint-by-numbers kits) is a top-tier dropship niche\",\n    \"URL is a /collections/ path on a regional Shopify store (.il domain, cdn.shopify.com image URL)\",\n    \"No verifiable brand history or manufacturer mentioned in the scrape\",\n    \"Multiple product listings with prices (e.g., ₪122.00, ₪92.00) indicate a catalog of generic items\"\n  ],\n  \"missingSignals\": [\n    \"No independent brand history or 'About Us' page details\",\n    \"No specific manufacturer cited for the kits\"\n  ],\n  \"redFlags\": [\n    \"Dropship-saturated product category\",\n    \"Regional Shopify store with generic products\",\n    \"No verifiable brand identity\"\n  ],\n  \"aliexpressKeywords\": [\n    \"paint by numbers kit adults\",\n    \"diy oil painting canvas numbers\",\n    \"number painting kit custom\",\n    \"paint by numbers landscape\"\n  ],\n  \"styleTokens\": [],\n  \"materialPriors\": [],\n  \"estimatedStorePriceUsd\": 32.5,\n  \"estimatedSupplierPriceUsd\": 10,\n  \"estimatedMarkupPercent\": 225\n}",
+  "model": "gemini-2.5-flash",
+  "provider": "google",
+  "error": null
+}

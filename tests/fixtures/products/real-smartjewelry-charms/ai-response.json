@@ -1,0 +1,39 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.85,
+    "productCategory": "Smart couple's jewelry and gadgets",
+    "reasoning": "The store sells 'smart touch bracelets' and 'long-distance touch lamps', which are highly saturated dropship categories explicitly listed in Busted's Rule 14. While the store claims 'Totwoo was founded in Milan', this is a self-assertion within the scrape without independent verification. The generic domain name 'smartjewelry.co.il' further suggests a reseller model.",
+    "reasoningSignals": [
+      "Core products are 'smart touch bracelets' and 'long-distance touch lamps', which are top dropship categories",
+      "Store claims 'Totwoo was founded in Milan' but provides no independently verifiable brand history within the scrape",
+      "Generic domain name 'smartjewelry.co.il' for a store selling branded products",
+      "Shopify store (indicated by cdn.shop URL) selling generic smart gadgets"
+    ],
+    "missingSignals": [
+      "Independent verification of the 'Totwoo' brand's origin or manufacturing",
+      "Manufacturer details for the smart jewelry and lamps"
+    ],
+    "redFlags": [
+      "Dropship-saturated product category (smart touch bracelets, long-distance lamps)",
+      "Generic domain name for a branded product",
+      "Self-claimed brand origin without external verification"
+    ],
+    "aliexpressKeywords": [
+      "smart touch bracelet couple",
+      "long distance couple jewelry",
+      "vibration couple bracelet",
+      "long distance touch lamp"
+    ],
+    "styleTokens": [],
+    "materialPriors": [],
+    "estimatedStorePriceUsd": 145.53,
+    "estimatedSupplierPriceUsd": 25,
+    "estimatedMarkupPercent": 482
+  },
+  "rawResponse": "{\n  \"verdict\": \"dropship\",\n  \"confidence\": 0.85,\n  \"productCategory\": \"Smart couple's jewelry and gadgets\",\n  \"reasoning\": \"The store sells 'smart touch bracelets' and 'long-distance touch lamps', which are highly saturated dropship categories explicitly listed in Busted's Rule 14. While the store claims 'Totwoo was founded in Milan', this is a self-assertion within the scrape without independent verification. The generic domain name 'smartjewelry.co.il' further suggests a reseller model.\",\n  \"reasoningSignals\": [\n    \"Core products are 'smart touch bracelets' and 'long-distance touch lamps', which are top dropship categories\",\n    \"Store claims 'Totwoo was founded in Milan' but provides no independently verifiable brand history within the scrape\",\n    \"Generic domain name 'smartjewelry.co.il' for a store selling branded products\",\n    \"Shopify store (indicated by cdn.shop URL) selling generic smart gadgets\"\n  ],\n  \"missingSignals\": [\n    \"Independent verification of the 'Totwoo' brand's origin or manufacturing\",\n    \"Manufacturer details for the smart jewelry and lamps\"\n  ],\n  \"redFlags\": [\n    \"Dropship-saturated product category (smart touch bracelets, long-distance lamps)\",\n    \"Generic domain name for a branded product\",\n    \"Self-claimed brand origin without external verification\"\n  ],\n  \"aliexpressKeywords\": [\n    \"smart touch bracelet couple\",\n    \"long distance couple jewelry\",\n    \"vibration couple bracelet\",\n    \"long distance touch lamp\"\n  ],\n  \"styleTokens\": [],\n  \"materialPriors\": [],\n  \"estimatedStorePriceUsd\": 145.53,\n  \"estimatedSupplierPriceUsd\": 25,\n  \"estimatedMarkupPercent\": 482\n}",
+  "model": "gemini-2.5-flash",
+  "provider": "google",
+  "error": null
+}

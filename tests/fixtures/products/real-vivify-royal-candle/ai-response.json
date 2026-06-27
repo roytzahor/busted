@@ -1,0 +1,33 @@
+{
+  "prediction": {
+    "verdict": "legit",
+    "isLikelyDropship": false,
+    "confidence": 0.92,
+    "productCategory": "Decorative candle set",
+    "reasoning": "The product is described as a 'Royal Set' featuring handmade candles and a concrete tray, with specific details about natural wax and scent notes. The store offers fast local shipping (3-5 days nationwide) and explicitly states 'handmade', indicating a legitimate small brand or artisan rather than a dropshipped generic item.",
+    "reasoningSignals": [
+      "Explicitly states 'עבודת יד' (handmade)",
+      "Mentions '100% שעווה טבעית' (100% natural wax)",
+      "Fast shipping: '3 ימי עסקים לגוש דן | עד 5 ימים ארצי' (3 business days to Gush Dan | up to 5 days nationwide)",
+      "Detailed product components listed: 'נר זר ורדים דקורטיבי', 'נר ריחני בכוס זכוכית', 'סט עיצוב מבטון: מגש בסיס עגול ווזה קשתית מינימליסטית', 'זר פרחים יבשים תואם'",
+      "Specific scent profile provided: 'תבליני הדר', 'הדרים, פירות ווניל'"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "aliexpressKeywords": [
+      "handmade candle set",
+      "concrete tray candle set",
+      "rose ball candle",
+      "scented candle gift set"
+    ],
+    "styleTokens": [],
+    "materialPriors": [],
+    "estimatedStorePriceUsd": 70.5,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\n  \"verdict\": \"legit\",\n  \"confidence\": 0.92,\n  \"productCategory\": \"Decorative candle set\",\n  \"reasoning\": \"The product is described as a 'Royal Set' featuring handmade candles and a concrete tray, with specific details about natural wax and scent notes. The store offers fast local shipping (3-5 days nationwide) and explicitly states 'handmade', indicating a legitimate small brand or artisan rather than a dropshipped generic item.\",\n  \"reasoningSignals\": [\n    \"Explicitly states 'עבודת יד' (handmade)\",\n    \"Mentions '100% שעווה טבעית' (100% natural wax)\",\n    \"Fast shipping: '3 ימי עסקים לגוש דן | עד 5 ימים ארצי' (3 business days to Gush Dan | up to 5 days nationwide)\",\n    \"Detailed product components listed: 'נר זר ורדים דקורטיבי', 'נר ריחני בכוס זכוכית', 'סט עיצוב מבטון: מגש בסיס עגול ווזה קשתית מינימליסטית', 'זר פרחים יבשים תואם'\",\n    \"Specific scent profile provided: 'תבליני הדר', 'הדרים, פירות ווניל'\"\n  ],\n  \"missingSignals\": [],\n  \"redFlags\": [],\n  \"aliexpressKeywords\": [\n    \"handmade candle set\",\n    \"concrete tray candle set\",\n    \"rose ball candle\",\n    \"scented candle gift set\"\n  ],\n  \"styleTokens\": [],\n  \"materialPriors\": [],\n  \"estimatedStorePriceUsd\": 70.5,\n  \"estimatedSupplierPriceUsd\": null,\n  \"estimatedMarkupPercent\": null\n}",
+  "model": "gemini-2.5-flash",
+  "provider": "google",
+  "error": null
+}

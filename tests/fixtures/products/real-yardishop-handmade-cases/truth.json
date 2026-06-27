@@ -1,0 +1,13 @@
+{
+  "url": "https://yardishop.com/",
+  "category": "legit_brand",
+  "expectedVerdict": "legit",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Independent Shopify store selling handmade tobacco cases. MUST NOT be flagged as dropship. If scrape returns sparse data (homepage), insufficient_evidence is also acceptable."
+  },
+  "notes": "Independent Shopify store selling handmade tobacco cases. MUST NOT be flagged as dropship. If scrape returns sparse data (homepage), insufficient_evidence is also acceptable.",
+  "capturedAt": "2026-06-27T08:15:18.100Z",
+  "confidenceMin": 0,
+  "confidenceMax": 0.6
+}

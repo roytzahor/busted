@@ -1,0 +1,13 @@
+{
+  "url": "https://agasandtamar.com/he/product/in-between-ring-copy/",
+  "category": "legit_brand",
+  "expectedVerdict": "legit",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "agas&tamar — LEGIT jewelry brand with physical Tel Aviv store. CRITICAL: must NOT be classified as dropship. False-positive here is the worst failure."
+  },
+  "notes": "agas&tamar — LEGIT jewelry brand with physical Tel Aviv store. CRITICAL: must NOT be classified as dropship. False-positive here is the worst failure.",
+  "capturedAt": "2026-06-27T08:17:11.842Z",
+  "confidenceMin": 0,
+  "confidenceMax": 0.6
+}

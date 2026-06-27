@@ -1,0 +1,33 @@
+{
+  "prediction": {
+    "verdict": "legit",
+    "isLikelyDropship": false,
+    "confidence": 0.88,
+    "productCategory": "Gold and Ruby Ring",
+    "reasoning": "The product page belongs to 'Agas & Tamar', a brand that provides a physical address, phone number, and email, indicating an established business. The description mentions 'delicate gold' and a 'slice of ruby', with a note about natural variations, which is consistent with artisanal jewelry rather than generic dropshipped goods.",
+    "reasoningSignals": [
+      "Brand name 'Agas & Tamar' is present with contact information",
+      "Physical address in Tel Aviv provided in the markdown excerpt",
+      "Description mentions natural variations ('will not look exactly like the pictures') which can indicate handmade items"
+    ],
+    "missingSignals": [
+      "Specific material composition (e.g., 14k gold, gold-plated)",
+      "Shipping timeframe information"
+    ],
+    "redFlags": [],
+    "aliexpressKeywords": [
+      "gold ruby ring",
+      "delicate gold ring",
+      "minimalist gemstone ring"
+    ],
+    "styleTokens": [],
+    "materialPriors": [],
+    "estimatedStorePriceUsd": 30,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\n  \"verdict\": \"legit\",\n  \"confidence\": 0.88,\n  \"productCategory\": \"Gold and Ruby Ring\",\n  \"reasoning\": \"The product page belongs to 'Agas & Tamar', a brand that provides a physical address, phone number, and email, indicating an established business. The description mentions 'delicate gold' and a 'slice of ruby', with a note about natural variations, which is consistent with artisanal jewelry rather than generic dropshipped goods.\",\n  \"reasoningSignals\": [\n    \"Brand name 'Agas & Tamar' is present with contact information\",\n    \"Physical address in Tel Aviv provided in the markdown excerpt\",\n    \"Description mentions natural variations ('will not look exactly like the pictures') which can indicate handmade items\"\n  ],\n  \"missingSignals\": [\n    \"Specific material composition (e.g., 14k gold, gold-plated)\",\n    \"Shipping timeframe information\"\n  ],\n  \"redFlags\": [],\n  \"aliexpressKeywords\": [\n    \"gold ruby ring\",\n    \"delicate gold ring\",\n    \"minimalist gemstone ring\"\n  ],\n  \"styleTokens\": [],\n  \"materialPriors\": [],\n  \"estimatedStorePriceUsd\": 30,\n  \"estimatedSupplierPriceUsd\": null,\n  \"estimatedMarkupPercent\": null\n}",
+  "model": "gemini-2.5-flash",
+  "provider": "google",
+  "error": null
+}

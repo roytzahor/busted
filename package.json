@@ -17,6 +17,7 @@
     "eval": "tsx --env-file=.env scripts/eval/run-fixtures.ts",
     "eval:capture": "tsx --env-file=.env scripts/eval/capture-fixture.ts",
     "eval:list": "tsx scripts/eval/list-fixtures.ts",
+    "eval:refresh": "tsx --env-file=.env scripts/eval/refresh-fixture.ts",
     "verify:categories": "tsx --env-file=.env scripts/verify-category-ids.ts",
     "test": "vitest run",
     "test:watch": "vitest",

@@ -1,0 +1,13 @@
+{
+  "url": "https://vivify.co.il/product/royal/",
+  "category": "legit_brand",
+  "expectedVerdict": "legit",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Original brand making candles at home. Must NOT be flagged as dropship. AliExpress may have similar silicone molds — disclaimer is the right product behavior."
+  },
+  "notes": "Original brand making candles at home. Must NOT be flagged as dropship. AliExpress may have similar silicone molds — disclaimer is the right product behavior.",
+  "capturedAt": "2026-06-27T08:16:53.691Z",
+  "confidenceMin": 0,
+  "confidenceMax": 0.7
+}

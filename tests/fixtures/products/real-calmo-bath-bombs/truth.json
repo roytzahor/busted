@@ -1,0 +1,11 @@
+{
+  "url": "https://calmo.co.il/products/calmo",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "notes": "Bath foam tablets. Source on Alibaba (500 MOQ, not AliExpress) — supplier search may return weak matches. Mark match found = good even if low confidence."
+  },
+  "notes": "Bath foam tablets. Source on Alibaba (500 MOQ, not AliExpress) — supplier search may return weak matches. Mark match found = good even if low confidence.",
+  "capturedAt": "2026-06-27T08:18:16.003Z"
+}

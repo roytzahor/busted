@@ -12,6 +12,10 @@
 import { verifyDropshipLikelihood } from "@/lib/ai/dropship-verifier";
 import { extractSearchKeywords } from "@/lib/aliexpress/keywords";
 import { rankAliExpressCandidates } from "@/lib/aliexpress/rank-products";
+import {
+  computeMatchConfidence,
+  MATCH_CONFIDENCE_MIN,
+} from "@/lib/aliexpress/match-confidence";
 import { detectProductSource } from "@/lib/scraping/detect-source";
 import { buildSupplierMarketplacePrediction } from "@/lib/ai/supplier-marketplace-analysis";
 import { loadAllFixtures } from "@/lib/eval/fixture-store";
@@ -38,11 +42,19 @@ function parseOptions(): CliOptions {
   return opts;
 }
 
+
 function deriveVerdict(
-  prediction: { isLikelyDropship: boolean; confidence: number } | null,
+  prediction: { isLikelyDropship: boolean; confidence: number; verdict?: string } | null,
   attributes: { title: string; description: string; mainImageUrl: string | null },
 ): ExpectedVerdict {
   if (!prediction) return "insufficient_evidence";
+
+  // AI explicitly flagged a non-product page → honour that verdict directly.
+  // "not_a_product" maps directly; "collection_page" represents a legitimate
+  // store showing a catalog — map it to "legit" since there IS a real store
+  // behind it (the AI dropship determination must come from individual PDPs).
+  if (prediction.verdict === "not_a_product") return "not_a_product";
+  if (prediction.verdict === "collection_page") return "legit";
 
   const attrCount =
     Number(attributes.title.length > 0) +
@@ -79,6 +91,7 @@ async function evaluateFixture(
   let prediction: {
     isLikelyDropship: boolean;
     confidence: number;
+    verdict?: string;
   } | null = null;
 
   if (isSupplierListing) {
@@ -112,10 +125,36 @@ async function evaluateFixture(
   let supplierMatch = false;
   let supplierWinnerPriceUsd: number | null = null;
 
-  if (!opts.skipSupplier && fixture.aliexpress) {
+  // Mirror production gating: supplier search only runs when verdict is dropship.
+  // legit / collection_page / not_a_product / insufficient_evidence all suppress
+  // the supplier search in the real pipeline, so we must do the same here to
+  // avoid false-positive supplier matches on legit/collection pages.
+  const supplierSearchVerdict = prediction?.verdict ?? predictedVerdict;
+  const supplierSearchEnabled =
+    !opts.skipSupplier &&
+    fixture.aliexpress !== undefined &&
+    supplierSearchVerdict === "dropship";
+
+  if (supplierSearchEnabled && fixture.aliexpress) {
     const ranked = rankAliExpressCandidates(fixture.aliexpress.candidates);
-    supplierFound = ranked.length > 0;
-    supplierWinnerPriceUsd = ranked[0]?.priceUsd ?? null;
+
+    // Apply the same confidence floor that production uses (MATCH_CONFIDENCE_MIN).
+    // Without this, any random high-volume AliExpress listing is treated as a
+    // "found" supplier even when its title is completely unrelated (e.g. a USB
+    // charger returned for a Hebrew candle brand search).
+    const confidenceRanked = ranked
+      .map((candidate) => ({
+        candidate,
+        confidence: computeMatchConfidence(
+          fixture.scrape.attributes,
+          fixture.scrape.detectedStorePriceUsd,
+          candidate,
+        ),
+      }))
+      .filter(({ confidence }) => confidence.score >= MATCH_CONFIDENCE_MIN);
+
+    supplierFound = confidenceRanked.length > 0;
+    supplierWinnerPriceUsd = confidenceRanked[0]?.candidate.priceUsd ?? null;
 
     const truthExpected = fixture.truth.expectedSupplier;
     if (truthExpected.shouldFindMatch && supplierFound) {
@@ -127,11 +166,18 @@ async function evaluateFixture(
     } else if (!truthExpected.shouldFindMatch) {
       supplierMatch = !supplierFound;
     }
-  } else if (!fixture.aliexpress) {
-    // No AliExpress fixture data — only matters if we expected a match.
+  } else {
+    // Supplier search was skipped (no aliexpress.json, skipSupplier flag, or
+    // non-dropship verdict). For legit/collection/not_a_product verdicts the
+    // production system would never have run the search, so "no match found"
+    // is the correct production outcome — count it correct iff shouldFindMatch=false.
     if (fixture.truth.expectedSupplier.shouldFindMatch) {
-      notes.push("expected supplier match but no aliexpress.json captured");
+      if (!fixture.aliexpress) {
+        notes.push("expected supplier match but no aliexpress.json captured");
+      }
+      // supplierMatch stays false — we didn't find a supplier
     } else {
+      // shouldFindMatch=false and we found nothing — correct outcome
       supplierMatch = true;
     }
   }

@@ -1,0 +1,39 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.85,
+    "productCategory": "Personalized wooden puzzle",
+    "reasoning": "The product, a personalized wooden family puzzle, falls into a category frequently dropshipped and fulfilled by third-party services. The description's mention of 'advanced CNC technology' for a product claimed to be 'handmade in our home workshop' is a strong red flag, as CNC services are widely used by dropship resellers, contradicting genuine artisan production in this context. Despite the claim of being 'made in Israel,' the combination of product type and manufacturing method points to a dropship model.",
+    "reasoningSignals": [
+      "Product category 'personalized wooden puzzle gifts' is explicitly listed as a dropship niche (Rule 14)",
+      "Description states product is made with 'advanced CNC technology', which is a fulfillment-service red flag for this category (Rule 14)",
+      "Product is personalized with names and family structure, a common feature of dropshipped items fulfilled by third-party services",
+      "No independent brand history or verifiable manufacturer cited beyond the self-claim of 'home workshop'"
+    ],
+    "missingSignals": [
+      "No verifiable supplier information for price comparison",
+      "More details about the 'home workshop' or actual manufacturing process"
+    ],
+    "redFlags": [
+      "Dropship-saturated product category (personalized wooden puzzles)",
+      "Contradictory claims of 'handmade' and 'CNC technology'",
+      "Self-claimed local production without verifiable brand history"
+    ],
+    "aliexpressKeywords": [
+      "personalized wooden family puzzle",
+      "custom wood lion puzzle",
+      "wooden animal family names puzzle",
+      "engraved family puzzle wood"
+    ],
+    "styleTokens": [],
+    "materialPriors": [],
+    "estimatedStorePriceUsd": 72.5,
+    "estimatedSupplierPriceUsd": 20,
+    "estimatedMarkupPercent": 262.5
+  },
+  "rawResponse": "{\n  \"verdict\": \"dropship\",\n  \"confidence\": 0.85,\n  \"productCategory\": \"Personalized wooden puzzle\",\n  \"reasoning\": \"The product, a personalized wooden family puzzle, falls into a category frequently dropshipped and fulfilled by third-party services. The description's mention of 'advanced CNC technology' for a product claimed to be 'handmade in our home workshop' is a strong red flag, as CNC services are widely used by dropship resellers, contradicting genuine artisan production in this context. Despite the claim of being 'made in Israel,' the combination of product type and manufacturing method points to a dropship model.\",\n  \"reasoningSignals\": [\n    \"Product category 'personalized wooden puzzle gifts' is explicitly listed as a dropship niche (Rule 14)\",\n    \"Description states product is made with 'advanced CNC technology', which is a fulfillment-service red flag for this category (Rule 14)\",\n    \"Product is personalized with names and family structure, a common feature of dropshipped items fulfilled by third-party services\",\n    \"No independent brand history or verifiable manufacturer cited beyond the self-claim of 'home workshop'\"\n  ],\n  \"missingSignals\": [\n    \"No verifiable supplier information for price comparison\",\n    \"More details about the 'home workshop' or actual manufacturing process\"\n  ],\n  \"redFlags\": [\n    \"Dropship-saturated product category (personalized wooden puzzles)\",\n    \"Contradictory claims of 'handmade' and 'CNC technology'\",\n    \"Self-claimed local production without verifiable brand history\"\n  ],\n  \"aliexpressKeywords\": [\n    \"personalized wooden family puzzle\",\n    \"custom wood lion puzzle\",\n    \"wooden animal family names puzzle\",\n    \"engraved family puzzle wood\"\n  ],\n  \"styleTokens\": [],\n  \"materialPriors\": [],\n  \"estimatedStorePriceUsd\": 72.5,\n  \"estimatedSupplierPriceUsd\": 20,\n  \"estimatedMarkupPercent\": 262.5\n}",
+  "model": "gemini-2.5-flash",
+  "provider": "google",
+  "error": null
+}

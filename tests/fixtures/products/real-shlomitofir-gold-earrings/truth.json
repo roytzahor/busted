@@ -1,0 +1,13 @@
+{
+  "url": "https://shlomitofir.co.il/collections/14k-gold-earrings",
+  "category": "legit_brand",
+  "expectedVerdict": "legit",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Shlomit Ofir — LEGIT jewelry brand with physical Tel Aviv store. Collection page (not single product). insufficient_evidence is also acceptable. Must NOT flag as dropship."
+  },
+  "notes": "Shlomit Ofir — LEGIT jewelry brand with physical Tel Aviv store. Collection page (not single product). insufficient_evidence is also acceptable. Must NOT flag as dropship.",
+  "capturedAt": "2026-06-27T08:17:31.970Z",
+  "confidenceMin": 0,
+  "confidenceMax": 0.6
+}

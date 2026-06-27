@@ -46,3 +46,6 @@ next-env.d.ts
 /graphify-out/
 /logs/
 *.xlsx
+
+# Nested agent git worktrees (registered via git worktree — never commit into parent)
+.claude/worktrees/

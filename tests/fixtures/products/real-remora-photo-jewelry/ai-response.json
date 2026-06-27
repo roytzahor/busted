@@ -1,0 +1,41 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.88,
+    "productCategory": "Encrypted photo jewelry",
+    "reasoning": "The store sells 'jewelry with encrypted photos' and 'personalized gifts', which is a well-known dropship niche (Rule 14a). The site is a generic Shopify store on a .shop domain, listing multiple products with 'on sale' prices but no verifiable brand history or manufacturer. This indicates a dropshipping operation reselling generic items.",
+    "reasoningSignals": [
+      "Product category ('jewelry with encrypted photo') is a top-tier AliExpress dropship niche (Rule 14a)",
+      "Store operates on a generic Shopify '.shop' domain, common for dropshippers",
+      "Multiple products are listed with 'on sale' pricing, a common dropship marketing tactic",
+      "No manufacturer name or independent brand history is mentioned in the scrape",
+      "Mentions '925 sterling silver', a common material for dropshipped personalized jewelry"
+    ],
+    "missingSignals": [
+      "No verifiable brand 'About Us' page or history",
+      "No specific shipping timeframes mentioned",
+      "No manufacturer details"
+    ],
+    "redFlags": [
+      "Dropship-saturated product category",
+      "Generic Shopify domain",
+      "Prominent 'on sale' pricing across multiple items"
+    ],
+    "aliexpressKeywords": [
+      "encrypted photo necklace",
+      "custom projection bracelet",
+      "personalized photo jewelry",
+      "925 silver photo pendant"
+    ],
+    "styleTokens": [],
+    "materialPriors": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": 8,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\n  \"verdict\": \"dropship\",\n  \"confidence\": 0.88,\n  \"productCategory\": \"Encrypted photo jewelry\",\n  \"reasoning\": \"The store sells 'jewelry with encrypted photos' and 'personalized gifts', which is a well-known dropship niche (Rule 14a). The site is a generic Shopify store on a .shop domain, listing multiple products with 'on sale' prices but no verifiable brand history or manufacturer. This indicates a dropshipping operation reselling generic items.\",\n  \"reasoningSignals\": [\n    \"Product category ('jewelry with encrypted photo') is a top-tier AliExpress dropship niche (Rule 14a)\",\n    \"Store operates on a generic Shopify '.shop' domain, common for dropshippers\",\n    \"Multiple products are listed with 'on sale' pricing, a common dropship marketing tactic\",\n    \"No manufacturer name or independent brand history is mentioned in the scrape\",\n    \"Mentions '925 sterling silver', a common material for dropshipped personalized jewelry\"\n  ],\n  \"missingSignals\": [\n    \"No verifiable brand 'About Us' page or history\",\n    \"No specific shipping timeframes mentioned\",\n    \"No manufacturer details\"\n  ],\n  \"redFlags\": [\n    \"Dropship-saturated product category\",\n    \"Generic Shopify domain\",\n    \"Prominent 'on sale' pricing across multiple items\"\n  ],\n  \"aliexpressKeywords\": [\n    \"encrypted photo necklace\",\n    \"custom projection bracelet\",\n    \"personalized photo jewelry\",\n    \"925 silver photo pendant\"\n  ],\n  \"styleTokens\": [],\n  \"materialPriors\": [],\n  \"estimatedStorePriceUsd\": null,\n  \"estimatedSupplierPriceUsd\": 8,\n  \"estimatedMarkupPercent\": null\n}",
+  "model": "gemini-2.5-flash",
+  "provider": "google",
+  "error": null
+}

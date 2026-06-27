@@ -1,0 +1,11 @@
+{
+  "url": "https://remoraisrael.shop/",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "notes": "Sentimental photo jewelry. Classic dropship. Homepage — sparse-scrape fallback acceptable."
+  },
+  "notes": "Sentimental photo jewelry. Classic dropship. Homepage — sparse-scrape fallback acceptable.",
+  "capturedAt": "2026-06-27T08:18:53.554Z"
+}

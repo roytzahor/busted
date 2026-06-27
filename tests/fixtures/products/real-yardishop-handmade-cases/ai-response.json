@@ -1,0 +1,35 @@
+{
+  "prediction": {
+    "verdict": "collection_page",
+    "isLikelyDropship": false,
+    "confidence": 0.95,
+    "productCategory": "tobacco case",
+    "reasoning": "The page presents a collection of multiple distinct handmade tobacco cases, each with a price, under a clear 'Our Collection' heading. The owner explicitly states that each case is hand-sewn with no mass production, indicating a small artisan business rather than dropshipping.",
+    "reasoningSignals": [
+      "Page lists multiple distinct product names and prices ('קייס מנומר ורוד בהיר ₪159.90', 'קייס טבק אדל ₪159.90')",
+      "Description states 'תפירה בעבודת יד' (handmade sewing) and 'אין כאן ייצור המוני' (no mass production)",
+      "Founder's personal story about starting the brand and sewing each item",
+      "Option for local self-collection in Beer Sheva",
+      "Shipping 'תוך ימים ספורים' (within a few days)"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "aliexpressKeywords": [],
+    "styleTokens": [
+      "handmade",
+      "unique design",
+      "patterned",
+      "colorful"
+    ],
+    "materialPriors": [
+      "fabric"
+    ],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\n  \"verdict\": \"collection_page\",\n  \"confidence\": 0.95,\n  \"productCategory\": \"tobacco case\",\n  \"reasoning\": \"The page presents a collection of multiple distinct handmade tobacco cases, each with a price, under a clear 'Our Collection' heading. The owner explicitly states that each case is hand-sewn with no mass production, indicating a small artisan business rather than dropshipping.\",\n  \"reasoningSignals\": [\n    \"Page lists multiple distinct product names and prices ('קייס מנומר ורוד בהיר ₪159.90', 'קייס טבק אדל ₪159.90')\",\n    \"Description states 'תפירה בעבודת יד' (handmade sewing) and 'אין כאן ייצור המוני' (no mass production)\",\n    \"Founder's personal story about starting the brand and sewing each item\",\n    \"Option for local self-collection in Beer Sheva\",\n    \"Shipping 'תוך ימים ספורים' (within a few days)\"\n  ],\n  \"missingSignals\": [],\n  \"redFlags\": [],\n  \"aliexpressKeywords\": [],\n  \"styleTokens\": [\n    \"handmade\",\n    \"unique design\",\n    \"patterned\",\n    \"colorful\"\n  ],\n  \"materialPriors\": [\n    \"fabric\"\n  ],\n  \"estimatedStorePriceUsd\": null,\n  \"estimatedSupplierPriceUsd\": null,\n  \"estimatedMarkupPercent\": null\n}",
+  "model": "gemini-2.5-flash",
+  "provider": "google",
+  "error": null
+}

@@ -1,0 +1,11 @@
+{
+  "url": "https://mxm02.com/",
+  "category": "not_a_product",
+  "expectedVerdict": "not_a_product",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Store homepage with many products, not a single product page. System should classify as not_a_product and instruct user to paste a specific product URL."
+  },
+  "notes": "Store homepage with many products, not a single product page. System should classify as not_a_product and instruct user to paste a specific product URL.",
+  "capturedAt": "2026-06-27T08:15:00.280Z"
+}

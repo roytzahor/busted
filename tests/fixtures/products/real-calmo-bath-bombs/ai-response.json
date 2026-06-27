@@ -1,0 +1,40 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.85,
+    "productCategory": "Shower spa tablets",
+    "reasoning": "The product, shower spa tablets, belongs to a category frequently dropshipped from overseas suppliers. The store uses urgency marketing ('Summer sale for a limited time') and operates on a regional domain without providing verifiable brand history or manufacturer details, which are common characteristics of dropshipping operations.",
+    "reasoningSignals": [
+      "Product category (shower spa tablets/steamers) is widely available from Chinese suppliers",
+      "Urgency marketing ('Summer sale for a limited time - up to 40% discount') is present",
+      "No verifiable manufacturer or brand history beyond the product name 'Calmo'",
+      "Regional .co.il domain suggests a local reseller",
+      "Price is present in markdown but not detected by `detectedStorePriceUsd`, which can indicate JS-rendered prices common in dropship stores"
+    ],
+    "missingSignals": [
+      "Explicit long shipping times (e.g., 2-4 weeks)",
+      "Detailed 'About Us' page content"
+    ],
+    "redFlags": [
+      "Dropship-saturated product category",
+      "Urgency marketing",
+      "Generic branding"
+    ],
+    "aliexpressKeywords": [
+      "shower steamer tablets",
+      "aromatherapy shower bombs",
+      "essential oil shower tablets",
+      "spa shower fizzies"
+    ],
+    "styleTokens": [],
+    "materialPriors": [],
+    "estimatedStorePriceUsd": 44.55,
+    "estimatedSupplierPriceUsd": 10,
+    "estimatedMarkupPercent": 345.5
+  },
+  "rawResponse": "{\n  \"verdict\": \"dropship\",\n  \"confidence\": 0.85,\n  \"productCategory\": \"Shower spa tablets\",\n  \"reasoning\": \"The product, shower spa tablets, belongs to a category frequently dropshipped from overseas suppliers. The store uses urgency marketing ('Summer sale for a limited time') and operates on a regional domain without providing verifiable brand history or manufacturer details, which are common characteristics of dropshipping operations.\",\n  \"reasoningSignals\": [\n    \"Product category (shower spa tablets/steamers) is widely available from Chinese suppliers\",\n    \"Urgency marketing ('Summer sale for a limited time - up to 40% discount') is present\",\n    \"No verifiable manufacturer or brand history beyond the product name 'Calmo'\",\n    \"Regional .co.il domain suggests a local reseller\",\n    \"Price is present in markdown but not detected by `detectedStorePriceUsd`, which can indicate JS-rendered prices common in dropship stores\"\n  ],\n  \"missingSignals\": [\n    \"Explicit long shipping times (e.g., 2-4 weeks)\",\n    \"Detailed 'About Us' page content\"\n  ],\n  \"redFlags\": [\n    \"Dropship-saturated product category\",\n    \"Urgency marketing\",\n    \"Generic branding\"\n  ],\n  \"aliexpressKeywords\": [\n    \"shower steamer tablets\",\n    \"aromatherapy shower bombs\",\n    \"essential oil shower tablets\",\n    \"spa shower fizzies\"\n  ],\n  \"styleTokens\": [],\n  \"materialPriors\": [],\n  \"estimatedStorePriceUsd\": 44.55,\n  \"estimatedSupplierPriceUsd\": 10,\n  \"estimatedMarkupPercent\": 345.5\n}",
+  "model": "gemini-2.5-flash",
+  "provider": "google",
+  "error": null
+}

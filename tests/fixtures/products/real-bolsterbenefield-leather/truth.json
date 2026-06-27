@@ -1,0 +1,11 @@
+{
+  "url": "https://bolsterbenefield.com/",
+  "category": "not_a_product",
+  "expectedVerdict": "not_a_product",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Site shows only image galleries of leather+wood items, no real product detail pages. Expect not_a_product. Bonus if system surfaces 'no product detected, here are similar items'."
+  },
+  "notes": "Site shows only image galleries of leather+wood items, no real product detail pages. Expect not_a_product. Bonus if system surfaces 'no product detected, here are similar items'.",
+  "capturedAt": "2026-06-27T08:16:21.002Z"
+}

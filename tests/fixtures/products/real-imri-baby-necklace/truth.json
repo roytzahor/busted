@@ -1,0 +1,11 @@
+{
+  "url": "https://imri-jewelry.co.il/products/my-baby-necklace",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "notes": "Hug-baby necklace. Source costs ~2 NIS on AliExpress. Hebrew title — translate pre-pass should fire."
+  },
+  "notes": "Hug-baby necklace. Source costs ~2 NIS on AliExpress. Hebrew title — translate pre-pass should fire.",
+  "capturedAt": "2026-06-27T08:15:59.238Z"
+}

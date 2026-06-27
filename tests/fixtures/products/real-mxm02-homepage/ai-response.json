@@ -1,0 +1,28 @@
+{
+  "prediction": {
+    "verdict": "not_a_product",
+    "isLikelyDropship": false,
+    "confidence": 0.95,
+    "productCategory": "Store homepage",
+    "reasoning": "The scraped page appears to be a general e-commerce store's homepage, not a specific product page or a shoppable collection. It features a brand name title, a generic mission statement, a logo image, and a country/currency selector, but no individual products, prices, or product descriptions are present.",
+    "reasoningSignals": [
+      "Title 'moslash' is a brand name, not a product name",
+      "Description is a generic store mission statement, not a product description",
+      "Main image is a logo/placeholder, not a product image",
+      "Markdown excerpt shows a country/currency selector, indicating a general store page",
+      "No price detected"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "aliexpressKeywords": [],
+    "styleTokens": [],
+    "materialPriors": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\n  \"verdict\": \"not_a_product\",\n  \"confidence\": 0.95,\n  \"productCategory\": \"Store homepage\",\n  \"reasoning\": \"The scraped page appears to be a general e-commerce store's homepage, not a specific product page or a shoppable collection. It features a brand name title, a generic mission statement, a logo image, and a country/currency selector, but no individual products, prices, or product descriptions are present.\",\n  \"reasoningSignals\": [\n    \"Title 'moslash' is a brand name, not a product name\",\n    \"Description is a generic store mission statement, not a product description\",\n    \"Main image is a logo/placeholder, not a product image\",\n    \"Markdown excerpt shows a country/currency selector, indicating a general store page\",\n    \"No price detected\"\n  ],\n  \"missingSignals\": [],\n  \"redFlags\": [],\n  \"aliexpressKeywords\": [],\n  \"styleTokens\": [],\n  \"materialPriors\": [],\n  \"estimatedStorePriceUsd\": null,\n  \"estimatedSupplierPriceUsd\": null,\n  \"estimatedMarkupPercent\": null\n}",
+  "model": "gemini-2.5-flash",
+  "provider": "google",
+  "error": null
+}

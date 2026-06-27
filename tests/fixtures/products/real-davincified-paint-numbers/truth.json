@@ -1,0 +1,11 @@
+{
+  "url": "https://www.davincified.com/il/collections/paint-by-numbers-kits",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "notes": "Paint-by-numbers kits. Classic dropship. Collection page — if scrape returns sparse data, insufficient_evidence is acceptable."
+  },
+  "notes": "Paint-by-numbers kits. Classic dropship. Collection page — if scrape returns sparse data, insufficient_evidence is acceptable.",
+  "capturedAt": "2026-06-27T08:18:34.157Z"
+}

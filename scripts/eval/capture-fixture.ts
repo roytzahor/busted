@@ -108,7 +108,9 @@ async function main(): Promise<void> {
   console.log("[capture] step 3/3: searching AliExpress…");
   let aliFixture: FixtureAliExpress | undefined;
   try {
-    const keywords = extractSearchKeywords(scrapeFixture.attributes.title);
+    const effectiveTitle =
+      scrapeFixture.attributes.translatedTitle ?? scrapeFixture.attributes.title;
+    const keywords = extractSearchKeywords(effectiveTitle);
     const provider: "aliexpress_api" | "firecrawl_scrape" = isAliExpressApiConfigured()
       ? "aliexpress_api"
       : "firecrawl_scrape";

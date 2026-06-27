@@ -1,0 +1,39 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.85,
+    "productCategory": "Baby charm necklace",
+    "reasoning": "The product category (baby/mother charm necklace in 925 sterling silver and 18K gold plating) is overwhelmingly dropshipped from AliExpress. While a price is present and the store claims to be 'reservist-owned,' there's no verifiable manufacturer or unique brand story beyond this self-description. The use of common materials and typical e-commerce marketing tactics (discounts, urgency) further suggest a dropship model.",
+    "reasoningSignals": [
+      "Product category (baby/mother charm necklace, 925 sterling silver, 18K gold plating) is overwhelmingly dropshipped from AliExpress",
+      "No manufacturer name or trademark cited in the scrape",
+      "Marketing tactics include '30% discount' and 'stock running out fast' ('המלאי שלנו אוזל מהר'), common in dropship stores",
+      "Self-described as 'reservist-owned business' ('עסק של מילואימניק') without corroborating brand history or unique product design"
+    ],
+    "missingSignals": [
+      "Verifiable brand history beyond self-description",
+      "Manufacturer details"
+    ],
+    "redFlags": [
+      "AliExpress-saturated product category",
+      "No verifiable brand identity beyond self-claim",
+      "Urgency marketing"
+    ],
+    "aliexpressKeywords": [
+      "baby charm necklace sterling silver",
+      "mother child pendant 925",
+      "gold plated baby figure necklace",
+      "new mom jewelry gift"
+    ],
+    "styleTokens": [],
+    "materialPriors": [],
+    "estimatedStorePriceUsd": 64.32,
+    "estimatedSupplierPriceUsd": 8,
+    "estimatedMarkupPercent": 704
+  },
+  "rawResponse": "{\n  \"verdict\": \"dropship\",\n  \"confidence\": 0.85,\n  \"productCategory\": \"Baby charm necklace\",\n  \"reasoning\": \"The product category (baby/mother charm necklace in 925 sterling silver and 18K gold plating) is overwhelmingly dropshipped from AliExpress. While a price is present and the store claims to be 'reservist-owned,' there's no verifiable manufacturer or unique brand story beyond this self-description. The use of common materials and typical e-commerce marketing tactics (discounts, urgency) further suggest a dropship model.\",\n  \"reasoningSignals\": [\n    \"Product category (baby/mother charm necklace, 925 sterling silver, 18K gold plating) is overwhelmingly dropshipped from AliExpress\",\n    \"No manufacturer name or trademark cited in the scrape\",\n    \"Marketing tactics include '30% discount' and 'stock running out fast' ('המלאי שלנו אוזל מהר'), common in dropship stores\",\n    \"Self-described as 'reservist-owned business' ('עסק של מילואימניק') without corroborating brand history or unique product design\"\n  ],\n  \"missingSignals\": [\n    \"Verifiable brand history beyond self-description\",\n    \"Manufacturer details\"\n  ],\n  \"redFlags\": [\n    \"AliExpress-saturated product category\",\n    \"No verifiable brand identity beyond self-claim\",\n    \"Urgency marketing\"\n  ],\n  \"aliexpressKeywords\": [\n    \"baby charm necklace sterling silver\",\n    \"mother child pendant 925\",\n    \"gold plated baby figure necklace\",\n    \"new mom jewelry gift\"\n  ],\n  \"styleTokens\": [],\n  \"materialPriors\": [],\n  \"estimatedStorePriceUsd\": 64.32,\n  \"estimatedSupplierPriceUsd\": 8,\n  \"estimatedMarkupPercent\": 704\n}",
+  "model": "gemini-2.5-flash",
+  "provider": "google",
+  "error": null
+}
