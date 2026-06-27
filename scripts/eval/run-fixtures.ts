@@ -92,6 +92,8 @@ async function evaluateFixture(
     isLikelyDropship: boolean;
     confidence: number;
     verdict?: string;
+    productCategory?: string;
+    aliexpressKeywords?: string[];
   } | null = null;
 
   if (isSupplierListing) {
@@ -138,6 +140,12 @@ async function evaluateFixture(
   if (supplierSearchEnabled && fixture.aliexpress) {
     const ranked = rankAliExpressCandidates(fixture.aliexpress.candidates);
 
+    // Mirror production: fold AI category + keywords into the match text so
+    // brand-name-only titles still overlap with generic AliExpress listings.
+    const matchTerms = [prediction?.productCategory, ...(prediction?.aliexpressKeywords ?? [])]
+      .filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+      .join(" ");
+
     // Apply the same confidence floor that production uses (MATCH_CONFIDENCE_MIN).
     // Without this, any random high-volume AliExpress listing is treated as a
     // "found" supplier even when its title is completely unrelated (e.g. a USB
@@ -149,6 +157,7 @@ async function evaluateFixture(
           fixture.scrape.attributes,
           fixture.scrape.detectedStorePriceUsd,
           candidate,
+          matchTerms,
         ),
       }))
       .filter(({ confidence }) => confidence.score >= MATCH_CONFIDENCE_MIN);

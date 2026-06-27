@@ -44,14 +44,37 @@ function jaccard(a: Set<string>, b: Set<string>): number {
   return union === 0 ? 0 : intersection / union;
 }
 
+// A consumer dropship/AliExpress item priced above this is almost certainly a
+// price-parse error (e.g. an "$18,163,911" olive-oil extractor) — never a real
+// match. Hard upper bound, independent of the store price.
+const MAX_PLAUSIBLE_SUPPLIER_PRICE_USD = 5000;
+
+// How much pricier than the store a candidate may be before we treat it as the
+// wrong product. AliExpress is meant to be the cheaper source; a candidate that
+// costs 8×+ the store can't be it (and best-effort "similar" items that far off
+// are noise too).
+const MAX_SUPPLIER_OVER_STORE_RATIO = 8;
+
 function classifyPriceRatio(
   storePrice: number | null,
   candidatePrice: number,
 ): { ratio: number | null; verdict: MatchConfidence["priceVerdict"] } {
-  if (storePrice === null || storePrice <= 0 || candidatePrice <= 0) {
+  if (candidatePrice <= 0 || candidatePrice > MAX_PLAUSIBLE_SUPPLIER_PRICE_USD) {
+    // Zero/negative or absurdly large price → parse error, reject outright.
+    return {
+      ratio: storePrice && storePrice > 0 ? storePrice / candidatePrice : null,
+      verdict: "absurd",
+    };
+  }
+  if (storePrice === null || storePrice <= 0) {
     return { ratio: null, verdict: "unknown" };
   }
   const ratio = storePrice / candidatePrice;
+  if (candidatePrice > storePrice * MAX_SUPPLIER_OVER_STORE_RATIO) {
+    // Supplier dramatically pricier than the store → can't be the cheaper
+    // source; almost certainly the wrong product.
+    return { ratio, verdict: "absurd" };
+  }
   if (ratio < 1.0) {
     // Store is cheaper than candidate? That's not a markup scenario.
     return { ratio, verdict: "no_markup" };
@@ -74,13 +97,23 @@ export function computeMatchConfidence(
   scrapedAttrs: ScrapedProductAttributes,
   storePriceUsd: number | null,
   candidate: AliExpressProductCandidate,
+  /**
+   * Extra descriptive terms (AI productCategory + functional keywords) folded
+   * into the scraped token set. Brand-name-only titles like "Bleesse" share no
+   * tokens with a generic AliExpress listing; adding "menstrual heating pad
+   * period massager" lets the overlap actually fire. Optional + backward-safe.
+   */
+  extraMatchTerms?: string,
 ): MatchConfidence {
   const reasons: string[] = [];
 
   // Use translated title when available so non-Latin (Hebrew/Arabic/CJK) scrapes
   // produce meaningful Jaccard overlap against English AliExpress candidate titles.
   const effectiveTitle = scrapedAttrs.translatedTitle ?? scrapedAttrs.title;
-  const scrapedTokens = normalizeTokens(effectiveTitle);
+  const matchText = extraMatchTerms?.trim()
+    ? `${effectiveTitle} ${extraMatchTerms}`
+    : effectiveTitle;
+  const scrapedTokens = normalizeTokens(matchText);
   const candidateTokens = normalizeTokens(candidate.title);
   const titleOverlap = jaccard(scrapedTokens, candidateTokens);
 
@@ -131,12 +164,20 @@ export function computeMatchConfidence(
   // Final weighted score
   // Title overlap is the strongest signal — getting the right *product*
   // matters more than markup ratio (which can still be valid at unusual values).
-  const score =
+  let finalScore =
     titleOverlap * 0.55 + priceScore * 0.3 + trustScore * 0.15;
+  finalScore = Math.max(0, Math.min(1, finalScore));
+
+  if (verdict === "absurd") {
+    // Hard clamp: a parse-error / wrong-product price must not be rescued by
+    // title overlap. Push below BEST_EFFORT_FLOOR so the candidate is suppressed
+    // rather than surfaced as a "closest match".
+    finalScore = Math.min(finalScore, 0.1);
+  }
 
   return {
-    score: Math.max(0, Math.min(1, score)),
-    quality: scoreToQuality(score),
+    score: finalScore,
+    quality: scoreToQuality(finalScore),
     titleOverlap,
     priceRatio: ratio,
     priceVerdict: verdict,
@@ -145,6 +186,13 @@ export function computeMatchConfidence(
 }
 
 export const MATCH_CONFIDENCE_MIN = 0.4;
+
+/**
+ * Below this score we don't even surface a best-effort "closest match" — the
+ * candidate is noise (wrong product / absurd price). find-supplier soft-skips
+ * instead, so the route shows no supplier rather than a misleading one.
+ */
+export const BEST_EFFORT_FLOOR = 0.2;
 export const IMAGE_MATCH_MIN = 0.5;
 
 /**

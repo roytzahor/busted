@@ -24,6 +24,7 @@ import {
 import {
   IMAGE_MATCH_MIN,
   MATCH_CONFIDENCE_MIN,
+  BEST_EFFORT_FLOOR,
   computeMatchConfidence,
   foldImageMatchIntoConfidence,
   foldVariantIntoConfidence,
@@ -241,6 +242,13 @@ export async function findAliExpressSupplier(params: {
   const titleKeywords = extractSearchKeywords(effectiveTitle);
   const thin = isThinTitle(effectiveTitle);
 
+  // Descriptive terms folded into every match-confidence call so brand-name-only
+  // titles (e.g. "Bleesse") still overlap with generic AliExpress listings via
+  // the AI's productCategory + functional keywords.
+  const matchTerms = [params.productCategory, ...(params.aiKeywords ?? [])]
+    .filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+    .join(" ");
+
   // Phase 4 keyword precedence:
   //   1. identity.searchKeywords.primary (vision-grounded canonical)
   //   2. identity.searchKeywords.visualTerms (vision-grounded visual)
@@ -451,7 +459,7 @@ export async function findAliExpressSupplier(params: {
   const TOP_N = Math.min(12, candidates.length);
   const scored = candidates.slice(0, TOP_N).map((candidate) => ({
     candidate,
-    confidence: computeMatchConfidence(params.attributes, params.storePriceUsd, candidate),
+    confidence: computeMatchConfidence(params.attributes, params.storePriceUsd, candidate, matchTerms),
   }));
   scored.sort((a, b) => b.confidence.score - a.confidence.score);
 
@@ -498,7 +506,7 @@ export async function findAliExpressSupplier(params: {
       }
       const newScored = candidates.slice(0, TOP_N).map((candidate) => ({
         candidate,
-        confidence: computeMatchConfidence(params.attributes, params.storePriceUsd, candidate),
+        confidence: computeMatchConfidence(params.attributes, params.storePriceUsd, candidate, matchTerms),
       }));
       newScored.sort((a, b) => b.confidence.score - a.confidence.score);
       scored.splice(0, scored.length, ...newScored);
@@ -592,7 +600,7 @@ export async function findAliExpressSupplier(params: {
     // Re-score the now-richer candidate pool.
     const reScored = candidates.slice(0, TOP_N).map((candidate) => ({
       candidate,
-      confidence: computeMatchConfidence(params.attributes, params.storePriceUsd, candidate),
+      confidence: computeMatchConfidence(params.attributes, params.storePriceUsd, candidate, matchTerms),
     }));
     reScored.sort((a, b) => b.confidence.score - a.confidence.score);
     scored.splice(0, scored.length, ...reScored);
@@ -677,7 +685,7 @@ export async function findAliExpressSupplier(params: {
         }
         const retryScored = candidates.slice(0, TOP_N).map((candidate) => ({
           candidate,
-          confidence: computeMatchConfidence(params.attributes, params.storePriceUsd, candidate),
+          confidence: computeMatchConfidence(params.attributes, params.storePriceUsd, candidate, matchTerms),
         }));
         retryScored.sort((a, b) => b.confidence.score - a.confidence.score);
 
@@ -745,6 +753,18 @@ export async function findAliExpressSupplier(params: {
   }
 
   const best = scored[0];
+
+  // Hard suppression — never surface a garbage match. An absurd/parse-error
+  // price (e.g. an "$18M olive-oil extractor") or a score down in the noise
+  // floor is worse than showing no supplier at all. Soft-skip so the route
+  // renders "no confident match" instead of a misleading one.
+  if (best.confidence.priceVerdict === "absurd" || best.confidence.score < BEST_EFFORT_FLOOR) {
+    throw new AliExpressSearchError(
+      "ALIEXPRESS_NO_CONFIDENT_MATCH",
+      `Best candidate failed the sanity check (score ${best.confidence.score.toFixed(2)}, price ${best.confidence.priceVerdict}) — no supplier shown.`,
+      422,
+    );
+  }
 
   if (best.confidence.score < MATCH_CONFIDENCE_MIN) {
     // Score below confident threshold — surface as closest match rather than returning nothing.
