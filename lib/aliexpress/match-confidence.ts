@@ -77,7 +77,10 @@ export function computeMatchConfidence(
 ): MatchConfidence {
   const reasons: string[] = [];
 
-  const scrapedTokens = normalizeTokens(scrapedAttrs.title);
+  // Use translated title when available so non-Latin (Hebrew/Arabic/CJK) scrapes
+  // produce meaningful Jaccard overlap against English AliExpress candidate titles.
+  const effectiveTitle = scrapedAttrs.translatedTitle ?? scrapedAttrs.title;
+  const scrapedTokens = normalizeTokens(effectiveTitle);
   const candidateTokens = normalizeTokens(candidate.title);
   const titleOverlap = jaccard(scrapedTokens, candidateTokens);
 

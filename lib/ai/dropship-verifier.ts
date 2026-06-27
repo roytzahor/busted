@@ -81,6 +81,11 @@ HARD RULES (violating these = wrong output):
 9. confidence reflects YOUR certainty given available data. Do not output high confidence on weak data.
 10. "collection_page" REQUIRES: (a) the scrape mentions multiple distinct product names that share a vertical, AND (b) no single dominant price/PDP. If only ONE product is described, this is a PDP — use dropship/legit/insufficient_evidence instead. Set estimated prices to null. Confidence 0.7+ when the page clearly lists multiple items.
 11. styleTokens/materialPriors MUST be empty arrays for any verdict OTHER than "collection_page".
+12. COLLECTION_PAGE OVERRIDE — If the product category is a well-known dropship niche (paint-by-numbers kits, photo locket jewelry, LED projectors, smart touch bracelets, galaxy lights, posture correctors, massage gadgets, personalized print-on-demand gifts, etc.) AND there is no independently verifiable brand history in the scrape, use "dropship" (for a PDP) or "insufficient_evidence" instead of "collection_page". A collection page of dropship products is still evidence of a dropship store.
+13. SELF-CLAIMED MANUFACTURING (MULTI-SIGNAL RULE) — When ALL of the following are true simultaneously: (a) seller claims "handmade", "made locally", "reservist-owned", or similar, AND (b) no price detected, AND (c) no manufacturer name or trademark, AND (d) product category is widely available on AliExpress — then the self-description is a red flag, not a legit signal. If a store price IS detected or the domain is an established brand name, this rule does NOT apply.
+14. DROPSHIP PRODUCT CATEGORIES — The following categories are overwhelmingly dropshipped/fulfilled via third-party services regardless of where the store is located: (a) baby/mother charm necklaces, photo locket jewelry, encrypted-photo jewelry; (b) paint-by-numbers kits; (c) personalized wooden puzzle gifts ("made with CNC technology" is a fulfillment-service red flag, not proof of genuine manufacture — CNC laser/cutting services are widely used by dropship resellers); (d) smart touch bracelets for couples; (e) LED galaxy projectors, posture correctors, massage devices. When a page sells these categories AND has no verifiable manufacturer or brand history AND no price detected, lean strongly toward "dropship" even if the copy sounds professional or claims local production. NOTE: fine jewelry (gold, silver, gemstones sold at $20+ prices) from stores with an established brand-name domain (e.g. brandname.com) is NOT in this list.
+15. NO-PRICE SIGNAL — detectedStorePriceUsd=null on a Shopify /products/ page is a weak dropship signal in combination with other signals. Alone it is not enough.
+16. PORTFOLIO / GALLERY SITES — If the scrape title is a business name (not a product name) and the description lists only product TYPES or business services without individual purchasable items (no prices, no add-to-cart, no product variants described), the page is likely a business homepage or portfolio, not a shoppable product page. Use "not_a_product" in this case. Distinguish from "collection_page" (which requires actual shoppable items with prices or clear buy CTAs).
 
 EXAMPLES:
 
@@ -175,6 +180,57 @@ Output: {
   "materialPriors": ["14k gold", "sterling silver"],
   "estimatedStorePriceUsd": null,
   "estimatedSupplierPriceUsd": null,
+  "estimatedMarkupPercent": null
+}
+
+Input: { sourceUrl: "https://agasandtamar.com/he/product/in-between-ring", title: "In Between Ring", description: "Delicate gold ring set with a slice of ruby and a gold element sitting side by side. A ring unlike others, will not look exactly like the pictures.", detectedStorePriceUsd: 30, mainImageUrl: "https://..." }
+Output: {
+  "verdict": "legit",
+  "confidence": 0.82,
+  "productCategory": "Fine jewelry ring",
+  "reasoning": "Fine jewelry store with detected price ($30), branded domain name, and a product (ruby + gold ring) that is bespoke/design-driven — not a commodity AliExpress item. The description mentions unique artisan characteristics ('will not look exactly like the pictures'). No dropship signals present.",
+  "reasoningSignals": ["Price detected ($30) — JS-rendered prices work on this page, indicating a real product", "Ruby + gold fine jewelry is not a commodity AliExpress product category", "Description notes each ring is slightly unique — consistent with artisan production", "Branded domain (brand name .com) with no red flags"],
+  "missingSignals": [],
+  "redFlags": [],
+  "aliexpressKeywords": ["gold ruby ring", "ruby slice ring gold", "dainty gemstone ring"],
+  "styleTokens": [],
+  "materialPriors": [],
+  "estimatedStorePriceUsd": 30,
+  "estimatedSupplierPriceUsd": null,
+  "estimatedMarkupPercent": null
+}
+
+Input: { sourceUrl: "https://imri-jewelry.co.il/products/my-baby-necklace", title: "My Baby Necklace", description: "Sterling silver 925, hypoallergenic. Seller describes themselves as a reservist-owned business. Two-year warranty. Free returns. 445 reviews.", detectedStorePriceUsd: null, mainImageUrl: "https://..." }
+Output: {
+  "verdict": "dropship",
+  "confidence": 0.78,
+  "productCategory": "Baby charm necklace",
+  "reasoning": "Baby charm necklaces in 925 sterling silver are one of the most saturated dropship categories on AliExpress ($2-8 supplier cost). No price is detected (JS-rendered), the brand has no independently verifiable identity, no manufacturer is cited, and the seller's 'reservist business' framing is self-description without corroboration. All signals together — category, no price, no brand — indicate dropship.",
+  "reasoningSignals": ["Product category (baby charm necklace, 925 silver plating) is overwhelmingly dropshipped from AliExpress", "No price detected on /products/ PDP — common in JS-rendered dropship stores", "No manufacturer name or trademark cited anywhere in the scrape", "Self-described as 'reservist business' without corroborating brand history — insufficient to establish legitimacy"],
+  "missingSignals": ["No store price", "No brand About page", "No manufacturer cited"],
+  "redFlags": ["AliExpress-saturated product category", "No price", "No verifiable brand identity"],
+  "aliexpressKeywords": ["baby charm necklace sterling silver", "infant pendant necklace 925", "mother baby necklace charm"],
+  "styleTokens": [],
+  "materialPriors": [],
+  "estimatedStorePriceUsd": null,
+  "estimatedSupplierPriceUsd": 4,
+  "estimatedMarkupPercent": null
+}
+
+Input: { sourceUrl: "https://www.example-gifts.co.il/collections/paint-by-numbers-kits", title: "ערכות הצביעה לפי מספרים — Best Paint by Numbers Kits in Israel", description: "Buy quality paint-by-numbers kits. Includes canvas, paints and brushes.", detectedStorePriceUsd: null }
+Output: {
+  "verdict": "dropship",
+  "confidence": 0.82,
+  "productCategory": "Paint by numbers kit",
+  "reasoning": "Paint-by-numbers kits are one of the most heavily dropshipped product categories from AliExpress/Chinese suppliers. This is a Shopify collections page on a regional Israeli domain with no brand history, no manufacturer name, and no price. The store appears to resell generic kits imported from Chinese suppliers at markup.",
+  "reasoningSignals": ["Paint-by-numbers kits are a top-10 AliExpress dropship category", "Regional .co.il Shopify store with no verifiable brand or manufacturer", "No price detected — typical of JS-rendered dropship stores", "URL is a /collections/ path with no individual PDP — browse-mode dropship store structure"],
+  "missingSignals": ["No individual product prices", "No manufacturer", "No brand history"],
+  "redFlags": ["Dropship-saturated product category", "No brand identity", "No price"],
+  "aliexpressKeywords": ["paint by numbers kit adults", "diy oil painting canvas numbers", "number painting kit"],
+  "styleTokens": [],
+  "materialPriors": [],
+  "estimatedStorePriceUsd": null,
+  "estimatedSupplierPriceUsd": 8,
   "estimatedMarkupPercent": null
 }`;
 

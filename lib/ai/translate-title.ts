@@ -17,7 +17,7 @@
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const DEFAULT_MODEL = "gemini-2.0-flash";
+const DEFAULT_MODEL = "gemini-2.5-flash";
 
 /** Unicode ranges that flag a title as non-Latin. */
 const NON_LATIN_RANGES: Array<[number, number]> = [
@@ -77,7 +77,10 @@ export async function translateTitle(title: string): Promise<string | null> {
   try {
     const client = new GoogleGenerativeAI(apiKey);
     const model = client.getGenerativeModel({
-      model: process.env.GOOGLE_AI_VISION_MODEL ?? DEFAULT_MODEL,
+      model:
+        process.env.GOOGLE_AI_VISION_MODEL ??
+        process.env.GOOGLE_AI_MODEL ??
+        DEFAULT_MODEL,
     });
 
     const response = await model.generateContent({
