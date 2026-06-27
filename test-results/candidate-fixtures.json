@@ -1,0 +1,128 @@
+[
+  {
+    "id": "candidate-aliexpress-led-strip",
+    "url": "https://www.aliexpress.com/item/1005007914556601.html",
+    "category": "aliexpress_itself",
+    "expected_verdict": "not_a_product",
+    "should_find_match": false,
+    "rationale": "Direct AliExpress product listing for RGB LED strip lights (5m-30m, APP control). Tests that the pipeline handles AliExpress source URLs correctly — the page is a supplier listing, not a dropship store.",
+    "source": "AliExpress LED category search"
+  },
+  {
+    "id": "candidate-happierfive-posture-corrector",
+    "url": "https://happierfive.myshopify.com/products/body-wellness-posture-corrector",
+    "category": "dropship_obvious",
+    "expected_verdict": "dropship",
+    "should_find_match": true,
+    "rationale": "Classic AliExpress posture corrector resell: countdown timer, '$22.99 (was $39.95)', 'people are viewing this' fake urgency, unrelated product mix (scratch maps, slimming masks), generic copy.",
+    "source": "myshopify.com fitness health dropship search"
+  },
+  {
+    "id": "candidate-akeo-silicone-ice-tray",
+    "url": "https://akeo-shop.myshopify.com/products/beautiful-silicone-ice-tray",
+    "category": "dropship_obvious",
+    "expected_verdict": "dropship",
+    "should_find_match": true,
+    "rationale": "AliExpress-style kitchen gadget store: '3/4 weeks' shipping disclosed on page, 50% discount, pressure tactics ('Limited Quantity — Will Sell Out Fast!'), broad unrelated product mix.",
+    "source": "myshopify.com gadget search"
+  },
+  {
+    "id": "candidate-cave-watch-womens",
+    "url": "https://cave-watch.myshopify.com/products/dropshipping-womens-watches",
+    "category": "dropship_obvious",
+    "expected_verdict": "dropship",
+    "should_find_match": true,
+    "rationale": "Product title literally contains the word 'Dropshipping'; $9.33 wholesale price, generic Chinese bulk-catalog specs, clearly an AliExpress watch reseller with zero brand story.",
+    "source": "myshopify.com watch/jewelry dropship search"
+  },
+  {
+    "id": "candidate-geargrabber-jewelry-set",
+    "url": "https://geargrabber.myshopify.com/products/fashion-earring-necklace-set",
+    "category": "dropship_obvious",
+    "expected_verdict": "dropship",
+    "should_find_match": true,
+    "rationale": "'Just Pay Shipping' free-item tactic, '2-4 weeks' delivery, 'Only 3 left!' fake scarcity, hundreds of unrelated products (dog toys, kitchen gadgets, beauty items), typical AliExpress general store.",
+    "source": "myshopify.com necklace jewelry dropship search"
+  },
+  {
+    "id": "candidate-pet360-measuring-tape",
+    "url": "https://pet360-store.myshopify.com/products/distance-measuring-instrument-electronic-measuring-ruler-tape-measure-high-definition-digital-lcd-high-precision-electronic-measuring-ruler-tool",
+    "category": "dropship_obvious",
+    "expected_verdict": "dropship",
+    "should_find_match": true,
+    "rationale": "Obvious AliExpress-sourced pet gadget: fabricated social proof ('2,451 viewing'), contradictory review count (claimed 892 vs 'No reviews'), generic Chinese product description, sold-out despite heavy promo.",
+    "source": "myshopify.com pet gadget search"
+  },
+  {
+    "id": "candidate-worldpage-sunflower-necklace",
+    "url": "https://worldpage-store.myshopify.com/products/2019-new-women-gold-necklace-custom-you-are-my-sunshine-open-locket-sunflower-pendant-necklace-free-dropshipping",
+    "category": "dropship_obvious",
+    "expected_verdict": "dropship",
+    "should_find_match": true,
+    "rationale": "Product title contains 'Free Dropshipping', $2.98 price point, bulk model numbers (11199/11197), generic copy with no brand story — wholesale catalog listing dressed as a retail product.",
+    "source": "myshopify.com necklace dropship search"
+  },
+  {
+    "id": "candidate-dropshiphome-garden-homepage",
+    "url": "https://dropshiphome-garden-shop.myshopify.com/",
+    "category": "not_a_product",
+    "expected_verdict": "not_a_product",
+    "should_find_match": false,
+    "rationale": "Store homepage (not a product page): three product categories, no single item focused, keyword-stuffed generic product titles at $0.74–$69, store name literally contains 'Dropship'. Tests that the pipeline flags non-product URLs.",
+    "source": "myshopify.com home garden dropship search"
+  },
+  {
+    "id": "candidate-geekyget-fruit-knife",
+    "url": "https://geekyget.com/products/panda-portable-stainless-steel-2-in-1-fruit-knife-peeler/",
+    "category": "dropship_subtle",
+    "expected_verdict": "dropship",
+    "should_find_match": true,
+    "rationale": "GeekyGet presents as a polished novelty gifts brand (90-day returns, free global shipping, verified reviews, professional layout) yet sources from AliExpress — no About Us, 50% perpetual discount, vague contact details.",
+    "source": "GeekyGet dropshipping store research"
+  },
+  {
+    "id": "candidate-notebooktherapy-bullet-journal",
+    "url": "https://notebooktherapy.com/products/notebooktherapy-tsuki-bullet-journal",
+    "category": "dropship_subtle",
+    "expected_verdict": "dropship",
+    "should_find_match": true,
+    "rationale": "Highly polished kawaii stationery brand (1.6M IG followers, FSC certifications, 'designed in Tokyo' copy) but ships from overseas with 6–21 day windows and 1–5 day processing — classic white-label AliExpress with strong branding.",
+    "source": "dropshipping store examples research"
+  },
+  {
+    "id": "candidate-beardbrand-utility-balm",
+    "url": "https://www.beardbrand.com/products/utility-balm",
+    "category": "legit_brand",
+    "expected_verdict": "legit",
+    "should_find_match": false,
+    "rationale": "Established DTC men's grooming brand (Austin TX, Shark Tank, GQ, NYT); proprietary formulations, 1,009 reviews, physical barbershop/retail. No AliExpress equivalent possible — classic false-positive test.",
+    "source": "Shopify legit brand examples"
+  },
+  {
+    "id": "candidate-brightland-awake-olive-oil",
+    "url": "https://www.brightland.co/products/awake",
+    "category": "legit_brand",
+    "expected_verdict": "legit",
+    "should_find_match": false,
+    "rationale": "California DTC olive oil brand with transparent farm-to-bottle supply chain, specific harvest dates, third-party testing data, and 600,000+ customers. Artisan food product with no dropship equivalent.",
+    "source": "DTC brand research"
+  },
+  {
+    "id": "candidate-staghead-designs-ring",
+    "url": "https://stagheaddesigns.com/products/dyad-ironwood-antler-wedding-band",
+    "category": "legit_brand",
+    "expected_verdict": "legit",
+    "should_find_match": false,
+    "rationale": "Genuine artisan jeweler making handcrafted custom rings from antler, ironwood, and precious metal; $454, 4,204 reviews, 3–6 week made-to-order lead time, accepts personal materials from customers.",
+    "source": "legit artisan brand research"
+  },
+  {
+    "id": "candidate-mvmt-voyager-watch",
+    "url": "https://www.mvmt.com/products/voyager-stainless-steel-mesh-band-watch",
+    "category": "legit_brand",
+    "expected_verdict": "legit",
+    "should_find_match": false,
+    "rationale": "MVMT is a $100M+ acquired DTC watch brand; original collections, ceramic technology, exclusive collaborations, 95K+ reviews — strong false-positive test for polished watch brand vs AliExpress watch reseller.",
+    "source": "Shopify legit brand research"
+  }
+]

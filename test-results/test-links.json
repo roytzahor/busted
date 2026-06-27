@@ -1,0 +1,188 @@
+[
+  {
+    "id": 1,
+    "label": "אתר קניות 1",
+    "shop_url": "https://mxm02.com/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZnRzaASf2J9leHRuA2FlbQIxMQBzcnRjBmFwcF9pZA8xMjQwMjQ1NzQyODc0MTQAAafr2g5o-3PF9UYifclVyujjlkZLPrIvPKI1WGybeGm4sUsx-Px-VDr_3raqsg_aem_otxB9aYvN1OdMEhjnO1jkw",
+    "description": "אתר קניות מלא מוצרים ",
+    "verify": "לראות שיודע לזהות את כל המוצרים ולשפר",
+    "notes": "להכניס בהוראות השימוש: כדי לקבל תוצאה מדוייקת יותר- עליך להכניס קישור לדף מוצר ספציפי",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c3fMrotb",
+      "https://a.aliexpress.com/_c3U6SSjX",
+      "https://a.aliexpress.com/_c3hxJHkd",
+      "https://a.aliexpress.com/_c3HYzs5F",
+      "https://a.aliexpress.com/_c2zfX3VP",
+      "https://a.aliexpress.com/_c4VoWtkz",
+      "https://a.aliexpress.com/_c2RI3Uuh",
+      "https://a.aliexpress.com/_c4d1fLpr"
+    ]
+  },
+  {
+    "id": 2,
+    "label": "אתר קניות 2",
+    "shop_url": "https://yardishop.com/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZnRzaASf2NtleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA8xMjQwMjQ1NzQyODc0MTQAAafjrUASkVMuD4xCpXN4WIhBcMfvOl-yY3TYLpnrXQcxNQU2DY9dnQyla3i8gg_aem_ISuA_8BxJcC714LASfA6Ug",
+    "description": "קייסים מעוצבים לטבק",
+    "verify": "זה שופיפיי של עצמאית עם מוצרים הנד מייד, צריך לוודא שהוא יודע לזהות ולהגיד שזה אתר לג׳יט ולתת מוצרים כמה שיותר דומים מהעלי",
+    "notes": "לוודא שהוא נותן עוד אופציות ",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c3GGFexf",
+      "https://a.aliexpress.com/_c3bAFi5j",
+      "https://a.aliexpress.com/_c4K4z80h"
+    ]
+  },
+  {
+    "id": 3,
+    "label": "אתר קניות 3",
+    "shop_url": "https://bleesse.com/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZnRzaASf2TBleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA8xMjQwMjQ1NzQyODc0MTQAAacuAg2FJky1xdLBV9D78voXhLXFxZf8O4xmFzk8dL7FiAB47lv6MEDdivgTVQ_aem_hOFSDOTTos0JPocjcJmRgg",
+    "description": "מכשיר מסאג׳ מתחמם לבטן",
+    "verify": "דרופשיפינג קלאסי",
+    "notes": "יש עוד מוצרים כאלה של חברות אחרות - אפשר להציע קישורים לכולם",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c3bNRt1R",
+      "https://a.aliexpress.com/_c3bD8XG5"
+    ]
+  },
+  {
+    "id": 4,
+    "label": "אתר קניות 4",
+    "shop_url": "https://imri-jewelry.co.il/products/my-baby-necklace?utm_medium=paid&utm_id=120247380186700343&utm_content=120248770305290343&utm_term=120248770305280343&utm_campaign=120247380186700343&fbclid=PAZnRzaASf2WNleHRuA2FlbQEwAGFkaWQBqzWeneTrN3NydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABp_HLH4-5Be9_xMOpWU-Iv8OjxeSg2xxRnaK0y42KkyUbI-XdQjCaIXPcZzHG_aem_FVMiri5CzrvghPuzu1oXAw&utm_source=facebook&campaign_id=120247380186700343&ad_id=120248770305290343",
+    "description": "שרשרת חיבוק ",
+    "verify": "דרופשיפינג קלאסי",
+    "notes": "זה אשכרה עולה 2 שקל אתה מבין את השרמוטות?!?",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c3iBsxYl",
+      "https://a.aliexpress.com/_c3GEd6qV"
+    ]
+  },
+  {
+    "id": 5,
+    "label": "אתר קניות 5",
+    "shop_url": "https://bolsterbenefield.com/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZnRzaASf2ZZleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA8xMjQwMjQ1NzQyODc0MTQAAaftXyxT-_mJtTKclJWJjoMAIsa4lL1aSL77rX4PkiLbdAB8SZYv3IlU4Eit4g_aem_lFNqkCBCFZpJfCe9wPklUA",
+    "description": "מוצרי עור ועץ ",
+    "verify": "דרופשיפינג? אין דפי מוצרים יש רק תמונות של מוצרים מעור ועץ - לוודא שהוא יודע לקרוא לזה בשם נכון ולתת מוצרים דומים מעלי לפי התיאורים באתר",
+    "notes": "להכניס הסתייגות: האתר לא דרופשיפינג אבל מצאתי מוצרים דומים (לא 100%)",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c3Tfw9TL",
+      "https://a.aliexpress.com/_c3zkrzcH"
+    ]
+  },
+  {
+    "id": 6,
+    "label": "אתר קניות 6",
+    "shop_url": "https://www.yuvall.com/apps/shopeaks/yuvall_com/1Nyrx?utm_campaign=Get%20Lucky%20Necklace%20%7C%20Shopeaks%20(CBO)&utm_medium=Instagram_Reels.52502908319010.52505872192610.52505872243210&utm_content=001%20-%20Get%20Lucky%20Necklace%20%7C%20Images%20+%20Video%20-%20Copy&utm_term=52505872192610&utm_source=facebookig&utm_id=52502908319010&fbclid=PAZnRzaASf2bJleHRuA2FlbQEwAGFkaWQAAC_EAlC_cnNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABpz5OwOBEe4fhE1TogGdtLtb611vM_tMSK_Pg5KQR1hQworBUTRVANZKTYyw4_aem_wVvu6H1Gf-nYpTvQUqFYwA&campaign_id=52502908319010&ad_id=52505872243210",
+    "description": "תכשיטים (מלא)",
+    "verify": "לדעתי דרופשיפינג, יש מלא סוגי תכשיטים- צריך לראות שהוא מזהה מספיק ונותן קישורים, אולי לבקש מהמשתמש קישורים ספציפיים לדף של מוצר ספציפי (להכניס להוראות שימוש גם באפליקציה)",
+    "notes": "יש הרבה תכשיטים שאין דומה להם בעלי ",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c39Oil37",
+      "https://a.aliexpress.com/_c372HcYh",
+      "https://a.aliexpress.com/_c3LgTVlB",
+      "https://a.aliexpress.com/_c3LgTVlB",
+      "https://a.aliexpress.com/_c4UvCZTL"
+    ]
+  },
+  {
+    "id": 7,
+    "label": "אתר קניות 7",
+    "shop_url": "https://vivify.co.il/product/royal/?utm_medium=paid&utm_source=ig&utm_id=6990716269610&utm_content=52505274391414&utm_term=52505268725214&utm_campaign=6990716269610&fbclid=PAZnRzaASf2clleHRuA2FlbQEwAGFkaWQAAC_A1k-G7nNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABpz5OwOBEe4fhE1TogGdtLtb611vM_tMSK_Pg5KQR1hQworBUTRVANZKTYyw4_aem_VA5G-9I7pC3LAIu-258Dfg",
+    "description": "נרות (ספציפיים) ומוצרי נוי",
+    "verify": "עסק מקורי , מכין את המוצרים שלו בבית",
+    "notes": "מוצרים מוכנים: צריך להכניס הסתייגות שאלו מודלים מסיליקון ",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c34hFOpL",
+      "https://a.aliexpress.com/_c3i24lf3",
+      "https://a.aliexpress.com/_c4tn2Fsl"
+    ]
+  },
+  {
+    "id": 8,
+    "label": "אתר קניות 8",
+    "shop_url": "https://agasandtamar.com/he/product/in-between-ring-copy/?utm_source=facebook&utm_medium=cpc&utm_campaign=ruby&utm_content=Ruby_Carousel&utm_id=120241845042240300&utm_term=120241845042220300&fbclid=PAZnRzaASf2epleHRuA2FlbQEwAGFkaWQBqzJcuLZhHHNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABp5KLoHpIyvZNTCoyTzHRuD0CzuBeQVea4XgM2U37my86XjoqTWaSz2InUv4S_aem_u48Jd7Dhu5fXK45AZ5nAXA",
+    "description": "תכשיטים מעוצבים (יקרים גם)",
+    "verify": "חברה לג׳יט, אתר שופיפיי, חייב לבדוק שלא מזהה בטעות כדרופשיפינג (אפילו יש חנות פיזית בתלאביב) חייב חייב להכניס דיסקליימר ולהגיד שזה לא המוצר המקורי אלא מוצר שהמערכת זיהתה כדומה ב___% ",
+    "notes": "חברה לג׳יט עם מוצרים איכותיים מאוד, דיסקליימר!!",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c3jGV2QV",
+      "https://a.aliexpress.com/_c3kGWbxb",
+      "https://a.aliexpress.com/_c3hkKbU5",
+      "https://a.aliexpress.com/_c4DVwm8Z",
+      "https://a.aliexpress.com/_c32BJKNb"
+    ]
+  },
+  {
+    "id": 9,
+    "label": "אתר קניות 9",
+    "shop_url": "https://shlomitofir.co.il/collections/14k-gold-earrings?sort_by=best-selling&utm_source=ig&utm_medium=cpc&utm_campaign=Gold+Earrings&utm_content=Image+-+Gold+Heart+Collage&utm_id=120240511520660323&utm_term=120240511520620323&fbclid=PAZnRzaASf2h5leHRuA2FlbQEwAGFkaWQBqy690PFvM3NydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABp5KLoHpIyvZNTCoyTzHRuD0CzuBeQVea4XgM2U37my86XjoqTWaSz2InUv4S_aem_qRegQnPTo_JQIeLNbtR1Xw&campaign_id=120240511520660323&ad_id=120241207736800323",
+    "description": "תכשיטים טבעות ",
+    "verify": "חברה לג׳יט, אתר שופיפיי, חייב לבדוק שלא מזהה בטעות כדרופשיפינג (אפילו יש חנות פיזית בתלאביב) חייב חייב להכניס דיסקליימר ולהגיד שזה לא המוצר המקורי אלא מוצר שהמערכת זיהתה כדומה ב___% ",
+    "notes": "חברה לג׳יט עם מוצרים איכותיים מאוד, דיסקליימר!!",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c3B2jg0p",
+      "https://a.aliexpress.com/_c3JaEKJf",
+      "https://a.aliexpress.com/_c2xbGdVP",
+      "https://a.aliexpress.com/_c45l747X",
+      "https://a.aliexpress.com/_c3kaftnF"
+    ]
+  },
+  {
+    "id": 10,
+    "label": "אתר קניות 10",
+    "shop_url": "https://smartjewelry.co.il/?utm_medium=paid&utm_id=120255087851620386&utm_content=120255366842770386&utm_term=120255366842730386&utm_campaign=120255087851620386&fbclid=PAZnRzaASf2uNleHRuA2FlbQEwAGFkaWQBqzuelUeeInNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABpxy209Y_pEvaX1K7yU7HsqVnLJPqtdyyEnQmpjYGEKMS_S8C4ISKYZUj5ces_aem_f_YXjB-J5qY6g3mto1kugg&utm_source=facebook&campaign_id=120255087851620386&ad_id=120255366842770386",
+    "description": "צמידים צ׳ארמים וזה ",
+    "verify": "לדעתי גם דרופשיפינג ",
+    "notes": "דרופשיפינג פאר אקסלנס",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c3kiNvxj",
+      "https://a.aliexpress.com/_c4D78Rgl",
+      "https://a.aliexpress.com/_c3KS37YH",
+      "https://a.aliexpress.com/_c3drtpLb",
+      "https://a.aliexpress.com/_c3B7KTMV",
+      "https://a.aliexpress.com/_c30AnICZ"
+    ]
+  },
+  {
+    "id": 11,
+    "label": "אתר קניות 11",
+    "shop_url": "https://calmo.co.il/products/calmo?ad_id=120248233314860236&campaign_id=120248231393710236&fbclid=PAZnRzaASgsCBleHRuA2FlbQEwAGFkaWQBqzUhnQ8E_HNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABpyYHKg2AlDCMuxc7dNdwQiJY8YdSfPuOjizVylv56x029ujCAbyRFdAjtX_7_aem_wyGM7hkLAxRKwkl8COUM4Q&utm_campaign=120248231393710236&utm_content=120248233314860236&utm_id=120248231393710236&utm_medium=paid&utm_source=facebook&utm_term=120248231393770236",
+    "description": "טבליות ריח קצף לאמבטיה ",
+    "verify": "דרופשיפינג קלאסי",
+    "notes": "מקרה מעניין- המוצר המקורי נמצא בעליבאבא (לא באקספרס) אבל מינימום הזמנה של 500, אפשר לכתוב את זה למשתמש: מצאתי בעליבאבא אבל מינימום של 500 יחידות, מצאתי לך גם אפשרויות נוספות בעליאקספרס של קניה בודדת. ככה המשתמש רואה ומבין שהמוצר שלו סיני כי הוא זהה לעליבאבא.",
+    "expected_ali_urls": [
+      "https://www.alibaba.com/x/1lApKhP?ck=pdp",
+      "https://a.aliexpress.com/_c4K0jZlB"
+    ]
+  },
+  {
+    "id": 12,
+    "label": "אתר קניות 12",
+    "shop_url": "https://www.davincified.com/il/collections/paint-by-numbers-kits?utm_medium=paid&utm_source=ig&utm_id=120247843830520525&utm_content=120248298335450525&utm_term=120248209068730525&utm_campaign=120247843830520525&fbclid=PAZnRzaAShPIJleHRuA2FlbQEwAGFkaWQBqzUws-T6zXNydGMGYXBwX2lkDzEyNDAyNDU3NDI4NzQxNAABpzSh5Yie6l27Al7N79zaeuyCpodo-RO5Aq29dnPNzRq6qJPCKOTChM4woGqU_aem_YHre_y9mmoAhOQTxYYks2w",
+    "description": "חוברות ציור לפי מספרים ",
+    "verify": "דרופשיפינג קלאסי",
+    "notes": "דרופשיפינג אורגינל ",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c3rc4c7P",
+      "https://a.aliexpress.com/_c3AhUJih"
+    ]
+  },
+  {
+    "id": 13,
+    "label": "אתר קניות 13",
+    "shop_url": "https://remoraisrael.shop/?utm_source=ig&utm_medium=social&utm_content=link_in_bio&fbclid=PAZnRzaASjYHVleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA8xMjQwMjQ1NzQyODc0MTQAAafXAkCDZcZ4LZ84CiecBf5-IaJEX1tzxMybGGzRGCFCbBaqzk3APNOTVS2qXQ_aem_5C4mc1d8NrlCZ9CGdzNkjg&_su_rec=kwmQ70CKIm5rZRXn0_edhriNpKOm0kjMSty-s5XvqPhKiVukBuiot7RqyChyPDgoSon_GKCMFjhoAcPfH_zQRgtyyHO5GiG29MQ9FH6Q5V3F5r4IEzyYoXwjRg6bLw6yXAbRt_5U8oGB42RN4JHEQTw-f3CkXMGUmykeRGIkGPuVOQs34_cpwFLjR8LzC8Sdy9RXbqmrIheNt3DFW0Uunt74oKbKaAQB3Eo83fEC0wLa7era_d1RmckWmNO_O2Deh-daphHqSJVMHlFujGtZyA&_su_rec_id=511a5554-0f76-4959-b0e0-54d4da657d7e-1781956896",
+    "description": "תכשיטים סנטימנטליים עם תמונות ",
+    "verify": "דרופשיפינג קלאסי",
+    "notes": null,
+    "expected_ali_urls": []
+  },
+  {
+    "id": 14,
+    "label": "אתר קניות 14",
+    "shop_url": "https://giftorder.co.il/products/%D7%9E%D7%A9%D7%A4%D7%97%D7%94-%D7%A9%D7%9C-%D7%90%D7%A8%D7%99%D7%95%D7%AA",
+    "description": "מתנות מעץ",
+    "verify": "דרופשיפינג קלאסי",
+    "notes": "דרופשיפינג אורגינל",
+    "expected_ali_urls": [
+      "https://a.aliexpress.com/_c4a5rfFn",
+      "https://a.aliexpress.com/_c3S06jVx"
+    ]
+  }
+]
