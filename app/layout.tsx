@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Heebo } from "next/font/google";
 import { Nav } from "@/components/nav";
 import { AnalyticsMount } from "@/components/analytics-mount";
@@ -60,6 +60,19 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+// `viewportFit: "cover"` is what activates `env(safe-area-inset-*)` on iOS
+// notch / Dynamic Island / home-indicator devices — without it those values
+// resolve to 0 and our safe-area padding below is a no-op. The app is always
+// dark, so the browser chrome (address bar, status bar) is pinned to the deep
+// warm-dark background instead of the amber brand color to avoid a jarring
+// bright bar over a dark UI.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#170b04",
+};
+
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
@@ -84,7 +97,7 @@ export default async function RootLayout({
       className="dark"
     >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${heebo.variable} min-h-screen antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${heebo.variable} min-h-dvh antialiased`}
       >
         <script
           type="application/ld+json"
@@ -100,13 +113,13 @@ export default async function RootLayout({
             initialCountry={locale.country}
             initialFromOverride={locale.fromOverride}
           >
-            <div className="flex min-h-screen flex-col">
+            <div className="flex min-h-dvh flex-col">
               <Nav />
               <main id="main-content" className="flex-1">
                 {children}
               </main>
-              <footer className="mt-auto border-t border-white/8 py-6">
-                <div className="mx-auto max-w-3xl space-y-2 px-4 text-center text-xs text-muted-foreground sm:px-6">
+              <footer className="mt-auto border-t border-white/8 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+                <div className="mx-auto max-w-3xl space-y-2 px-[max(1rem,env(safe-area-inset-left))] text-center text-xs text-muted-foreground sm:px-6">
                   <p className="font-medium text-foreground/70">
                     {BRAND_NAME} — {BRAND_TAGLINE} Spot the fire, skip the markup.
                   </p>

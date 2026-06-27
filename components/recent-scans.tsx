@@ -125,7 +125,7 @@ export function RecentScans() {
           open ? "translate-x-0" : "translate-x-full rtl:-translate-x-full pointer-events-none",
         )}
       >
-        <header className="flex items-center justify-between border-b border-white/10 px-5 py-4">
+        <header className="flex items-center justify-between border-b border-white/10 px-5 pb-4 pt-[max(1rem,env(safe-area-inset-top))]">
           <div>
             <p className="text-sm font-bold">Recent scans</p>
             <p className="text-xs text-muted-foreground">
@@ -207,7 +207,7 @@ export function RecentScans() {
           ))}
         </ul>
 
-        <footer className="border-t border-white/10 px-5 py-3">
+        <footer className="border-t border-white/10 px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <button
             type="button"
             onClick={() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { AnalysisSkeleton } from "@/components/analysis-skeleton";
 import { AnalysisTabs } from "@/components/analysis-tabs";
@@ -108,6 +108,9 @@ export function SearchHub() {
   const [liveStages, setLiveStages] = useState<Map<SSEStageId, LiveStageUpdate>>(new Map());
   // Stage 33 — self-healing demo examples
   const [examples, setExamples] = useState<DemoExample[]>(DEMO_EXAMPLES_FALLBACK);
+  // Mobile: the progress + results render below the fold. Anchor we scroll to
+  // so the user lands on the answer instead of staring at the hero.
+  const resultsAnchorRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const ac = new AbortController();
     void fetchFeaturedExamples(ac.signal).then(setExamples);
@@ -276,6 +279,18 @@ export function SearchHub() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
+  // Mobile-only: pull the live pipeline / results into view when a scan starts
+  // or completes — desktop already shows everything above the fold, and the
+  // CSS `scroll-behavior` (smooth, auto under reduced-motion) handles easing.
+  useEffect(() => {
+    if (phase !== "analyzing" && phase !== "complete") return;
+    if (typeof window === "undefined" || window.innerWidth >= 768) return;
+    const id = window.setTimeout(() => {
+      resultsAnchorRef.current?.scrollIntoView({ block: "start" });
+    }, 80);
+    return () => window.clearTimeout(id);
+  }, [phase]);
+
   const isAnalyzing = phase === "analyzing";
   const canSubmit = url.trim().length > 0 && !validationError && !isAnalyzing;
   const hasResults =
@@ -336,7 +351,7 @@ export function SearchHub() {
             aria-selected={mode === "single"}
             onClick={() => setMode("single")}
             className={cn(
-              "flex-1 rounded-full px-3 py-1.5 font-medium transition-colors",
+              "inline-flex min-h-11 flex-1 items-center justify-center rounded-full px-3 py-1.5 font-medium transition-colors sm:min-h-0",
               mode === "single"
                 ? "bg-primary/90 text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",
@@ -350,7 +365,7 @@ export function SearchHub() {
             aria-selected={mode === "bulk"}
             onClick={() => setMode("bulk")}
             className={cn(
-              "flex-1 rounded-full px-3 py-1.5 font-medium transition-colors",
+              "inline-flex min-h-11 flex-1 items-center justify-center rounded-full px-3 py-1.5 font-medium transition-colors sm:min-h-0",
               mode === "bulk"
                 ? "bg-primary/90 text-primary-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground",
@@ -510,6 +525,13 @@ export function SearchHub() {
         </>
         )}
       </section>
+
+      {/* Scroll anchor — `scroll-mt` clears the sticky nav + notch inset. */}
+      <div
+        ref={resultsAnchorRef}
+        aria-hidden="true"
+        className="scroll-mt-[calc(4rem+env(safe-area-inset-top))]"
+      />
 
       {/* ── Progress ──────────────────────────────────────────────── */}
       {phase === "analyzing" ? (

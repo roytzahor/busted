@@ -133,10 +133,40 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Kill the gray tap-flash on mobile — we provide our own active states. */
+    -webkit-tap-highlight-color: transparent;
+    /* Stop iOS from inflating text on orientation change. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
   html {
     @apply font-sans;
     overflow-x: hidden;
+    /* Smooth in-page jumps (e.g. auto-scroll to results). */
+    scroll-behavior: smooth;
+  }
+  /* Remove the 300ms tap delay on interactive elements so taps feel instant. */
+  a,
+  button,
+  [role="button"],
+  input,
+  label,
+  select,
+  summary {
+    touch-action: manipulation;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
   /* Hebrew (RTL) — switch the font stack to Heebo so Hebrew glyphs render
      with proper weights/metrics. Geist's Latin coverage is fine, but its

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -49,6 +50,22 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
     typeof result.imageMatchScore === "number" &&
     result.imageMatchScore >= 0.7 &&
     result.imageMatchSameFunction === true;
+
+  // Sticky mobile buy bar — shown while the user is reading the comparison,
+  // then auto-hidden once the real in-page CTA scrolls into view so it never
+  // double-stacks or covers the buttons. Desktop never sees it (md:hidden).
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  useEffect(() => {
+    const el = ctaRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0.25 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section
@@ -254,7 +271,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
       ) : null}
 
       {/* ── CTA row ──────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] p-5 backdrop-blur-sm sm:p-6">
+      <div ref={ctaRef} className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] p-5 backdrop-blur-sm sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <p className="font-semibold">
@@ -319,6 +336,73 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
           variant={isBestEffort ? "best-effort" : "confident"}
         />
       ) : null}
+
+      {/* ── Sticky mobile buy bar ────────────────────────────────── */}
+      <div
+        aria-hidden={!showStickyBar}
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-40 transform-gpu transition-transform duration-300 ease-out will-change-transform md:hidden",
+          showStickyBar ? "translate-y-0" : "pointer-events-none translate-y-[130%]",
+        )}
+      >
+        {/* Top-edge shine to lift the bar off the content behind it. */}
+        <div aria-hidden="true" className="shine-top h-px" />
+        <div className="flex items-center gap-3 border-t border-white/10 bg-background/85 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
+          <div className="min-w-0 flex-1">
+            {isBestEffort ? (
+              <>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Closest match on AliExpress
+                </p>
+                <p className="text-lg font-black leading-tight tabular-nums text-primary">
+                  {formatMoney(supplierProduct.priceUsd)}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="flex items-center gap-1 text-sm font-bold leading-tight text-success">
+                  <TrendingDown className="size-3.5 shrink-0" aria-hidden="true" />
+                  Save {formatMoney(savingsUsd)}
+                  <span className="text-success/80">· {savingsPercent}%</span>
+                </p>
+                <p className="truncate text-xs tabular-nums text-muted-foreground">
+                  {formatMoney(storeProduct.priceUsd)} →{" "}
+                  <span className="font-semibold text-foreground">
+                    {formatMoney(supplierProduct.priceUsd)}
+                  </span>
+                </p>
+              </>
+            )}
+          </div>
+          <Button
+            asChild
+            size="lg"
+            tabIndex={showStickyBar ? undefined : -1}
+            className="glow-success h-11 shrink-0 bg-success px-5 text-success-foreground shadow-lg shadow-success/25 transition-[background-color,box-shadow,scale] hover:bg-success/90 active:scale-[0.96]"
+          >
+            <a
+              href={supplierProduct.affiliateUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() =>
+                trackAffiliateClick({
+                  scanId: result.scanId,
+                  targetUrl: supplierProduct.affiliateUrl,
+                })
+              }
+              onAuxClick={() =>
+                trackAffiliateClick({
+                  scanId: result.scanId,
+                  targetUrl: supplierProduct.affiliateUrl,
+                })
+              }
+            >
+              {isBestEffort ? "View" : "Buy & Save"}
+              <ExternalLink className="ml-1.5 size-4" aria-hidden="true" />
+            </a>
+          </Button>
+        </div>
+      </div>
     </section>
   );
 }

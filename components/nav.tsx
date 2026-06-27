@@ -49,8 +49,8 @@ export function Nav() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/8 bg-background/60 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 sm:h-16 sm:px-6">
+    <header className="sticky top-0 z-50 border-b border-white/8 bg-background/60 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-[max(1rem,env(safe-area-inset-left))] sm:h-16 sm:px-6">
         <Link
           href="/"
           className="flex items-center gap-2 font-semibold tracking-tight"
