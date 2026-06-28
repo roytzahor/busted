@@ -1,0 +1,172 @@
+{
+  "generatedAt": "2026-06-28T00:00:00Z",
+  "note": "Official-API-only sourcing. No scraping/evasion. Fields marked unverified need confirmation against official docs.",
+  "providers": {
+    "aliexpress": {
+      "status": "integrated",
+      "auth": "HMAC-MD5 signed form-POST on every request. Credentials: ALIEXPRESS_APP_KEY (app_key param) + ALIEXPRESS_APP_SECRET (signing secret). Every call includes app_key, sign_method='md5', timestamp (Shanghai time), format='json', v='2.0', and a computed sign field. No OAuth token exchange needed — signing is stateless.",
+      "baseUrl": "https://api-sg.aliexpress.com/sync",
+      "protocol": "POST application/x-www-form-urlencoded",
+      "searchEndpoint": {
+        "method": "aliexpress.affiliate.product.query",
+        "description": "Keyword-based product search via AliExpress Affiliate Open Platform.",
+        "keyRequestParams": {
+          "keywords": "string — search terms",
+          "page_no": "int — page number (1-indexed)",
+          "page_size": "int — results per page (repo uses 40)",
+          "sort": "string — e.g. LAST_VOLUME_DESC (sales volume desc, repo default)",
+          "target_currency": "string — e.g. USD",
+          "target_language": "string — e.g. EN",
+          "tracking_id": "string — affiliate tracking tag",
+          "ship_to_country": "string — ISO country code, e.g. US",
+          "delivery_days": "string — max delivery time filter",
+          "category_ids": "string — comma-joined AE category IDs (optional narrowing)",
+          "min_sale_price": "string — USD floor price (optional)",
+          "max_sale_price": "string — USD ceiling price (optional)",
+          "fields": "string — comma-joined response fields to include"
+        }
+      },
+      "imageSearchEndpoint": {
+        "method": "aliexpress.affiliate.product.smartmatch",
+        "description": "Visual similarity search. Two dispatch arms: image_base64+image_format (preprocessed, preferred) or image_url (raw URL, let AE fetch). Returns candidates ranked by visual similarity.",
+        "keyRequestParams": {
+          "image_url": "string — URL arm: AE fetches the image",
+          "image_base64": "string — Base64 arm (preferred): cleaned/cropped bytes",
+          "image_format": "string — 'jpg'|'png'|'webp' (used with image_base64)",
+          "product_id": "string — set to '0' for discovery mode",
+          "site": "string — 'aliexpress'",
+          "device": "string — 'PC'",
+          "country": "string — ISO country code",
+          "tracking_id": "string — affiliate tracking tag"
+        }
+      },
+      "affiliateLinks": "Two paths. (1) Native AE: method aliexpress.affiliate.link.generate with promotion_link_type='0', source_values=<product URL>, tracking_id — response promotion_links.promotion_link[].promotion_link. (2) Admitad fallback: OAuth2 client_credentials to https://api.admitad.com/token/ (scope: deeplink_generator public_data), then GET https://api.admitad.com/deeplink/{ADMITAD_WEBSITE_ID}/advcampaign/{ADMITAD_ALIEXPRESS_CAMPAIGN_ID}/?ulp=<sourceUrl> — response[0].link. Provider preference controlled by AFFILIATE_PROVIDER env var ('auto'|'admitad').",
+      "responseFields": {
+        "product_id": "string — AliExpress product ID",
+        "product_title": "string — product name in English",
+        "product_detail_url": "string — canonical product page URL",
+        "product_main_image_url": "string — primary image URL",
+        "promotion_link": "string — pre-baked affiliate link (when API returns one)",
+        "sale_price": "string — base price (currency per target_currency param)",
+        "target_sale_price": "string — localized/converted price (preferred over sale_price)",
+        "target_sale_price_currency": "string — currency code for target_sale_price",
+        "lastest_volume": "number|string — recent order/sales count (proxy for seller trust)",
+        "evaluate_rate": "string — seller rating percentage, e.g. '96.5%'",
+        "ship_to_days": "string|number — estimated shipping days to target country"
+      },
+      "sources": [
+        "repo:lib/aliexpress/api-client.ts",
+        "repo:lib/affiliate/convert-link.ts",
+        "repo:lib/aliexpress/oauth.ts",
+        "repo:lib/aliexpress/sign-request.ts"
+      ],
+      "notes": "Already integrated and in production. Credentials required: ALIEXPRESS_APP_KEY, ALIEXPRESS_APP_SECRET, ALIEXPRESS_TRACKING_ID (optional, defaults to 'busted'). Admitad path additionally needs ADMITAD_CLIENT_ID, ADMITAD_CLIENT_SECRET, ADMITAD_WEBSITE_ID, ADMITAD_ALIEXPRESS_CAMPAIGN_ID. Image smartmatch falls back gracefully to null on any failure — never breaks the pipeline."
+    },
+    "cjdropshipping": {
+      "status": "public_api_available",
+      "auth": "API-key → access-token exchange. Step 1: POST /api2.0/v1/authentication/getAccessToken with JSON body {apiKey: '<CJ_API_KEY>'}. Returns accessToken (15-day lifetime) and refreshToken (180-day lifetime). Server-side caches the same token within a 24-hour window for the same account. Step 2: Pass CJ-Access-Token: <token> header on every subsequent request. Refresh: POST /api2.0/v1/authentication/refreshAccessToken.",
+      "baseUrl": "https://developers.cjdropshipping.com/api2.0/v1",
+      "protocol": "HTTPS required. Request/response format: JSON, UTF-8. Auth header: CJ-Access-Token.",
+      "searchEndpoint": {
+        "path": "/product/listV2",
+        "method": "GET",
+        "status": "verified",
+        "description": "Recommended product search/list endpoint (V2). Keyword search across public CJ catalog.",
+        "keyRequestParams": {
+          "keyWord": "string — product name or SKU search term",
+          "page": "int — page number (default 1, max 1000)",
+          "size": "int — results per page (default 10, max 100)",
+          "categoryId": "string — filter by category ID (optional)",
+          "startSellPrice": "decimal — minimum price filter in USD (optional)",
+          "endSellPrice": "decimal — maximum price filter in USD (optional)",
+          "countryCode": "string — warehouse country filter, e.g. 'CN', 'US' (optional)",
+          "sort": "string — 'asc' or 'desc'",
+          "orderBy": "int — 0=relevance, 1=listing count, 2=price, 3=create time, 4=inventory",
+          "features": "array — optional extras: 'enable_description', 'enable_category', 'enable_video'"
+        }
+      },
+      "legacySearchEndpoint": {
+        "path": "/product/list",
+        "method": "GET",
+        "status": "verified",
+        "description": "Legacy product list endpoint. Retained for back-compat; listV2 is recommended.",
+        "keyRequestParams": {
+          "productName": "string — fuzzy name search",
+          "pageNum": "int — page number (default 1)",
+          "pageSize": "int — per-page count (default 20, max 200)",
+          "categoryId": "string — category filter",
+          "minPrice": "decimal — minimum price USD",
+          "maxPrice": "decimal — maximum price USD",
+          "countryCode": "string — inventory location"
+        }
+      },
+      "productDetailEndpoint": {
+        "path": "/product/query",
+        "method": "GET",
+        "status": "verified",
+        "keyRequestParams": {
+          "pid": "string — product ID",
+          "productSku": "string — SKU (alternative to pid)"
+        }
+      },
+      "responseFields": {
+        "id": "string — CJ product identifier (listV2)",
+        "pid": "string — product identifier (legacy list)",
+        "nameEn": "string — English product name (listV2)",
+        "productNameEn": "string — English product name (legacy list)",
+        "sku": "string — product SKU",
+        "bigImage": "string — main image URL",
+        "productImage": "string — main image URL (legacy field name)",
+        "sellPrice": "string|decimal — price in USD",
+        "nowPrice": "string — discounted price (listV2 only)",
+        "categoryId": "string — category identifier",
+        "threeCategoryName": "string — full hierarchical category path",
+        "warehouseInventoryNum": "int — stock quantity (listV2)",
+        "listedNum": "int — how many stores have listed this product",
+        "addMarkStatus": "int — 1=free shipping eligible, 0=paid shipping"
+      },
+      "affiliateLinks": {
+        "status": "unverified",
+        "todo": "The CJ API auth page lists a /api2.0/v1/authentication/getAffiliateAccessToken endpoint (#6 in the auth section), but its request parameters, response shape, and relationship to product-level affiliate link generation are not documented in the pages fetched. CJ also runs a separate human-facing affiliate referral program (affiliate.cjdropshipping.com, 2% commission on referred users) that is distinct from product-level affiliate tracking. Confirm via https://developers.cjdropshipping.com/en/api/api2/ whether getAffiliateAccessToken generates trackable product links or is only for the user-referral commission program.",
+        "humanAffiliateProgram": "affiliate.cjdropshipping.com — 2% commission on referred users' orders for 1 year. Not a product-link API.",
+        "sources": ["https://affiliate.cjdropshipping.com/", "https://developers.cjdropshipping.com/en/api/api2/"]
+      },
+      "rateLimits": {
+        "globalIpCap": "10 req/sec per IP",
+        "nonLoginEndpoints": "up to 30 req/sec",
+        "tierLimits": {
+          "Free (tier 0-1)": "1 req/sec",
+          "Plus (tier 2)": "2 req/sec",
+          "Prime (tier 3)": "4 req/sec",
+          "Advanced (tier 4-5)": "6 req/sec"
+        },
+        "dailyQuota": "Points-based system (daily request count limits deprecated). See https://docs.cjdropshipping.com/en/api/api2/standard/points.html",
+        "ipUserCap": "max 3 API users per IP address"
+      },
+      "sources": [
+        "https://developers.cjdropshipping.com/en/api/api2/api/product.html",
+        "https://developers.cjdropshipping.com/en/api/api2/api/auth.html",
+        "https://developers.cjdropshipping.com/en/api/start/limit.html",
+        "https://developers.cjdropshipping.com/en/api/api2/"
+      ],
+      "notes": "Fully public developer API requiring only a CJ account and API key — no special partner approval needed for the catalog search endpoints. Account registration at cjdropshipping.com unlocks API key access. Rate tier is tied to CJ account sales volume level. Product-level affiliate/trackable link generation via API is unverified and needs manual confirmation against official docs."
+    },
+    "zendrop": {
+      "status": "no_public_catalog_api",
+      "publicApiScope": "Zendrop exposes api.zendrop.com but the domain is fully behind login authentication — no unauthenticated developer documentation, no public OpenAPI spec, and no public developer portal is reachable without credentials. Their help center (support.zendrop.com) covers only UI-based product discovery workflows. No public product catalog search API was found via official documentation or their developer domain.",
+      "catalogSearchAvailable": false,
+      "auth": {
+        "status": "unverified",
+        "todo": "api.zendrop.com redirects to a login page. Auth model (API key, OAuth, etc.) is not publicly documented. Contact Zendrop's partner/integrations team for private API access."
+      },
+      "knownApiDomain": "https://api.zendrop.com/ (login-gated)",
+      "sources": [
+        "https://api.zendrop.com/Module",
+        "https://support.zendrop.com/en/articles/8536720-module-5-finding-products-in-our-catalog",
+        "https://support.zendrop.com/en/collections/5545065-products"
+      ],
+      "notes": "Zendrop's product catalog is accessible only through their web UI or potentially through a private partner API not publicly documented. The api.zendrop.com endpoint exists but requires authenticated access. Integration would require a direct partnership or reseller agreement with Zendrop to obtain API credentials and documentation. Do not attempt to reverse-engineer or scrape."
+    }
+  },
+  "recommendation": "AliExpress is already integrated and production-ready via the official Affiliate Open Platform (keyword search + image smartmatch + affiliate link generation — all confirmed from codebase). CJ Dropshipping has a fully public developer API with a documented product catalog search endpoint (/product/listV2) requiring only a free CJ account and API key — it is the most straightforward new integration. Zendrop has no discoverable public product catalog API; their api.zendrop.com is fully login-gated with no public documentation, making integration impossible without a direct partnership agreement — do not pursue without first obtaining explicit partner API access from Zendrop."
+}
