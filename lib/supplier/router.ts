@@ -197,6 +197,13 @@ export async function searchAllSuppliers(
 }
 
 /**
+ * Alias matching the orchestration vocabulary — identical to searchAllSuppliers.
+ * Fans out across AliExpress + eBay + Amazon (any configured provider)
+ * concurrently under the shared time budget.
+ */
+export const aggregateSupplierSearch = searchAllSuppliers;
+
+/**
  * Bridge a normalized SupplierCandidate into the shape `computeMatchConfidence`
  * expects. The order/rating fields are SYNTHESIZED from the normalized
  * trustScore — a provisional mapping; calibrate per provider once real native

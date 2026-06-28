@@ -16,6 +16,7 @@ export {
 export {
   DEFAULT_SEARCH_BUDGET_MS,
   searchAllSuppliers,
+  aggregateSupplierSearch,
   searchAndScoreSuppliers,
   toMatchCandidate,
   type RouterSearchOptions,

@@ -9,17 +9,20 @@
  * synthesize candidates, because fabricated supplier data would silently
  * corrupt match-confidence scoring and any evaluation built on top of it.
  *
- * Networks that only expose data behind anti-bot/ToS barriers (DHgate, Temu,
- * 1688) are deliberately OUT of scope: official-API sourcing only.
+ * Networks that only expose data behind anti-bot/ToS barriers are deliberately
+ * OUT of scope: official-API sourcing only.
+ *
+ * `temu_aggregator` is a forward-looking literal only — there is no provider
+ * for it. Temu has no official public catalog API, so sourcing it would require
+ * a *licensed* third-party aggregator feed, not scraping. Until such a feed is
+ * contracted, no adapter exists and the value is unused.
  */
 
 export type SupplierProvider =
   | "aliexpress"
-  | "cjdropshipping"
-  | "zendrop"
-  | "temu"
-  | "dhgate"
-  | "1688";
+  | "ebay"
+  | "amazon"
+  | "temu_aggregator";
 
 /**
  * A normalized supplier listing. `trustScore` is provider-normalized to 0..1
