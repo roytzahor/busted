@@ -1,0 +1,28 @@
+{
+  "keywords": "compression socks varicose veins 20-30 mmHg medical stockings",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005007678901001",
+      "title": "Compression Socks Varicose Veins 20-30 mmHg Cotton Spandex Medical Grade",
+      "priceUsd": 5.49,
+      "productUrl": "https://www.aliexpress.com/item/1005007678901001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/compression-socks-001.jpg",
+      "orderCount": 41300,
+      "sellerRating": 4.9,
+      "shippingDays": 11,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005007678901002",
+      "title": "Medical Compression Stockings Women Men Varicose Veins Leg Support",
+      "priceUsd": 3.99,
+      "productUrl": "https://www.aliexpress.com/item/1005007678901002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/compression-socks-002.jpg",
+      "orderCount": 27600,
+      "sellerRating": 4.7,
+      "shippingDays": 14,
+      "promotionLink": null
+    }
+  ]
+}

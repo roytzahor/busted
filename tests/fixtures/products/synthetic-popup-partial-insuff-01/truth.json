@@ -1,0 +1,11 @@
+{
+  "url": "https://trending-gadget-store.com/products/electric-back-scratcher",
+  "category": "dropship_obvious",
+  "expectedVerdict": "insufficient_evidence",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Partial scrape from cookie-consent banner partial capture — insufficient evidence to confirm dropship"
+  },
+  "notes": "Synthetic. Cookie consent banner allowed title + partial description through but blocked image and price. attrCount=2 (title + desc>50) so confidence check applies, not attrCount gate. AI returns insufficient_evidence (confidence 0.35).",
+  "capturedAt": "2026-06-30"
+}

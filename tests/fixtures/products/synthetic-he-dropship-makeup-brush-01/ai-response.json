@@ -1,0 +1,34 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.79,
+    "productCategory": "Makeup Brush Set",
+    "aliexpressKeywords": [
+      "makeup brush set professional 12pcs",
+      "cosmetic brushes kit synthetic"
+    ],
+    "reasoningSignals": [
+      "10-18 business day shipping window from an unnamed warehouse",
+      "Generic 12-piece brush set sold identically across many Israeli dropship stores",
+      "50% permanent discount suggests inflated anchor price",
+      "No brand origin story or manufacturer attribution"
+    ],
+    "missingSignals": [
+      "No About page content",
+      "No factory/origin info"
+    ],
+    "redFlags": [
+      "Long overseas shipping",
+      "Generic generic product",
+      "Inflated original price"
+    ],
+    "estimatedStorePriceUsd": 39.5,
+    "estimatedSupplierPriceUsd": 6,
+    "estimatedMarkupPercent": 558
+  },
+  "rawResponse": "{\"verdict\":\"dropship\",\"confidence\":0.79}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

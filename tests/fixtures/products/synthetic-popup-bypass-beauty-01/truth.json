@@ -1,0 +1,20 @@
+{
+  "url": "https://glow-skin-co.myshopify.com/products/vitamin-c-serum-30ml",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      3,
+      12
+    ],
+    "notes": "Vitamin C face serum — $3-10 on AliExpress; Shopify store at $49. Crawlbase JS dismissed the email collection modal."
+  },
+  "expectedSavingsPercentBand": [
+    75,
+    94
+  ],
+  "notes": "Synthetic. Email-modal popup bypassed by Crawlbase JS rendering. Full PDP content captured for a skincare dropship product.",
+  "capturedAt": "2026-06-30"
+}

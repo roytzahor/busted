@@ -1,0 +1,28 @@
+{
+  "keywords": "interactive cat toy feather wand automatic electric",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005007567890001",
+      "title": "Interactive Cat Toy Automatic Electric Feather Wand 3 Speed Auto Shut Off",
+      "priceUsd": 4.29,
+      "productUrl": "https://www.aliexpress.com/item/1005007567890001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/cat-toy-feather-001.jpg",
+      "orderCount": 28400,
+      "sellerRating": 4.8,
+      "shippingDays": 12,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005007567890002",
+      "title": "Electric Rotating Feather Cat Teaser Toy Auto Spin Silent Motor",
+      "priceUsd": 3.15,
+      "productUrl": "https://www.aliexpress.com/item/1005007567890002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/cat-toy-feather-002.jpg",
+      "orderCount": 19200,
+      "sellerRating": 4.6,
+      "shippingDays": 16,
+      "promotionLink": null
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "prediction": {
+    "verdict": "not_a_product",
+    "isLikelyDropship": false,
+    "confidence": 0.88,
+    "productCategory": null,
+    "aliexpressKeywords": [],
+    "reasoningSignals": [
+      "Empty category page — no products listed",
+      "No price, SKU, or product image",
+      "Description explicitly states category is empty"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"not_a_product\",\"confidence\":0.88}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

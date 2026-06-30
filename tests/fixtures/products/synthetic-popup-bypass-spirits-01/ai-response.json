@@ -1,0 +1,33 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.83,
+    "productCategory": "Whiskey Decanter Set",
+    "aliexpressKeywords": [
+      "whiskey decanter set crystal glass 7 piece",
+      "whiskey glasses gift set"
+    ],
+    "reasoningSignals": [
+      "2-4 week shipping 'handcrafted to order' is a common dropship euphemism",
+      "Generic 7-piece crystal decanter set widely available on AliExpress",
+      "50% permanent discount on inflated anchor price",
+      "Shopify store with no brand history, winery, or distillery affiliation"
+    ],
+    "missingSignals": [
+      "No glassware manufacturer or origin"
+    ],
+    "redFlags": [
+      "Long shipping window",
+      "Generic product",
+      "Inflated anchor price"
+    ],
+    "estimatedStorePriceUsd": 89.99,
+    "estimatedSupplierPriceUsd": 14,
+    "estimatedMarkupPercent": 542
+  },
+  "rawResponse": "{\"verdict\":\"dropship\",\"confidence\":0.83}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

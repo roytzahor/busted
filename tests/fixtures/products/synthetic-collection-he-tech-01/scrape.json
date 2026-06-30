@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# בית חכם | Tech Deals IL\n\nמוצגים 48 מוצרים בקטגוריה\n\n- נורה חכמה LED E27 — ₪39\n- שקע חכם WiFi — ₪49\n- מצלמת אבטחה IP — ₪289\n- נעילה חכמה — ₪649\n- תרמוסטט חכם — ₪399\n- רמקול Bluetooth — ₪199\n- מקרן מיני — ₪749\n- שלט רחוק אוניברסלי IR — ₪89\n- חיישן דלת/חלון — ₪69\n- מזגן חכם WiFi — ₪1,890\n- מצלמת כניסה — ₪459\n- שקע 4 כניסות WiFi — ₪159\n…ועוד 36 מוצרים נוספים בקטגוריה",
+    "metadata": {
+      "title": "מוצרי בית חכם | Tech Deals IL",
+      "description": "48 מוצרי בית חכם — נורות, שקעים, מצלמות, נעילות, תרמוסטטים ועוד.",
+      "ogImage": "https://tech-deals.co.il/cdn/collections/smart-home-banner.jpg",
+      "sourceUrl": "https://tech-deals.co.il/collections/smart-home"
+    }
+  },
+  "attributes": {
+    "title": "מוצרי בית חכם | Tech Deals IL",
+    "description": "48 מוצרי בית חכם — נורות, שקעים, מצלמות, נעילות, תרמוסטטים ועוד. קטגוריה מלאה.",
+    "mainImageUrl": "https://tech-deals.co.il/cdn/collections/smart-home-banner.jpg",
+    "sourceUrl": "https://tech-deals.co.il/collections/smart-home",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": null,
+  "storeName": "tech-deals.co.il"
+}

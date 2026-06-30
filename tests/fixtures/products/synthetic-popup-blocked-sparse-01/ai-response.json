@@ -1,0 +1,21 @@
+{
+  "prediction": {
+    "verdict": "insufficient_evidence",
+    "isLikelyDropship": false,
+    "confidence": 0.28,
+    "productCategory": null,
+    "aliexpressKeywords": [],
+    "reasoningSignals": [],
+    "missingSignals": [
+      "Page content obscured by popup — no product attributes visible"
+    ],
+    "redFlags": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"insufficient_evidence\",\"confidence\":0.28}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

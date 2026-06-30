@@ -1,0 +1,23 @@
+{
+  "prediction": {
+    "verdict": "collection_page",
+    "isLikelyDropship": false,
+    "confidence": 0.9,
+    "productCategory": null,
+    "aliexpressKeywords": [],
+    "reasoningSignals": [
+      "URL pattern /collections/smart-home",
+      "48 distinct product lines listed — clearly a category index, not a PDP",
+      "Wide price range (₪39–₪1,890) spanning many product types"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"collection_page\",\"confidence\":0.90}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

@@ -1,0 +1,34 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.84,
+    "productCategory": "Smart Watch Fitness Tracker",
+    "aliexpressKeywords": [
+      "smart watch X9 Pro blood pressure",
+      "fitness tracker smartwatch IP67"
+    ],
+    "reasoningSignals": [
+      "10-20 business days shipping from unspecified location",
+      "X9 Pro is a known generic AliExpress smartwatch model sold under dozens of brands",
+      "Extreme anchor price (₪599 → ₪299) as psychological discount",
+      "No chip maker, OS, or hardware manufacturer mentioned"
+    ],
+    "missingSignals": [
+      "No hardware vendor",
+      "No regional warranty info"
+    ],
+    "redFlags": [
+      "Long overseas shipping",
+      "Known generic model name",
+      "Inflated anchor price"
+    ],
+    "estimatedStorePriceUsd": 79.3,
+    "estimatedSupplierPriceUsd": 18,
+    "estimatedMarkupPercent": 340
+  },
+  "rawResponse": "{\"verdict\":\"dropship\",\"confidence\":0.84}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

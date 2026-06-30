@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Crystal Whiskey Decanter Set — Premium 7-Piece | Luxury Spirits Shop\n\n**$89.99** ~~$179.99~~ (50% OFF)\n\n🥃 Complete your home bar with our premium crystal decanter set.\n\n✅ Lead-free crystal glass\n✅ Includes 6 matching whiskey glasses\n✅ Gift box included\n✅ Laser-engraved 'L' logo\n\n*Ships within 2-4 weeks — handcrafted to order*\n\nLuxury Spirits Shop — Elevate Every Pour",
+    "metadata": {
+      "title": "Crystal Whiskey Decanter Set 7-Piece | Luxury Spirits Shop",
+      "description": "Premium lead-free crystal whiskey decanter set with 6 glasses and gift box. 50% off today.",
+      "ogImage": "https://luxury-spirits-shop.myshopify.com/cdn/products/decanter-set.jpg",
+      "sourceUrl": "https://luxury-spirits-shop.myshopify.com/products/whiskey-decanter-set"
+    }
+  },
+  "attributes": {
+    "title": "Crystal Whiskey Decanter Set 7-Piece | Luxury Spirits Shop",
+    "description": "Premium lead-free crystal whiskey decanter set with 6 matching glasses and gift box. Laser-engraved logo. 50% off — ships in 2-4 weeks.",
+    "mainImageUrl": "https://luxury-spirits-shop.myshopify.com/cdn/products/decanter-set.jpg",
+    "sourceUrl": "https://luxury-spirits-shop.myshopify.com/products/whiskey-decanter-set",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 89.99,
+  "storeName": "luxury-spirits-shop.myshopify.com"
+}

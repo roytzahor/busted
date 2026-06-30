@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# About Us | Trendy Finds\n\n## הסיפור שלנו\n\nTrendy Finds נוסדה ב-2021 עם מטרה אחת: להביא לכם את המוצרים הכי טרנדיים בעולם במחיר שמתאים לכיס הישראלי.\n\nהצוות שלנו סורק את השוק הגלובלי כדי למצוא מוצרים שמשנים חיים — ומביא אותם ישירות אליכם.\n\n**שליחות שלנו:** משלוח מהיר. מוצרים מדהימים. מחירים שוברים שוק.\n\n[Shop Now](/collections/all)",
+    "metadata": {
+      "title": "About Us | Trendy Finds IL",
+      "description": "הסיפור שלנו — Trendy Finds הביא לישראל מוצרים טרנדיים ממגוון העולם.",
+      "ogImage": "https://trendy-finds.co.il/cdn/about-team.jpg",
+      "sourceUrl": "https://trendy-finds.co.il/pages/about-us"
+    }
+  },
+  "attributes": {
+    "title": "About Us | Trendy Finds IL",
+    "description": "הסיפור שלנו — Trendy Finds הביא לישראל מוצרים טרנדיים ממגוון העולם. שליחות: משלוח מהיר, מוצרים מדהימים, מחירים שוברים שוק.",
+    "mainImageUrl": "https://trendy-finds.co.il/cdn/about-team.jpg",
+    "sourceUrl": "https://trendy-finds.co.il/pages/about-us",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": null,
+  "storeName": "trendy-finds.co.il"
+}

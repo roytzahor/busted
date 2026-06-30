@@ -1,0 +1,11 @@
+{
+  "url": "https://stylehaus.myshopify.com/collections/women-all",
+  "category": "legit_brand",
+  "expectedVerdict": "legit",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Collection page — no single product to match; supplier search must be suppressed"
+  },
+  "notes": "Synthetic. Shopify collection page listing 24 products. Must resolve collection_page → legit without triggering supplier search.",
+  "capturedAt": "2026-06-30"
+}

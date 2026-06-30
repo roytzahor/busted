@@ -1,0 +1,20 @@
+{
+  "url": "https://glam-beauty-il.co.il/products/makeup-brush-set-12",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      3,
+      12
+    ],
+    "notes": "Generic makeup brush set — $3-10 on AliExpress; Israeli store at 149 ILS (~$39)"
+  },
+  "expectedSavingsPercentBand": [
+    70,
+    92
+  ],
+  "notes": "Synthetic. Hebrew cosmetics page. Title is pure Hebrew; match depends entirely on extraMatchTerms bridge.",
+  "capturedAt": "2026-06-30"
+}

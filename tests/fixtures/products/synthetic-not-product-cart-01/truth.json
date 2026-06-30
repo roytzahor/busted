@@ -1,0 +1,12 @@
+{
+  "url": "https://flash-deals.myshopify.com/cart",
+  "category": "not_a_product",
+  "expectedVerdict": "not_a_product",
+  "confidenceMin": 0.8,
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Shopping cart page — dynamic, no static product content"
+  },
+  "notes": "Synthetic. Empty Shopify cart page. Sparse scrape content (no product attributes); must resolve not_a_product via attrCount < 2.",
+  "capturedAt": "2026-06-30"
+}

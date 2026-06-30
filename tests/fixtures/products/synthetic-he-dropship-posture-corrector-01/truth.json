@@ -1,0 +1,20 @@
+{
+  "url": "https://health-zone.co.il/products/posture-corrector-pro",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      5,
+      18
+    ],
+    "notes": "Posture corrector brace — $6-15 on AliExpress; Israeli store at 249 ILS (~$66)"
+  },
+  "expectedSavingsPercentBand": [
+    73,
+    92
+  ],
+  "notes": "Synthetic. Hebrew orthopedic product. Tests both price-ratio scoring (3-15× sweet spot) and extraMatchTerms bridge.",
+  "capturedAt": "2026-06-30"
+}

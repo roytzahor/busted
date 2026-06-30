@@ -1,0 +1,11 @@
+{
+  "url": "https://viral-drops.myshopify.com/products/neck-massager-pro",
+  "category": "dropship_obvious",
+  "expectedVerdict": "not_a_product",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Popup blocked all content — system must return not_a_product, never guess dropship from noise"
+  },
+  "notes": "Synthetic. Crawlbase captured page BEFORE popup was dismissed — only page title tag visible. Tests that sparse scrape → not_a_product, not a hallucinated dropship verdict. attrCount < 2 gates this correctly.",
+  "capturedAt": "2026-06-30"
+}

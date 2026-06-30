@@ -1,0 +1,28 @@
+{
+  "keywords": "vitamin c serum 30ml face brightening hyaluronic acid",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005007890123001",
+      "title": "Vitamin C Brightening Face Serum 30ml 20% Hyaluronic Acid Anti-Aging",
+      "priceUsd": 5.99,
+      "productUrl": "https://www.aliexpress.com/item/1005007890123001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/vitamin-c-serum-001.jpg",
+      "orderCount": 18900,
+      "sellerRating": 4.8,
+      "shippingDays": 13,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005007890123002",
+      "title": "Vitamin C Facial Serum 30ml Brightening Whitening Hyaluronic",
+      "priceUsd": 3.89,
+      "productUrl": "https://www.aliexpress.com/item/1005007890123002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/vitamin-c-serum-002.jpg",
+      "orderCount": 12300,
+      "sellerRating": 4.6,
+      "shippingDays": 17,
+      "promotionLink": null
+    }
+  ]
+}

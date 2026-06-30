@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Contact Us | DropShip Zone\n\nHave a question about your order? We're here to help!\n\n**Email:** support@dropship-zone.com\n**Hours:** Sun–Thu 09:00–18:00 IST\n\n[Contact Form]\nName: ___\nEmail: ___\nMessage: ___\n[Submit]\n\nWe typically reply within 24–48 hours.",
+    "metadata": {
+      "title": "Contact Us | DropShip Zone",
+      "description": "Get in touch with our support team. We reply within 24-48 hours.",
+      "ogImage": null,
+      "sourceUrl": "https://dropship-zone.myshopify.com/pages/contact"
+    }
+  },
+  "attributes": {
+    "title": "Contact Us | DropShip Zone",
+    "description": "Get in touch with our support team. We reply within 24-48 hours.",
+    "mainImageUrl": null,
+    "sourceUrl": "https://dropship-zone.myshopify.com/pages/contact",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": null,
+  "storeName": "dropship-zone.myshopify.com"
+}

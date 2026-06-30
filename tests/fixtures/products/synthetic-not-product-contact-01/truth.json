@@ -1,0 +1,12 @@
+{
+  "url": "https://dropship-zone.myshopify.com/pages/contact",
+  "category": "not_a_product",
+  "expectedVerdict": "not_a_product",
+  "confidenceMin": 0.7,
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Contact page — no product; supplier search must not run"
+  },
+  "notes": "Synthetic. Shopify contact-us page. Tests that the system returns not_a_product without attempting supplier lookup.",
+  "capturedAt": "2026-06-30"
+}

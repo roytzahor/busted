@@ -1,0 +1,28 @@
+{
+  "keywords": "whiskey decanter set crystal glass 7 piece gift",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005007789012001",
+      "title": "Crystal Whiskey Decanter Set 7 Piece with 6 Glasses Gift Box Lead Free",
+      "priceUsd": 14.99,
+      "productUrl": "https://www.aliexpress.com/item/1005007789012001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/decanter-set-001.jpg",
+      "orderCount": 7200,
+      "sellerRating": 4.7,
+      "shippingDays": 15,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005007789012002",
+      "title": "Whiskey Decanter and Glasses Set 7pc Crystal Clear Bottle Carafe",
+      "priceUsd": 10.5,
+      "productUrl": "https://www.aliexpress.com/item/1005007789012002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/decanter-set-002.jpg",
+      "orderCount": 4100,
+      "sellerRating": 4.6,
+      "shippingDays": 18,
+      "promotionLink": null
+    }
+  ]
+}

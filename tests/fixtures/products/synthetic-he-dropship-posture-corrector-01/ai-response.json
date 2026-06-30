@@ -1,0 +1,33 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.8,
+    "productCategory": "Posture Corrector Back Brace",
+    "aliexpressKeywords": [
+      "posture corrector back brace",
+      "orthopedic shoulder support"
+    ],
+    "reasoningSignals": [
+      "7-14 business day shipping from unnamed source",
+      "Generic orthopedic brace sold identically under many Israeli dropship brands",
+      "Medical approval claim without certification body named",
+      "Extreme original price 2× sale price as anchor"
+    ],
+    "missingSignals": [
+      "No manufacturer or medical certification authority named"
+    ],
+    "redFlags": [
+      "Long shipping",
+      "Vague medical claims",
+      "Generic product category"
+    ],
+    "estimatedStorePriceUsd": 66,
+    "estimatedSupplierPriceUsd": 9,
+    "estimatedMarkupPercent": 633
+  },
+  "rawResponse": "{\"verdict\":\"dropship\",\"confidence\":0.80}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

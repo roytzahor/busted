@@ -1,0 +1,20 @@
+{
+  "url": "https://paws-n-claws.co.il/products/interactive-cat-toy-feather",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.55,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      2,
+      7
+    ],
+    "notes": "Interactive cat toy — $2-5 on AliExpress; Israeli store at 79 ILS (~$21)"
+  },
+  "expectedSavingsPercentBand": [
+    65,
+    90
+  ],
+  "notes": "Synthetic. Hebrew pet store. Lower-value item; tests that the confidence threshold still fires at smaller price points.",
+  "capturedAt": "2026-06-30"
+}

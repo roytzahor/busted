@@ -1,0 +1,20 @@
+{
+  "url": "https://gadget-world.co.il/products/smart-watch-x9-pro",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      12,
+      35
+    ],
+    "notes": "Generic smartwatch — $15-30 on AliExpress; Israeli store at 299 ILS (~$79)"
+  },
+  "expectedSavingsPercentBand": [
+    55,
+    82
+  ],
+  "notes": "Synthetic. Hebrew smartwatch PDP. Model number 'X9 Pro' appears in both Hebrew title and AliExpress listings.",
+  "capturedAt": "2026-06-30"
+}

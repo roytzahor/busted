@@ -1,0 +1,31 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.75,
+    "productCategory": "Interactive Cat Toy",
+    "aliexpressKeywords": [
+      "interactive cat toy feather wand automatic",
+      "electric cat feather toy"
+    ],
+    "reasoningSignals": [
+      "10-18 business days from manufacturer — unmistakably overseas dropship",
+      "Generic automatic feather toy available on AliExpress under dozens of store names",
+      "Auto-shutoff and quiet motor are standard spec language copied from AliExpress listings"
+    ],
+    "missingSignals": [
+      "No brand name beyond store name"
+    ],
+    "redFlags": [
+      "Long overseas shipping from manufacturer",
+      "Generic product with copied specs"
+    ],
+    "estimatedStorePriceUsd": 20.9,
+    "estimatedSupplierPriceUsd": 4,
+    "estimatedMarkupPercent": 422
+  },
+  "rawResponse": "{\"verdict\":\"dropship\",\"confidence\":0.75}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

@@ -1,0 +1,28 @@
+{
+  "keywords": "smart watch X9 Pro blood pressure monitor IP67",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005007456789001",
+      "title": "X9 Pro Smart Watch Blood Pressure Oxygen Monitor IP67 Waterproof Fitness Tracker",
+      "priceUsd": 18.5,
+      "productUrl": "https://www.aliexpress.com/item/1005007456789001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/x9pro-watch-001.jpg",
+      "orderCount": 9800,
+      "sellerRating": 4.6,
+      "shippingDays": 15,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005007456789002",
+      "title": "Smart Watch X9Pro Fitness Tracker Heart Rate Blood Pressure Android iOS",
+      "priceUsd": 22,
+      "productUrl": "https://www.aliexpress.com/item/1005007456789002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/x9pro-watch-002.jpg",
+      "orderCount": 6200,
+      "sellerRating": 4.8,
+      "shippingDays": 13,
+      "promotionLink": null
+    }
+  ]
+}

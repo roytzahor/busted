@@ -1,0 +1,28 @@
+{
+  "keywords": "makeup brush set professional 12pcs cosmetic kit",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005007234567001",
+      "title": "Professional Makeup Brush Set 12 Pcs Soft Synthetic Hair Cosmetic Kit with Bag",
+      "priceUsd": 6.89,
+      "productUrl": "https://www.aliexpress.com/item/1005007234567001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/makeup-brush-12pcs-001.jpg",
+      "orderCount": 22100,
+      "sellerRating": 4.9,
+      "shippingDays": 12,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005007234567002",
+      "title": "12 Piece Makeup Brush Set Foundation Blush Eye Shadow Cosmetic Brushes",
+      "priceUsd": 4.99,
+      "productUrl": "https://www.aliexpress.com/item/1005007234567002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/makeup-brush-12pcs-002.jpg",
+      "orderCount": 15600,
+      "sellerRating": 4.7,
+      "shippingDays": 16,
+      "promotionLink": null
+    }
+  ]
+}

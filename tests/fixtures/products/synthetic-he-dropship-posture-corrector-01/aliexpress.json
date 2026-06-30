@@ -1,0 +1,28 @@
+{
+  "keywords": "posture corrector back brace orthopedic shoulder support",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005007345678001",
+      "title": "Posture Corrector Back Brace Orthopedic Shoulder Support Adjustable",
+      "priceUsd": 8.99,
+      "productUrl": "https://www.aliexpress.com/item/1005007345678001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/posture-corrector-001.jpg",
+      "orderCount": 31200,
+      "sellerRating": 4.8,
+      "shippingDays": 12,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005007345678002",
+      "title": "Back Posture Corrector Upper Back Shoulder Brace Support",
+      "priceUsd": 6.49,
+      "productUrl": "https://www.aliexpress.com/item/1005007345678002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/posture-corrector-002.jpg",
+      "orderCount": 18900,
+      "sellerRating": 4.7,
+      "shippingDays": 15,
+      "promotionLink": null
+    }
+  ]
+}

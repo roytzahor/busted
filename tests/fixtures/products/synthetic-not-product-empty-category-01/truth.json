@@ -1,0 +1,12 @@
+{
+  "url": "https://mega-sale.co.il/collections/winter-clearance",
+  "category": "not_a_product",
+  "expectedVerdict": "not_a_product",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Empty category page — no products loaded yet"
+  },
+  "notes": "Synthetic. Empty Hebrew category page (no products yet). Tests that a near-empty collection page doesn't trigger dropship analysis.",
+  "capturedAt": "2026-06-30"
+}

@@ -1,0 +1,23 @@
+{
+  "prediction": {
+    "verdict": "insufficient_evidence",
+    "isLikelyDropship": false,
+    "confidence": 0.35,
+    "productCategory": null,
+    "aliexpressKeywords": [],
+    "reasoningSignals": [],
+    "missingSignals": [
+      "No product image captured (cookie banner)",
+      "No price visible — blocked by cookie consent wall",
+      "No shipping information available"
+    ],
+    "redFlags": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"insufficient_evidence\",\"confidence\":0.35}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

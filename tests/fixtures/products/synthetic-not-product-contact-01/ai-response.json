@@ -1,0 +1,23 @@
+{
+  "prediction": {
+    "verdict": "not_a_product",
+    "isLikelyDropship": false,
+    "confidence": 0.95,
+    "productCategory": null,
+    "aliexpressKeywords": [],
+    "reasoningSignals": [
+      "URL path /pages/contact — unambiguously a support page",
+      "No product title, price, or add-to-cart element",
+      "Content is purely a contact form with support hours"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"not_a_product\",\"confidence\":0.95}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

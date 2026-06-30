@@ -1,0 +1,33 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.86,
+    "productCategory": "Resistance Band Set",
+    "aliexpressKeywords": [
+      "resistance band set 11 piece professional latex",
+      "exercise bands door anchor"
+    ],
+    "reasoningSignals": [
+      "14-21 business day delivery — overseas fulfillment",
+      "Generic 11-piece resistance band set with identical spec language to AliExpress listings",
+      "50% permanent anchor-price discount",
+      "No fitness brand story, athletes, or endorsements"
+    ],
+    "missingSignals": [
+      "No manufacturer or materials origin"
+    ],
+    "redFlags": [
+      "Long overseas shipping",
+      "Generic product",
+      "Inflated anchor price"
+    ],
+    "estimatedStorePriceUsd": 59,
+    "estimatedSupplierPriceUsd": 8,
+    "estimatedMarkupPercent": 637
+  },
+  "rawResponse": "{\"verdict\":\"dropship\",\"confidence\":0.86}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

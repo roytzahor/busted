@@ -1,0 +1,11 @@
+{
+  "url": "https://tech-deals.co.il/collections/smart-home",
+  "category": "legit_brand",
+  "expectedVerdict": "legit",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Hebrew tech collection page — no PDP, no supplier search"
+  },
+  "notes": "Synthetic. Hebrew smart-home category. High-payload page (many products) tests that no Vercel timeout occurs and collection_page verdict holds.",
+  "capturedAt": "2026-06-30"
+}

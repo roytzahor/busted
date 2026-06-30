@@ -1,0 +1,20 @@
+{
+  "url": "https://led-magic.co.il/products/rgb-led-strip-premium",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      3,
+      10
+    ],
+    "notes": "RGB LED strip — ubiquitous on AliExpress for $3-8; Israeli store sells at 89 ILS (~$24)"
+  },
+  "expectedSavingsPercentBand": [
+    60,
+    88
+  ],
+  "notes": "Synthetic. Hebrew product page with RGB acronym in title. Tests extraMatchTerms English bridge for title overlap.",
+  "capturedAt": "2026-06-30"
+}

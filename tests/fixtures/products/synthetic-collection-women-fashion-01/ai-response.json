@@ -1,0 +1,23 @@
+{
+  "prediction": {
+    "verdict": "collection_page",
+    "isLikelyDropship": false,
+    "confidence": 0.88,
+    "productCategory": null,
+    "aliexpressKeywords": [],
+    "reasoningSignals": [
+      "URL path is /collections/ — Shopify collection listing pattern",
+      "Page lists 24 distinct products with individual prices — no single PDP",
+      "No singular product title, description, or add-to-cart element"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"collection_page\",\"confidence\":0.88}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

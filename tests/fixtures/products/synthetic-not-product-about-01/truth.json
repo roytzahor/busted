@@ -1,0 +1,12 @@
+{
+  "url": "https://trendy-finds.co.il/pages/about-us",
+  "category": "not_a_product",
+  "expectedVerdict": "not_a_product",
+  "confidenceMin": 0.7,
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "About Us page — brand story, no product"
+  },
+  "notes": "Synthetic. Hebrew/English About Us page. Despite dropship brand language, the page is not a product — must return not_a_product.",
+  "capturedAt": "2026-06-30"
+}

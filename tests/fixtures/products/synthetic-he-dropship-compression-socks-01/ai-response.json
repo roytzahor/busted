@@ -1,0 +1,34 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.73,
+    "productCategory": "Compression Socks",
+    "aliexpressKeywords": [
+      "compression socks varicose veins 20-30 mmHg",
+      "medical compression stockings"
+    ],
+    "reasoningSignals": [
+      "8-16 business day shipping from unnamed source",
+      "Generic compression specification language (20-30 mmHg) used verbatim from AliExpress listings",
+      "Vague physiotherapist endorsement without name or institution",
+      "Shopify store with no brand history or company info"
+    ],
+    "missingSignals": [
+      "No certifying body for medical claim",
+      "No company registration"
+    ],
+    "redFlags": [
+      "Long shipping",
+      "Vague medical endorsement",
+      "Generic spec language"
+    ],
+    "estimatedStorePriceUsd": 31.5,
+    "estimatedSupplierPriceUsd": 5,
+    "estimatedMarkupPercent": 530
+  },
+  "rawResponse": "{\"verdict\":\"dropship\",\"confidence\":0.73}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

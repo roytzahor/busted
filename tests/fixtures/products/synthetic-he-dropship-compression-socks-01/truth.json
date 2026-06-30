@@ -1,0 +1,20 @@
+{
+  "url": "https://health-store-il.myshopify.com/products/compression-socks-varicose",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.55,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      3,
+      10
+    ],
+    "notes": "Compression socks — $3-8 on AliExpress; Israeli Shopify store at 119 ILS (~$32)"
+  },
+  "expectedSavingsPercentBand": [
+    69,
+    91
+  ],
+  "notes": "Synthetic. Hebrew Shopify store. Medical language used in Hebrew; extraMatchTerms bridges to English AliExpress listings.",
+  "capturedAt": "2026-06-30"
+}

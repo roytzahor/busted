@@ -1,0 +1,23 @@
+{
+  "prediction": {
+    "verdict": "collection_page",
+    "isLikelyDropship": false,
+    "confidence": 0.85,
+    "productCategory": null,
+    "aliexpressKeywords": [],
+    "reasoningSignals": [
+      "URL pattern /collections/ on .co.il Shopify store",
+      "Page enumerates 31 distinct product lines — no singular product",
+      "Mixed price range (₪89–₪2,890) consistent with category listing, not PDP"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"collection_page\",\"confidence\":0.85}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

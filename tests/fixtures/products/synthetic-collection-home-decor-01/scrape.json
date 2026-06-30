@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# סלון וחדר מגורים | Casa Living\n\nמוצגים 31 מוצרים\n\n- שולחן קפה אליפסה — ₪890\n- כרית קטיפה — ₪89\n- פנס רצפה נורדי — ₪459\n- שטיח מרוקאי 200×300 — ₪1,290\n- ספה תלת-מושבית — ₪2,890\n- מנורת שולחן מינימליסטית — ₪329\n- לוח קיר עץ — ₪249\n- כיסא ריפוד בוקלה — ₪1,190\n…ועוד 23 מוצרים",
+    "metadata": {
+      "title": "ריהוט וקישוט לסלון | Casa Living",
+      "description": "קולקציית ריהוט וקישוט לסלון — 31 מוצרים. שטיחים, מנורות, ספות, כריות.",
+      "ogImage": "https://casa-living.co.il/cdn/collections/living-room-banner.jpg",
+      "sourceUrl": "https://casa-living.co.il/collections/living-room"
+    }
+  },
+  "attributes": {
+    "title": "ריהוט וקישוט לסלון | Casa Living",
+    "description": "קולקציית ריהוט וקישוט לסלון — 31 מוצרים. שטיחים, מנורות, ספות, כריות ועוד.",
+    "mainImageUrl": "https://casa-living.co.il/cdn/collections/living-room-banner.jpg",
+    "sourceUrl": "https://casa-living.co.il/collections/living-room",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": null,
+  "storeName": "casa-living.co.il"
+}

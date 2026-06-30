@@ -1,0 +1,11 @@
+{
+  "url": "https://casa-living.co.il/collections/living-room",
+  "category": "legit_brand",
+  "expectedVerdict": "legit",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Collection page — no PDP to analyze; supplier search suppressed"
+  },
+  "notes": "Synthetic. Hebrew/English mixed home-decor category page. Verifies collection_page verdict regardless of page language.",
+  "capturedAt": "2026-06-30"
+}

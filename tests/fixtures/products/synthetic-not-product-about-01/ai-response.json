@@ -1,0 +1,23 @@
+{
+  "prediction": {
+    "verdict": "not_a_product",
+    "isLikelyDropship": false,
+    "confidence": 0.92,
+    "productCategory": null,
+    "aliexpressKeywords": [],
+    "reasoningSignals": [
+      "URL path /pages/about-us — brand story page, not a PDP",
+      "No product name, price, SKU, or add-to-cart",
+      "Content describes company founding story and mission"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"not_a_product\",\"confidence\":0.92}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

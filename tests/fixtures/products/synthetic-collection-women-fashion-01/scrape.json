@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Women's Collection | StyleHaus\n\nShowing 24 products\n\n- Floral Wrap Dress — ₪299\n- Linen Palazzo Pants — ₪189\n- Off-Shoulder Crop Top — ₪149\n- High Waist Skinny Jeans — ₪259\n- Boho Maxi Skirt — ₪219\n- Ribbed Bodysuit — ₪129\n- Satin Slip Dress — ₪349\n- Denim Jacket — ₪279\n- Printed Midi Dress — ₪229\n- Wide Leg Trousers — ₪199\n- Ruffle Blouse — ₪169\n- Cargo Pants — ₪239\n- Knit Sweater — ₪209\n- Velvet Blazer — ₪389\n- Pleated Mini Skirt — ₪159\n- Sports Leggings — ₪179\n- Tie-Dye T-Shirt — ₪99\n- Mock Neck Top — ₪139\n- Flare Jeans — ₪269\n- Silk Blouse — ₪319\n- Wrap Top — ₪149\n- Corset Belt — ₪89\n- Shorts — ₪119\n- Swimsuit — ₪199",
+    "metadata": {
+      "title": "Women's Collection | StyleHaus",
+      "description": "Browse our complete women's fashion collection. 24 styles in stock.",
+      "ogImage": "https://stylehaus.myshopify.com/cdn/shop/collections/women-banner.jpg",
+      "sourceUrl": "https://stylehaus.myshopify.com/collections/women-all"
+    }
+  },
+  "attributes": {
+    "title": "Women's Collection | StyleHaus",
+    "description": "Browse our complete women's fashion collection. 24 styles in stock: dresses, pants, tops, jeans, jackets, skirts, leggings, blouses, and more.",
+    "mainImageUrl": "https://stylehaus.myshopify.com/cdn/shop/collections/women-banner.jpg",
+    "sourceUrl": "https://stylehaus.myshopify.com/collections/women-all",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": null,
+  "storeName": "stylehaus.myshopify.com"
+}

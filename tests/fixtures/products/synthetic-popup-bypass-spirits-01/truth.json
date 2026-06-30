@@ -1,0 +1,20 @@
+{
+  "url": "https://luxury-spirits-shop.myshopify.com/products/whiskey-decanter-set",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      8,
+      22
+    ],
+    "notes": "Whiskey decanter set — $8-18 on AliExpress; Shopify store at $89 after age-gate bypass"
+  },
+  "expectedSavingsPercentBand": [
+    75,
+    91
+  ],
+  "notes": "Synthetic. Age-gate popup bypassed by Crawlbase JS rendering. Full product content captured despite age verification modal. Provider set to crawlbase.",
+  "capturedAt": "2026-06-30"
+}

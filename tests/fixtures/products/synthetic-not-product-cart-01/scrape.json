@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Your Cart | Flash Deals\n\nYour cart is empty.\n\n[Continue Shopping](/collections/all)",
+    "metadata": {
+      "title": "Cart | Flash Deals",
+      "description": "Your shopping cart.",
+      "ogImage": null,
+      "sourceUrl": "https://flash-deals.myshopify.com/cart"
+    }
+  },
+  "attributes": {
+    "title": "Cart | Flash Deals",
+    "description": "Your shopping cart.",
+    "mainImageUrl": null,
+    "sourceUrl": "https://flash-deals.myshopify.com/cart",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": null,
+  "storeName": "flash-deals.myshopify.com"
+}

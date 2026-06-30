@@ -1,0 +1,34 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.81,
+    "productCategory": "Vitamin C Face Serum",
+    "aliexpressKeywords": [
+      "vitamin c serum 30ml face brightening",
+      "hyaluronic acid vitamin c facial serum"
+    ],
+    "reasoningSignals": [
+      "2-3 week delivery window indicates overseas fulfillment",
+      "Generic Vitamin C + HA formula sold under dozens of brand names on AliExpress",
+      "Vague 'dermatologist-approved' claim without dermatologist name or study",
+      "Shopify store with no lab, chemist, or formulation background"
+    ],
+    "missingSignals": [
+      "No lab or formulator mentioned",
+      "No ingredient origin"
+    ],
+    "redFlags": [
+      "Overseas shipping",
+      "Generic formula",
+      "Unattributed medical claim"
+    ],
+    "estimatedStorePriceUsd": 49,
+    "estimatedSupplierPriceUsd": 6,
+    "estimatedMarkupPercent": 717
+  },
+  "rawResponse": "{\"verdict\":\"dropship\",\"confidence\":0.81}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

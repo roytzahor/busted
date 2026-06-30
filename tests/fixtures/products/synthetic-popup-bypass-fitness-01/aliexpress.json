@@ -1,0 +1,28 @@
+{
+  "keywords": "resistance band set 11 piece latex professional door anchor",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005007901234001",
+      "title": "Resistance Band Set 11 Piece Latex Exercise Bands Door Anchor Ankle Strap Carry Bag",
+      "priceUsd": 7.99,
+      "productUrl": "https://www.aliexpress.com/item/1005007901234001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/resistance-bands-11-001.jpg",
+      "orderCount": 23400,
+      "sellerRating": 4.8,
+      "shippingDays": 14,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005007901234002",
+      "title": "11pcs Resistance Bands Professional Workout Anti-Snap Latex with Bag",
+      "priceUsd": 5.49,
+      "productUrl": "https://www.aliexpress.com/item/1005007901234002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/resistance-bands-11-002.jpg",
+      "orderCount": 11200,
+      "sellerRating": 4.7,
+      "shippingDays": 18,
+      "promotionLink": null
+    }
+  ]
+}

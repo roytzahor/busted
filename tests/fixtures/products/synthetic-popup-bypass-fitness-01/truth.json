@@ -1,0 +1,20 @@
+{
+  "url": "https://fitzone-gear.myshopify.com/products/resistance-band-set-11pcs",
+  "category": "dropship_obvious",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      4,
+      14
+    ],
+    "notes": "11-piece resistance band set — $5-12 on AliExpress; Shopify store at $59. Playwright bypassed spin-wheel popup."
+  },
+  "expectedSavingsPercentBand": [
+    76,
+    92
+  ],
+  "notes": "Synthetic. Spin-the-wheel popup bypassed by Playwright fallback. Full product content captured. Tests that bypassed popup = full dropship verdict.",
+  "capturedAt": "2026-06-30"
+}

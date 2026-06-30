@@ -1,0 +1,39 @@
+{
+  "keywords": "rgb led strip lights 5m remote waterproof",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005007123456001",
+      "title": "RGB LED Strip Lights 5M Remote Control Waterproof IP65 16 Million Colors",
+      "priceUsd": 5.49,
+      "productUrl": "https://www.aliexpress.com/item/1005007123456001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/rgb-strip-5m-001.jpg",
+      "orderCount": 14320,
+      "sellerRating": 4.8,
+      "shippingDays": 14,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005007123456002",
+      "title": "5M LED RGB Strip Light App Remote Control USB",
+      "priceUsd": 3.99,
+      "productUrl": "https://www.aliexpress.com/item/1005007123456002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/rgb-strip-5m-002.jpg",
+      "orderCount": 8750,
+      "sellerRating": 4.7,
+      "shippingDays": 18,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005007123456003",
+      "title": "LED Strip Lights RGB 5 Meter Waterproof Remote",
+      "priceUsd": 7.25,
+      "productUrl": "https://www.aliexpress.com/item/1005007123456003.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/rgb-strip-5m-003.jpg",
+      "orderCount": 5100,
+      "sellerRating": 4.9,
+      "shippingDays": 12,
+      "promotionLink": null
+    }
+  ]
+}
