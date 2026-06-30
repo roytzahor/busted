@@ -1,36 +1,30 @@
 {
   "prediction": {
-    "verdict": "collection_page",
+    "verdict": "not_a_product",
     "isLikelyDropship": false,
-    "confidence": 0.9,
-    "productCategory": "leather work accessories",
-    "reasoning": "The page describes a 'versatile line of leather products' including tool belts, belt bags, tool buckets, and document tubes, with separate sections detailing each. This indicates a catalog or collection page rather than a single product detail page. No individual product price is detected.",
+    "confidence": 0.88,
+    "productCategory": "Leather accessories brand homepage",
+    "reasoning": "Homepage of an artisan leather goods brand (Bolster & Benefield). Three product types are described in prose (toolbelt for women, tool bucket, document tube) but NO individual prices appear in the scrape and NO 'Add to Cart' or 'Buy Now' buttons are present. The empty basket (€0,00) and 'Shop' navigation link are standard on every brand homepage — they are not buy CTAs. Rule 16 applies: this is a portfolio/brand homepage, not a shoppable collection page.",
     "reasoningSignals": [
-      "Description lists multiple products: 'Leather toolbelt, bucket, Pocket protectors, Belt bags, and document tubes'",
-      "Markdown excerpt states 'Introducing a versatile line of leather products, including tool belts, belt bags, organized tool buckets, document tubes, and pocket protectors.'",
-      "Separate sections in markdown describe 'Leather Toolbelt for Women', 'Leather Tool Bucket', and 'Leather Document Tube'",
-      "No single product price detected on the page"
+      "Title 'Bolster & Benefield - Leather Tool Belt' is the brand name, not a product name",
+      "No prices detected anywhere in the scraped content",
+      "No 'Add to Cart' or 'Buy Now' buttons visible in the markdown",
+      "Empty basket indicator (€ 0,00 0 Basket) — not a product price",
+      "Product descriptions are prose paragraphs about types, not individual shoppable listings"
     ],
     "missingSignals": [
       "Individual product prices",
-      "Specific product variants"
+      "Add to cart mechanism"
     ],
     "redFlags": [],
     "aliexpressKeywords": [],
-    "styleTokens": [
-      "practical",
-      "stylish",
-      "feminine",
-      "versatile"
-    ],
-    "materialPriors": [
-      "leather"
-    ],
+    "styleTokens": [],
+    "materialPriors": [],
     "estimatedStorePriceUsd": null,
     "estimatedSupplierPriceUsd": null,
     "estimatedMarkupPercent": null
   },
-  "rawResponse": "{\n  \"verdict\": \"collection_page\",\n  \"confidence\": 0.9,\n  \"productCategory\": \"leather work accessories\",\n  \"reasoning\": \"The page describes a 'versatile line of leather products' including tool belts, belt bags, tool buckets, and document tubes, with separate sections detailing each. This indicates a catalog or collection page rather than a single product detail page. No individual product price is detected.\",\n  \"reasoningSignals\": [\n    \"Description lists multiple products: 'Leather toolbelt, bucket, Pocket protectors, Belt bags, and document tubes'\",\n    \"Markdown excerpt states 'Introducing a versatile line of leather products, including tool belts, belt bags, organized tool buckets, document tubes, and pocket protectors.'\",\n    \"Separate sections in markdown describe 'Leather Toolbelt for Women', 'Leather Tool Bucket', and 'Leather Document Tube'\",\n    \"No single product price detected on the page\"\n  ],\n  \"missingSignals\": [\n    \"Individual product prices\",\n    \"Specific product variants\"\n  ],\n  \"redFlags\": [],\n  \"aliexpressKeywords\": [],\n  \"styleTokens\": [\n    \"practical\",\n    \"stylish\",\n    \"feminine\",\n    \"versatile\"\n  ],\n  \"materialPriors\": [\n    \"leather\"\n  ],\n  \"estimatedStorePriceUsd\": null,\n  \"estimatedSupplierPriceUsd\": null,\n  \"estimatedMarkupPercent\": null\n}",
+  "rawResponse": "{\"verdict\":\"not_a_product\",\"confidence\":0.88}",
   "model": "gemini-2.5-flash",
   "provider": "google",
   "error": null

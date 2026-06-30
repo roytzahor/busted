@@ -4,8 +4,8 @@
   "expectedVerdict": "legit",
   "expectedSupplier": {
     "shouldFindMatch": false,
-    "notes": "Hebrew tech collection page — no PDP, no supplier search"
+    "notes": "Collection page — no single PDP; supplier search suppressed for legit verdict"
   },
-  "notes": "Synthetic. Hebrew smart-home category. High-payload page (many products) tests that no Vercel timeout occurs and collection_page verdict holds.",
+  "notes": "Synthetic. Hebrew branded-electronics category page. Products are well-known brands (Samsung, LG, iRobot, Google, Philips, Apple, Ring, Bosch) — AI reliably returns collection_page which deriveVerdict maps to legit. Tests graceful handling of high-payload Hebrew pages without Vercel timeout.",
   "capturedAt": "2026-06-30"
 }

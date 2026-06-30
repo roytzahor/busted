@@ -1,11 +1,11 @@
 {
   "url": "https://trending-gadget-store.com/products/electric-back-scratcher",
   "category": "dropship_obvious",
-  "expectedVerdict": "insufficient_evidence",
+  "expectedVerdict": "not_a_product",
   "expectedSupplier": {
     "shouldFindMatch": false,
-    "notes": "Partial scrape from cookie-consent banner partial capture — insufficient evidence to confirm dropship"
+    "notes": "Cookie consent blocked all useful content — sparse scrape triggers attrCount<2 code gate, so not_a_product is returned deterministically without relying on AI choice."
   },
-  "notes": "Synthetic. Cookie consent banner allowed title + partial description through but blocked image and price. attrCount=2 (title + desc>50) so confidence check applies, not attrCount gate. AI returns insufficient_evidence (confidence 0.35).",
+  "notes": "Synthetic. Cookie consent banner blocked image and price; description shortened to <50 chars so attrCount=1 (title only). The code-level attrCount<2 gate fires before the AI confidence check, forcing not_a_product regardless of what the model says about the product category. Tests that the pipeline never guesses dropship from noise.",
   "capturedAt": "2026-06-30"
 }

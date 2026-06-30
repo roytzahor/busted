@@ -1,22 +1,28 @@
 {
   "prediction": {
-    "verdict": "insufficient_evidence",
+    "verdict": "not_a_product",
     "isLikelyDropship": false,
-    "confidence": 0.35,
+    "confidence": 0.88,
     "productCategory": null,
     "aliexpressKeywords": [],
-    "reasoningSignals": [],
+    "styleTokens": [],
+    "materialPriors": [],
+    "reasoningSignals": [
+      "Cookie consent wall blocked all product content — only page title visible",
+      "No description, price, or product image captured",
+      "Cannot determine product identity or dropship likelihood from page title alone"
+    ],
     "missingSignals": [
-      "No product image captured (cookie banner)",
-      "No price visible — blocked by cookie consent wall",
-      "No shipping information available"
+      "Product description (blocked by cookie consent)",
+      "Product price",
+      "Product image"
     ],
     "redFlags": [],
     "estimatedStorePriceUsd": null,
     "estimatedSupplierPriceUsd": null,
     "estimatedMarkupPercent": null
   },
-  "rawResponse": "{\"verdict\":\"insufficient_evidence\",\"confidence\":0.35}",
+  "rawResponse": "{\"verdict\":\"not_a_product\",\"confidence\":0.88}",
   "model": "synthetic",
   "provider": "synthetic",
   "error": null

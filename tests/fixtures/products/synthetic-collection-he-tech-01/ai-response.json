@@ -2,16 +2,20 @@
   "prediction": {
     "verdict": "collection_page",
     "isLikelyDropship": false,
-    "confidence": 0.9,
-    "productCategory": null,
-    "aliexpressKeywords": [],
+    "confidence": 0.90,
+    "productCategory": "Smart home electronics",
+    "reasoning": "Category page listing 48 branded smart-home products from Samsung, LG, Bosch, Philips, iRobot, Google, Apple, Ring, and Dyson. Multiple distinct branded items with individual ILS prices — clearly a category index for a legitimate authorised electronics retailer, not a PDP.",
     "reasoningSignals": [
-      "URL pattern /collections/smart-home",
-      "48 distinct product lines listed — clearly a category index, not a PDP",
-      "Wide price range (₪39–₪1,890) spanning many product types"
+      "URL pattern /collections/smart-home on a .co.il store",
+      "12+ distinct branded products listed (Samsung, LG, Bosch, Philips, iRobot, Google, Apple, Ring, Dyson)",
+      "Wide branded price range (₪499–₪4,199) spanning multiple brands and product types",
+      "No single product is described — this is a category index"
     ],
     "missingSignals": [],
     "redFlags": [],
+    "aliexpressKeywords": [],
+    "styleTokens": [],
+    "materialPriors": [],
     "estimatedStorePriceUsd": null,
     "estimatedSupplierPriceUsd": null,
     "estimatedMarkupPercent": null

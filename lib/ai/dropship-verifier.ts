@@ -85,7 +85,7 @@ HARD RULES (violating these = wrong output):
 13. SELF-CLAIMED MANUFACTURING (MULTI-SIGNAL RULE) — When ALL of the following are true simultaneously: (a) seller claims "handmade", "made locally", "reservist-owned", or similar, AND (b) no price detected, AND (c) no manufacturer name or trademark, AND (d) product category is widely available on AliExpress — then the self-description is a red flag, not a legit signal. If a store price IS detected or the domain is an established brand name, this rule does NOT apply.
 14. DROPSHIP PRODUCT CATEGORIES — The following categories are overwhelmingly dropshipped/fulfilled via third-party services regardless of where the store is located: (a) baby/mother charm necklaces, photo locket jewelry, encrypted-photo jewelry; (b) paint-by-numbers kits; (c) personalized wooden puzzle gifts ("made with CNC technology" is a fulfillment-service red flag, not proof of genuine manufacture — CNC laser/cutting services are widely used by dropship resellers); (d) smart touch bracelets for couples; (e) LED galaxy projectors, posture correctors, massage devices. When a page sells these categories AND has no verifiable manufacturer or brand history AND no price detected, lean strongly toward "dropship" even if the copy sounds professional or claims local production. NOTE: fine jewelry (gold, silver, gemstones sold at $20+ prices) from stores with an established brand-name domain (e.g. brandname.com) is NOT in this list.
 15. NO-PRICE SIGNAL — detectedStorePriceUsd=null on a Shopify /products/ page is a weak dropship signal in combination with other signals. Alone it is not enough.
-16. PORTFOLIO / GALLERY SITES — If the scrape title is a business name (not a product name) and the description lists only product TYPES or business services without individual purchasable items (no prices, no add-to-cart, no product variants described), the page is likely a business homepage or portfolio, not a shoppable product page. Use "not_a_product" in this case. Distinguish from "collection_page" (which requires actual shoppable items with prices or clear buy CTAs).
+16. PORTFOLIO / GALLERY SITES — If the scrape title is a business name (not a product name) and the content describes product TYPES or categories without individual prices or explicit "Add to Cart" / "Buy Now" buttons visible in the scraped content, use "not_a_product". Critical: a "Shop" navigation link, an empty basket indicator (€0 / £0 / $0 / 0 items), or descriptive prose about product types are NOT evidence of a shoppable collection — they appear on every brand homepage and portfolio site. A true "collection_page" requires MULTIPLE distinct items WITH individual prices OR explicit buy CTAs clearly visible in the scraped markdown. When in doubt between "not_a_product" and "collection_page" for a brand homepage with no prices in the scraped content: always choose "not_a_product".
 
 EXAMPLES:
 
@@ -178,6 +178,23 @@ Output: {
   "aliexpressKeywords": [],
   "styleTokens": ["minimalist", "dainty", "layering"],
   "materialPriors": ["14k gold", "sterling silver"],
+  "estimatedStorePriceUsd": null,
+  "estimatedSupplierPriceUsd": null,
+  "estimatedMarkupPercent": null
+}
+
+Input: { title: "ArtisanBrand - Leather Tool Belt", sourceUrl: "https://artisanbrand.com/", detectedStorePriceUsd: null, description: "Introducing a versatile line of leather products, including tool belts, belt bags, organized tool buckets, document tubes, and pocket protectors.", markdownExcerpt: "€ 0,00 0 Basket ... Home Info Shop Blog Contact ... Leather Toolbelt for Women [3-sentence description] ... Leather Tool Bucket [3-sentence description] ... Leather Document Tube [3-sentence description] ..." }
+Output: {
+  "verdict": "not_a_product",
+  "confidence": 0.88,
+  "productCategory": "Leather accessories brand homepage",
+  "reasoning": "Homepage of an artisan leather goods brand. Three product types are described in prose (toolbelt, tool bucket, document tube) but NO individual prices appear anywhere in the scrape and NO 'Add to Cart' or 'Buy Now' buttons are present. The empty basket (€0) and 'Shop' navigation link exist on every brand homepage — they are not buy CTAs. Rule 16 applies: this is a portfolio/brand homepage, not a shoppable collection page.",
+  "reasoningSignals": ["Title is the brand name, not a product name", "No prices detected in the scraped content", "No 'Add to Cart' or 'Buy Now' buttons visible in the markdown", "Product descriptions are prose about types, not individual shoppable listings"],
+  "missingSignals": ["Individual product prices", "Add to cart mechanism"],
+  "redFlags": [],
+  "aliexpressKeywords": [],
+  "styleTokens": [],
+  "materialPriors": [],
   "estimatedStorePriceUsd": null,
   "estimatedSupplierPriceUsd": null,
   "estimatedMarkupPercent": null
