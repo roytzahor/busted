@@ -10,9 +10,18 @@
  * header so the response includes `itemAffiliateWebUrl`; we fall back to the
  * plain `itemWebUrl` otherwise.
  *
- * Credential-gated + fail-open: with no keys the router skips this provider; on
- * any upstream error we throw a SupplierProviderError the router catches, so a
- * bad eBay call never fails the scan.
+ * Rate-limit handling:
+ *  - 429 / 503 → exponential backoff, up to MAX_RETRIES attempts.
+ *    Respects the Retry-After header when present; caps wait at RETRY_CAP_MS
+ *    so a single slow response can't stall the router's time budget.
+ *  - 401 → clears the token cache and retries once (handles rare race where a
+ *    2h token expires between cache-check and the actual request).
+ *  - All retries are signal-aware: the router's AbortSignal cancels them
+ *    immediately so a rate-limited call can't hold a serverless slot open.
+ *
+ * Credential-gated + fail-open: with no keys the router skips this provider;
+ * on any upstream error we throw a SupplierProviderError the router catches,
+ * so a bad eBay call never fails the scan.
  *
  * Docs: https://developer.ebay.com/api-docs/buy/browse/resources/item_summary/methods/search
  */
@@ -34,11 +43,26 @@ const EBAY_BROWSE_URL = `${EBAY_BASE}/buy/browse/v1/item_summary/search`;
 const EBAY_SCOPE = "https://api.ebay.com/oauth/api_scope";
 const MARKETPLACE_ID = process.env.EBAY_MARKETPLACE_ID ?? "EBAY_US";
 
+/** Max Browse search retries on 429/503 (first attempt + MAX_RETRIES more). */
+const MAX_RETRIES = 2;
+/** Base wait before the first retry; doubles each subsequent attempt. */
+const BASE_RETRY_MS = 500;
+/** Hard cap on any single retry wait — keeps us inside the router time budget. */
+const RETRY_CAP_MS = 3000;
+
+// ---------------------------------------------------------------------------
+// Token cache
+// ---------------------------------------------------------------------------
+
 interface CachedToken {
   token: string;
   expiresAt: number;
 }
 let cachedToken: CachedToken | null = null;
+
+function clearTokenCache() {
+  cachedToken = null;
+}
 
 async function getApplicationToken(
   appId: string,
@@ -76,6 +100,55 @@ async function getApplicationToken(
   return cachedToken.token;
 }
 
+// ---------------------------------------------------------------------------
+// Rate-limit helpers
+// ---------------------------------------------------------------------------
+
+/** Signal-aware sleep. Rejects immediately if the signal fires during the wait. */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(signal.reason); return; }
+    const timer = setTimeout(resolve, ms);
+    signal?.addEventListener(
+      "abort",
+      () => { clearTimeout(timer); reject(signal.reason); },
+      { once: true },
+    );
+  });
+}
+
+/**
+ * Fetch with automatic retry on 429 (Too Many Requests) and 503 (Service
+ * Unavailable). Reads the Retry-After header when present; otherwise uses
+ * exponential backoff capped at RETRY_CAP_MS. Aborts immediately if the
+ * caller's AbortSignal fires.
+ */
+async function fetchWithRetry(
+  url: string,
+  init: RequestInit & { signal?: AbortSignal },
+  maxRetries = MAX_RETRIES,
+): Promise<Response> {
+  let attempt = 0;
+  for (;;) {
+    const res = await fetch(url, init);
+
+    const retryable = res.status === 429 || res.status === 503;
+    if (!retryable || attempt >= maxRetries) return res;
+
+    const retryAfterSec = Number(res.headers.get("Retry-After") ?? NaN);
+    const delay = Number.isFinite(retryAfterSec)
+      ? Math.min(retryAfterSec * 1000, RETRY_CAP_MS)
+      : Math.min(BASE_RETRY_MS * 2 ** attempt, RETRY_CAP_MS);
+
+    await sleep(delay, init.signal);
+    attempt++;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Response mapping
+// ---------------------------------------------------------------------------
+
 interface EbayItemSummary {
   itemId?: string;
   title?: string;
@@ -110,6 +183,10 @@ function toCandidate(item: EbayItemSummary): SupplierCandidate | null {
   };
 }
 
+// ---------------------------------------------------------------------------
+// Provider
+// ---------------------------------------------------------------------------
+
 export const ebayProvider: ISupplierProvider = {
   name: "eBay",
   provider: "ebay",
@@ -129,8 +206,6 @@ export const ebayProvider: ISupplierProvider = {
     const q = keywords.filter((k) => k.trim().length > 0).join(" ").trim();
     if (!q) return [];
 
-    const token = await getApplicationToken(appId, certId, opts.signal);
-
     const params = new URLSearchParams({
       q,
       limit: String(Math.min(opts.limit ?? 10, 50)),
@@ -141,27 +216,40 @@ export const ebayProvider: ISupplierProvider = {
       params.set("filter", `price:[${min}..${max}],priceCurrency:USD`);
     }
 
-    const headers: Record<string, string> = {
-      Authorization: `Bearer ${token}`,
-      "X-EBAY-C-MARKETPLACE-ID": MARKETPLACE_ID,
-    };
     const campaignId = process.env.EBAY_CAMPAIGN_ID;
-    if (campaignId) {
-      // Returns itemAffiliateWebUrl on each summary.
-      headers["X-EBAY-C-ENDUSERCTX"] = `affiliateCampaignId=${campaignId}`;
+
+    // Inner search — extracted so we can retry on 401 after refreshing the token.
+    const doSearch = async (): Promise<Response> => {
+      const token = await getApplicationToken(appId, certId, opts.signal);
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+        "X-EBAY-C-MARKETPLACE-ID": MARKETPLACE_ID,
+      };
+      if (campaignId) {
+        headers["X-EBAY-C-ENDUSERCTX"] = `affiliateCampaignId=${campaignId}`;
+      }
+      return fetchWithRetry(
+        `${EBAY_BROWSE_URL}?${params.toString()}`,
+        { headers, signal: opts.signal },
+      );
+    };
+
+    let res = await doSearch();
+
+    // 401 = token expired in the wild (rare but possible); refresh once.
+    if (res.status === 401) {
+      clearTokenCache();
+      res = await doSearch();
     }
 
-    const res = await fetch(`${EBAY_BROWSE_URL}?${params.toString()}`, {
-      headers,
-      signal: opts.signal,
-    });
     if (!res.ok) {
       throw new SupplierProviderError(
         "ebay",
-        SUPPLIER_ERROR.UPSTREAM,
+        res.status === 429 ? SUPPLIER_ERROR.TIMEOUT : SUPPLIER_ERROR.UPSTREAM,
         `eBay Browse search failed (${res.status}).`,
       );
     }
+
     const json = (await res.json()) as { itemSummaries?: EbayItemSummary[] };
     return (json.itemSummaries ?? [])
       .map(toCandidate)
