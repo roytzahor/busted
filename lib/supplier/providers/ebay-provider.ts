@@ -25,9 +25,12 @@ import {
   type SupplierSearchOptions,
 } from "@/lib/supplier/types";
 
-const EBAY_OAUTH_URL = "https://api.ebay.com/identity/v1/oauth2/token";
-const EBAY_BROWSE_URL =
-  "https://api.ebay.com/buy/browse/v1/item_summary/search";
+const isSandbox = process.env.EBAY_SANDBOX === "true";
+const EBAY_BASE = isSandbox
+  ? "https://api.sandbox.ebay.com"
+  : "https://api.ebay.com";
+const EBAY_OAUTH_URL = `${EBAY_BASE}/identity/v1/oauth2/token`;
+const EBAY_BROWSE_URL = `${EBAY_BASE}/buy/browse/v1/item_summary/search`;
 const EBAY_SCOPE = "https://api.ebay.com/oauth/api_scope";
 const MARKETPLACE_ID = process.env.EBAY_MARKETPLACE_ID ?? "EBAY_US";
 
