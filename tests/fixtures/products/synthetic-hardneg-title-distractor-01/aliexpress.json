@@ -1,0 +1,39 @@
+{
+  "keywords": "magnetic car phone holder vent mount 360",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005006310001",
+      "title": "Magnetic Car Phone Holder Air Vent Mount 360 Rotation Universal",
+      "priceUsd": 3.4,
+      "productUrl": "https://www.aliexpress.com/item/1005006310001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/mount-1.jpg",
+      "orderCount": 9200,
+      "sellerRating": 4.7,
+      "shippingDays": 16,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006310002",
+      "title": "65W USB C Fast Charger GaN Wall Adapter Phone Laptop",
+      "priceUsd": 8.9,
+      "productUrl": "https://www.aliexpress.com/item/1005006310002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/chg-1.jpg",
+      "orderCount": 84000,
+      "sellerRating": 4.9,
+      "shippingDays": 14,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006310003",
+      "title": "Universal Phone Ring Holder Finger Grip Stand Kickstand",
+      "priceUsd": 1.2,
+      "productUrl": "https://www.aliexpress.com/item/1005006310003.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/ring-1.jpg",
+      "orderCount": 51000,
+      "sellerRating": 4.8,
+      "shippingDays": 18,
+      "promotionLink": null
+    }
+  ]
+}

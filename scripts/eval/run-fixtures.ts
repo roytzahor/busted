@@ -10,7 +10,6 @@
  */
 
 import { verifyDropshipLikelihood } from "@/lib/ai/dropship-verifier";
-import { extractSearchKeywords } from "@/lib/aliexpress/keywords";
 import { rankAliExpressCandidates } from "@/lib/aliexpress/rank-products";
 import {
   computeMatchConfidence,
@@ -29,15 +28,33 @@ interface CliOptions {
   filter?: string;
   skipAi: boolean;
   skipSupplier: boolean;
+  /** When set, a mean projected cost above the budget fails the run (exit 1). */
+  enforceCost: boolean;
+  /** Mean-cost budget in USD (default COST_BUDGET_USD). */
+  maxMeanCost: number;
 }
+
+/**
+ * Mean projected cost/scan budget. A refactor that raises accuracy but pushes
+ * the mean scan cost above this is a cost regression — run with --enforce-cost
+ * (e.g. in CI) to make it fail. Headroom above today's ~$0.0018 baseline.
+ */
+const COST_BUDGET_USD = 0.004;
 
 function parseOptions(): CliOptions {
   const args = process.argv.slice(2);
-  const opts: CliOptions = { skipAi: false, skipSupplier: false };
+  const opts: CliOptions = {
+    skipAi: false,
+    skipSupplier: false,
+    enforceCost: false,
+    maxMeanCost: COST_BUDGET_USD,
+  };
   for (let i = 0; i < args.length; i += 1) {
     if (args[i] === "--filter") opts.filter = args[i + 1];
     if (args[i] === "--skip-ai") opts.skipAi = true;
     if (args[i] === "--skip-supplier") opts.skipSupplier = true;
+    if (args[i] === "--enforce-cost") opts.enforceCost = true;
+    if (args[i] === "--max-mean-cost") opts.maxMeanCost = Number(args[i + 1]);
   }
   return opts;
 }
@@ -371,7 +388,12 @@ function printPerCategoryAccuracy(outcomes: FixtureOutcome[]): void {
   }
 }
 
-function printCostProjection(outcomes: FixtureOutcome[]): void {
+/** Prints the cost projection and returns true if the mean breached the budget. */
+function printCostProjection(
+  outcomes: FixtureOutcome[],
+  budget: number,
+  enforce: boolean,
+): boolean {
   console.log("\n=== Projected Cost / Scan (relative tracking — see COST_USD) ===\n");
   const costs = outcomes.map((o) => o.estimatedCostUsd).sort((a, b) => a - b);
   const total = costs.reduce((s, c) => s + c, 0);
@@ -381,6 +403,12 @@ function printCostProjection(outcomes: FixtureOutcome[]): void {
   const fmt = (n: number) => `$${n.toFixed(4)}`;
   console.log(`mean=${fmt(mean)}  median=${fmt(median)}  max=${fmt(max)}  total(${costs.length} scans)=${fmt(total)}`);
   console.log("(estimate: assumes PREPROCESS off; image stages only on dropship+image)");
+  const breached = mean > budget;
+  const verb = enforce ? "ENFORCED" : "advisory";
+  console.log(
+    `budget mean ≤ ${fmt(budget)} [${verb}]: ${breached ? "✗ OVER BUDGET" : "✓ within budget"}`,
+  );
+  return breached;
 }
 
 function printFailures(outcomes: FixtureOutcome[]): void {
@@ -451,11 +479,12 @@ async function main(): Promise<void> {
   printConfidenceBuckets(outcomes);
   printSupplierAccuracy(outcomes);
   printFalsePositives(outcomes);
-  printCostProjection(outcomes);
+  const costBreached = printCostProjection(outcomes, opts.maxMeanCost, opts.enforceCost);
   printFailures(outcomes);
   printSummary(outcomes);
 
-  const exitCode = outcomes.every((o) => o.verdictMatch && o.supplierMatch) ? 0 : 1;
+  const accuracyFailed = !outcomes.every((o) => o.verdictMatch && o.supplierMatch);
+  const exitCode = accuracyFailed || (opts.enforceCost && costBreached) ? 1 : 0;
   process.exit(exitCode);
 }
 

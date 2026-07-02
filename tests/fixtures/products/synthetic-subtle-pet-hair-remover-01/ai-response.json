@@ -1,5 +1,8 @@
 {
   "prediction": {
+    "reasoning": "synthetic fixture",
+    "styleTokens": [],
+    "materialPriors": [],
     "verdict": "dropship",
     "isLikelyDropship": true,
     "confidence": 0.72,

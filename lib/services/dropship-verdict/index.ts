@@ -17,13 +17,16 @@ import { buildSupplierMarketplacePrediction } from "@/lib/ai/supplier-marketplac
 import { detectProductSource } from "@/lib/scraping/detect-source";
 import type { ScrapedProductAttributes } from "@/lib/scraping/types";
 import { runService } from "@/lib/services/run";
-import { err, ok, type Result } from "@/lib/services/types";
+import { err, ok, type ProductIdentity, type Result } from "@/lib/services/types";
 
 export interface DropshipVerdictInput {
   url: string;
   attributes: ScrapedProductAttributes;
   markdown: string;
   storePriceUsd: number | null;
+  /** Vision-grounded identity from ProductIdentifierService, when available.
+   *  Passed to the AI verifier as corroborating evidence. */
+  identity?: ProductIdentity | null;
 }
 
 export interface DropshipVerdictOutput {
@@ -62,11 +65,14 @@ export async function verify(
       });
     }
 
-    emit("verify:ai", "Calling AI dropship verifier");
+    emit("verify:ai", "Calling AI dropship verifier", {
+      identityGrounded: input.identity != null,
+    });
     const aiResult = await verifyDropshipLikelihood({
       attributes: input.attributes,
       markdownExcerpt: input.markdown,
       storePriceUsd: input.storePriceUsd,
+      identity: input.identity ?? null,
     });
 
     if (aiResult.prediction) {

@@ -261,6 +261,108 @@ const SPECS: Spec[] = [
     },
   },
 
+  // ── hard negatives: adversarial candidate pools (precision guards) ───────
+  // These verify the SCORER rejects noise and still ranks the correct item
+  // first — the "no wrong supplier" guarantee, tested at the scoring level.
+  {
+    id: "synthetic-hardneg-price-noise-01",
+    category: "dropship_obvious",
+    url: "https://gadgetdeal-store.com/products/mini-humidifier",
+    storeName: "gadgetdeal-store.com",
+    title: "Mini Portable USB Humidifier | GadgetDeal",
+    description:
+      "Mini portable USB desktop humidifier with LED night light. 300ml. Ships 2-3 weeks.",
+    imageUrl: "https://gadgetdeal-store.com/img/humidifier.jpg",
+    priceUsd: 34.99,
+    markdown:
+      "# Mini Portable USB Humidifier\n\n**$34.99**\n\nMini portable USB desktop humidifier with LED night light, 300ml tank.\n\n*Ships 2-3 weeks*",
+    truth: {
+      expectedVerdict: "dropship",
+      confidenceMin: 0.5,
+      expectedSupplier: {
+        shouldFindMatch: true,
+        expectedPriceUsdBand: [3, 12],
+        notes: "Pool contains the correct $5 item PLUS a price-parse-error ($9M) and an over-8x ($399) decoy. Scorer must reject the noise and pick the correct cheap item.",
+      },
+      notes: "Synthetic hard-negative (price noise). Guards MAX_PLAUSIBLE_SUPPLIER_PRICE + MAX_SUPPLIER_OVER_STORE_RATIO.",
+    },
+    ai: {
+      verdict: "dropship",
+      isLikelyDropship: true,
+      confidence: 0.8,
+      productCategory: "USB Humidifier",
+      aliexpressKeywords: ["mini usb humidifier led", "portable desktop humidifier 300ml"],
+      reasoningSignals: [
+        "2-3 week shipping indicates overseas fulfillment",
+        "Generic USB gadget under a house brand",
+        "High markup on a sub-$6 commodity",
+      ],
+      missingSignals: ["No brand history"],
+      redFlags: ["Long overseas shipping", "Commodity gadget"],
+      estimatedStorePriceUsd: 34.99,
+      estimatedSupplierPriceUsd: 5,
+      estimatedMarkupPercent: 600,
+    },
+    aliexpress: {
+      keywords: "mini usb humidifier led portable desktop 300ml",
+      provider: "aliexpress_api",
+      candidates: [
+        { productId: "1005006300001", title: "Mini USB Humidifier LED Night Light Portable Desktop 300ml Air", priceUsd: 5.2, productUrl: "https://www.aliexpress.com/item/1005006300001.html", imageUrl: "https://ae01.alicdn.com/kf/hum-1.jpg", orderCount: 18400, sellerRating: 4.8, shippingDays: 15, promotionLink: null },
+        { productId: "1005006300002", title: "Industrial Ultrasonic Humidifier Commercial Machine 20L Warehouse", priceUsd: 9184233.0, productUrl: "https://www.aliexpress.com/item/1005006300002.html", imageUrl: "https://ae01.alicdn.com/kf/hum-2.jpg", orderCount: 12, sellerRating: 4.2, shippingDays: 30, promotionLink: null },
+        { productId: "1005006300003", title: "Mini Humidifier Portable Aroma Diffuser Deluxe Bundle Gift Box", priceUsd: 399.0, productUrl: "https://www.aliexpress.com/item/1005006300003.html", imageUrl: "https://ae01.alicdn.com/kf/hum-3.jpg", orderCount: 40, sellerRating: 4.9, shippingDays: 12, promotionLink: null },
+      ],
+    },
+  },
+  {
+    id: "synthetic-hardneg-title-distractor-01",
+    category: "dropship_obvious",
+    url: "https://trendypicks-shop.com/products/magnetic-phone-holder",
+    storeName: "trendypicks-shop.com",
+    title: "Magnetic Car Phone Holder Mount | TrendyPicks",
+    description:
+      "Strong magnetic car phone holder, air vent mount, 360° rotation. Fits all phones. Ships 10-20 days.",
+    imageUrl: "https://trendypicks-shop.com/img/mount.jpg",
+    priceUsd: 24.99,
+    markdown:
+      "# Magnetic Car Phone Holder Mount\n\n**$24.99**\n\nStrong magnetic car phone holder, air vent mount, 360° rotation.\n\n*Ships 10-20 days*",
+    truth: {
+      expectedVerdict: "dropship",
+      confidenceMin: 0.5,
+      expectedSupplier: {
+        shouldFindMatch: true,
+        expectedPriceUsdBand: [1, 8],
+        notes: "Pool contains the correct magnetic car mount PLUS a high-volume unrelated distractor (phone charger). Text overlap must rank the correct mount first.",
+      },
+      notes: "Synthetic hard-negative (title distractor). Guards against a high-order-count unrelated item winning on trust alone.",
+    },
+    ai: {
+      verdict: "dropship",
+      isLikelyDropship: true,
+      confidence: 0.78,
+      productCategory: "Car Phone Holder",
+      aliexpressKeywords: ["magnetic car phone holder vent mount", "360 car phone mount magnetic"],
+      reasoningSignals: [
+        "10-20 day shipping indicates overseas fulfillment",
+        "Generic car accessory under a house brand",
+        "High markup on a sub-$4 commodity",
+      ],
+      missingSignals: ["No brand history"],
+      redFlags: ["Long overseas shipping", "Commodity accessory"],
+      estimatedStorePriceUsd: 24.99,
+      estimatedSupplierPriceUsd: 3,
+      estimatedMarkupPercent: 733,
+    },
+    aliexpress: {
+      keywords: "magnetic car phone holder vent mount 360",
+      provider: "aliexpress_api",
+      candidates: [
+        { productId: "1005006310001", title: "Magnetic Car Phone Holder Air Vent Mount 360 Rotation Universal", priceUsd: 3.4, productUrl: "https://www.aliexpress.com/item/1005006310001.html", imageUrl: "https://ae01.alicdn.com/kf/mount-1.jpg", orderCount: 9200, sellerRating: 4.7, shippingDays: 16, promotionLink: null },
+        { productId: "1005006310002", title: "65W USB C Fast Charger GaN Wall Adapter Phone Laptop", priceUsd: 8.9, productUrl: "https://www.aliexpress.com/item/1005006310002.html", imageUrl: "https://ae01.alicdn.com/kf/chg-1.jpg", orderCount: 84000, sellerRating: 4.9, shippingDays: 14, promotionLink: null },
+        { productId: "1005006310003", title: "Universal Phone Ring Holder Finger Grip Stand Kickstand", priceUsd: 1.2, productUrl: "https://www.aliexpress.com/item/1005006310003.html", imageUrl: "https://ae01.alicdn.com/kf/ring-1.jpg", orderCount: 51000, sellerRating: 4.8, shippingDays: 18, promotionLink: null },
+      ],
+    },
+  },
+
   // ── aliexpress_itself: already on a supplier marketplace → skip search ────
   {
     id: "synthetic-supplier-aliexpress-earbuds-01",

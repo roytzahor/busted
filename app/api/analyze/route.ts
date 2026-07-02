@@ -484,6 +484,7 @@ async function runAnalysisPipeline(
     attributes: scrapeOut.attributes,
     markdown: scrapeOut.markdown,
     storePriceUsd,
+    identity,
   });
   serviceEvents.push(...verdictRes.events);
 

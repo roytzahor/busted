@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Mini Portable USB Humidifier\n\n**$34.99**\n\nMini portable USB desktop humidifier with LED night light, 300ml tank.\n\n*Ships 2-3 weeks*",
+    "metadata": {
+      "title": "Mini Portable USB Humidifier | GadgetDeal",
+      "description": "Mini portable USB desktop humidifier with LED night light. 300ml. Ships 2-3 weeks.",
+      "ogImage": "https://gadgetdeal-store.com/img/humidifier.jpg",
+      "sourceUrl": "https://gadgetdeal-store.com/products/mini-humidifier"
+    }
+  },
+  "attributes": {
+    "title": "Mini Portable USB Humidifier | GadgetDeal",
+    "description": "Mini portable USB desktop humidifier with LED night light. 300ml. Ships 2-3 weeks.",
+    "mainImageUrl": "https://gadgetdeal-store.com/img/humidifier.jpg",
+    "sourceUrl": "https://gadgetdeal-store.com/products/mini-humidifier",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 34.99,
+  "storeName": "gadgetdeal-store.com"
+}

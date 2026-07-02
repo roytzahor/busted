@@ -1,5 +1,8 @@
 {
   "prediction": {
+    "reasoning": "synthetic fixture",
+    "styleTokens": [],
+    "materialPriors": [],
     "verdict": "not_a_product",
     "isLikelyDropship": false,
     "confidence": 0.88,

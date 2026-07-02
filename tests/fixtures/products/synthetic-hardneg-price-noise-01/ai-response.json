@@ -1,0 +1,34 @@
+{
+  "prediction": {
+    "reasoning": "synthetic fixture",
+    "styleTokens": [],
+    "materialPriors": [],
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.8,
+    "productCategory": "USB Humidifier",
+    "aliexpressKeywords": [
+      "mini usb humidifier led",
+      "portable desktop humidifier 300ml"
+    ],
+    "reasoningSignals": [
+      "2-3 week shipping indicates overseas fulfillment",
+      "Generic USB gadget under a house brand",
+      "High markup on a sub-$6 commodity"
+    ],
+    "missingSignals": [
+      "No brand history"
+    ],
+    "redFlags": [
+      "Long overseas shipping",
+      "Commodity gadget"
+    ],
+    "estimatedStorePriceUsd": 34.99,
+    "estimatedSupplierPriceUsd": 5,
+    "estimatedMarkupPercent": 600
+  },
+  "rawResponse": "{\"verdict\":\"dropship\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

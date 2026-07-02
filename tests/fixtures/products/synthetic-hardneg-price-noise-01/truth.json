@@ -1,0 +1,16 @@
+{
+  "url": "https://gadgetdeal-store.com/products/mini-humidifier",
+  "category": "dropship_obvious",
+  "capturedAt": "2026-07-02",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.5,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      3,
+      12
+    ],
+    "notes": "Pool contains the correct $5 item PLUS a price-parse-error ($9M) and an over-8x ($399) decoy. Scorer must reject the noise and pick the correct cheap item."
+  },
+  "notes": "Synthetic hard-negative (price noise). Guards MAX_PLAUSIBLE_SUPPLIER_PRICE + MAX_SUPPLIER_OVER_STORE_RATIO."
+}

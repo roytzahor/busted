@@ -1,0 +1,34 @@
+{
+  "prediction": {
+    "reasoning": "synthetic fixture",
+    "styleTokens": [],
+    "materialPriors": [],
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.78,
+    "productCategory": "Car Phone Holder",
+    "aliexpressKeywords": [
+      "magnetic car phone holder vent mount",
+      "360 car phone mount magnetic"
+    ],
+    "reasoningSignals": [
+      "10-20 day shipping indicates overseas fulfillment",
+      "Generic car accessory under a house brand",
+      "High markup on a sub-$4 commodity"
+    ],
+    "missingSignals": [
+      "No brand history"
+    ],
+    "redFlags": [
+      "Long overseas shipping",
+      "Commodity accessory"
+    ],
+    "estimatedStorePriceUsd": 24.99,
+    "estimatedSupplierPriceUsd": 3,
+    "estimatedMarkupPercent": 733
+  },
+  "rawResponse": "{\"verdict\":\"dropship\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}
