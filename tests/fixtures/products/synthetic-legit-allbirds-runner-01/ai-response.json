@@ -1,0 +1,23 @@
+{
+  "prediction": {
+    "verdict": "legit",
+    "isLikelyDropship": false,
+    "confidence": 0.9,
+    "productCategory": "Footwear",
+    "aliexpressKeywords": [],
+    "reasoningSignals": [
+      "Established brand with verifiable identity (B-Corp, HQ address)",
+      "Domestic 3-5 business day fulfillment",
+      "Product-specific sustainability data (carbon footprint) not seen on dropship stores"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": 98,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"legit\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

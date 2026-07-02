@@ -77,7 +77,44 @@ interface FixtureOutcome {
   supplierFound: boolean;
   supplierMatch: boolean;
   supplierWinnerPriceUsd: number | null;
+  estimatedCostUsd: number;
   notes: string[];
+}
+
+/**
+ * Projected per-scan cost model — for tracking *relative* cost deltas across
+ * refactors, not billing-grade precision. Per-stage figures are the documented
+ * costs from CLAUDE.md (Gemini vision ≈ $0.0001/call, preprocess image-gen
+ * ≈ $0.039, cold text scan ≈ $0.0015).
+ */
+const COST_USD = {
+  BASE_SCAN: 0.0015, // scrape + text verdict (always incurred)
+  VISION_IDENTIFIER: 0.0002, // Gemini Vision canonical-identity call
+  IMAGE_RERANK: 0.0001, // batch image rerank (one multimodal call)
+  IMAGE_MATCH: 0.0001, // deep per-candidate image verification
+  PREPROCESS: 0.039, // image-gen preprocess (off by default)
+} as const;
+
+/**
+ * Estimate the AI cost a live scan of this fixture would incur, given which
+ * escalation stages its characteristics would trigger. Mirrors the runtime
+ * gates: image stages only run for a dropship verdict with a source image and
+ * a non-trivial text score; preprocess is assumed OFF (prod default).
+ */
+function projectScanCost(
+  fixture: FixtureRecord,
+  predictedVerdict: ExpectedVerdict,
+): number {
+  let cost: number = COST_USD.BASE_SCAN;
+  const hasImage = fixture.scrape.attributes.mainImageUrl !== null;
+  // Vision identifier runs on every scan with an image (IDENTIFIER_ENABLED default ON).
+  if (hasImage) cost += COST_USD.VISION_IDENTIFIER;
+  // Image rerank + deep image match only run when a supplier search runs
+  // (dropship verdict) AND there is a source image to compare against.
+  if (predictedVerdict === "dropship" && hasImage) {
+    cost += COST_USD.IMAGE_RERANK + COST_USD.IMAGE_MATCH;
+  }
+  return cost;
 }
 
 async function evaluateFixture(
@@ -202,6 +239,7 @@ async function evaluateFixture(
     supplierFound,
     supplierMatch,
     supplierWinnerPriceUsd,
+    estimatedCostUsd: projectScanCost(fixture, predictedVerdict),
     notes,
   };
 }
@@ -286,6 +324,65 @@ function printSupplierAccuracy(outcomes: FixtureOutcome[]): void {
   console.log("(FP = wrong supplier shown for a legit/non-product page — the WORST failure mode)");
 }
 
+/**
+ * The regression guardrail. Two failure classes damage user trust and revenue
+ * the most, so we surface them on their own before the generic failure list:
+ *   1. verdict FP — a legit / not-a-product page called "dropship"
+ *   2. supplier FP — a supplier link shown for a page that should have none
+ * Both should stay at ZERO. A refactor that raises either is a regression even
+ * if headline accuracy looks flat.
+ */
+function printFalsePositives(outcomes: FixtureOutcome[]): void {
+  const verdictFps = outcomes.filter(
+    (o) =>
+      (o.expectedVerdict === "legit" || o.expectedVerdict === "not_a_product") &&
+      o.predictedVerdict === "dropship",
+  );
+  const supplierFps = outcomes.filter(
+    (o) => !o.expectedSupplier.shouldFindMatch && o.supplierFound,
+  );
+
+  console.log("\n=== False Positives (regression guardrail — target: 0) ===\n");
+  console.log(`verdict FP (legit/not-a-product → dropship): ${verdictFps.length}`);
+  verdictFps.forEach((o) =>
+    console.log(`  ✗ ${o.id} [${o.category}] expected=${o.expectedVerdict}`),
+  );
+  console.log(`supplier FP (link shown when none expected): ${supplierFps.length}`);
+  supplierFps.forEach((o) =>
+    console.log(`  ✗ ${o.id} [${o.category}] winner_price=$${o.supplierWinnerPriceUsd ?? "?"}`),
+  );
+  if (verdictFps.length === 0 && supplierFps.length === 0) {
+    console.log("✓ no false positives");
+  }
+}
+
+function printPerCategoryAccuracy(outcomes: FixtureOutcome[]): void {
+  console.log("\n=== Per-Category Verdict Accuracy ===\n");
+  console.log(pad("category", 20) + pad("n", 6) + pad("correct", 10) + pad("accuracy", 10));
+  console.log("-".repeat(46));
+  const categories = [...new Set(outcomes.map((o) => o.category))].sort();
+  for (const cat of categories) {
+    const rows = outcomes.filter((o) => o.category === cat);
+    const correct = rows.filter((o) => o.verdictMatch).length;
+    const acc = ((correct / rows.length) * 100).toFixed(0);
+    console.log(
+      pad(cat, 20) + pad(String(rows.length), 6) + pad(String(correct), 10) + pad(`${acc}%`, 10),
+    );
+  }
+}
+
+function printCostProjection(outcomes: FixtureOutcome[]): void {
+  console.log("\n=== Projected Cost / Scan (relative tracking — see COST_USD) ===\n");
+  const costs = outcomes.map((o) => o.estimatedCostUsd).sort((a, b) => a - b);
+  const total = costs.reduce((s, c) => s + c, 0);
+  const mean = total / costs.length;
+  const median = costs[Math.floor(costs.length / 2)];
+  const max = costs[costs.length - 1];
+  const fmt = (n: number) => `$${n.toFixed(4)}`;
+  console.log(`mean=${fmt(mean)}  median=${fmt(median)}  max=${fmt(max)}  total(${costs.length} scans)=${fmt(total)}`);
+  console.log("(estimate: assumes PREPROCESS off; image stages only on dropship+image)");
+}
+
 function printFailures(outcomes: FixtureOutcome[]): void {
   const failures = outcomes.filter((o) => !o.verdictMatch || !o.supplierMatch);
   if (failures.length === 0) {
@@ -350,8 +447,11 @@ async function main(): Promise<void> {
   }
 
   printConfusionMatrix(outcomes);
+  printPerCategoryAccuracy(outcomes);
   printConfidenceBuckets(outcomes);
   printSupplierAccuracy(outcomes);
+  printFalsePositives(outcomes);
+  printCostProjection(outcomes);
   printFailures(outcomes);
   printSummary(outcomes);
 

@@ -1,0 +1,16 @@
+{
+  "url": "https://theworkspace-co.com/products/bamboo-desk-organizer",
+  "category": "dropship_subtle",
+  "capturedAt": "2026-07-02",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.5,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      4,
+      15
+    ],
+    "notes": "Generic bamboo organizer, $4-12 on AliExpress, retailed at $44. Subtle: no urgency timer, clean branding."
+  },
+  "notes": "Synthetic dropship_subtle. Professional presentation; tell is the 2-4 week ship + generic unbranded product."
+}

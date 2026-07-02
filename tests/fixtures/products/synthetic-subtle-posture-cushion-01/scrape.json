@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Orthopedic Memory Foam Seat Cushion\n\n**$59.00**\n\nErgonomic memory foam seat cushion for lower back and tailbone relief. Non-slip base.\n\n- Premium memory foam\n- Coccyx cutout design\n- Machine-washable cover\n\n*Delivery: 2-3 weeks*",
+    "metadata": {
+      "title": "Orthopedic Memory Foam Seat Cushion | SitWell",
+      "description": "Ergonomic memory foam seat cushion for lower back and tailbone relief. Non-slip base. Designed for office chairs and cars.",
+      "ogImage": "https://sitwell-ergonomics.com/img/cushion.jpg",
+      "sourceUrl": "https://sitwell-ergonomics.com/products/orthopedic-seat-cushion"
+    }
+  },
+  "attributes": {
+    "title": "Orthopedic Memory Foam Seat Cushion | SitWell",
+    "description": "Ergonomic memory foam seat cushion for lower back and tailbone relief. Non-slip base. Designed for office chairs and cars.",
+    "mainImageUrl": "https://sitwell-ergonomics.com/img/cushion.jpg",
+    "sourceUrl": "https://sitwell-ergonomics.com/products/orthopedic-seat-cushion",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 59,
+  "storeName": "sitwell-ergonomics.com"
+}

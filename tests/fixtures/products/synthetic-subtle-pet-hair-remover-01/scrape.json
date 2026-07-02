@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Reusable Pet Hair Remover Roller\n\n**$29.99**\n\nChemical-free reusable pet hair remover for couches, beds and clothes. Self-cleaning base — no sticky refills ever.\n\n- Reusable, no refills\n- Works on all fabrics\n- 30-day money-back guarantee\n\n*Ships within 10-18 business days*",
+    "metadata": {
+      "title": "Reusable Pet Hair Remover Roller | FurFree",
+      "description": "Chemical-free reusable pet hair remover for couches and clothes. Self-cleaning base. 30-day guarantee.",
+      "ogImage": "https://furfree-home.com/img/roller.jpg",
+      "sourceUrl": "https://furfree-home.com/products/reusable-pet-hair-remover"
+    }
+  },
+  "attributes": {
+    "title": "Reusable Pet Hair Remover Roller | FurFree",
+    "description": "Chemical-free reusable pet hair remover for couches and clothes. Self-cleaning base. 30-day guarantee.",
+    "mainImageUrl": "https://furfree-home.com/img/roller.jpg",
+    "sourceUrl": "https://furfree-home.com/products/reusable-pet-hair-remover",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 29.99,
+  "storeName": "furfree-home.com"
+}

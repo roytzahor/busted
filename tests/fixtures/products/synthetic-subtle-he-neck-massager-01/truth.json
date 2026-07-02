@@ -1,0 +1,16 @@
+{
+  "url": "https://relaxpro.co.il/products/neck-massager",
+  "category": "dropship_subtle",
+  "capturedAt": "2026-07-02",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.5,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      6,
+      20
+    ],
+    "notes": "Generic electric neck massager, ~$7-18 on AliExpress, retailed ₪149 (~$40). Hebrew store."
+  },
+  "notes": "Synthetic dropship_subtle, Hebrew (non-Latin title → tests translation keyword path)."
+}

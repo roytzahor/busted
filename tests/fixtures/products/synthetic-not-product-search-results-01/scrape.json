@@ -1,0 +1,20 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Search results for \"headphones\"\n\nShowing 1-24 of 248 results\n\n- Sort by: Relevance\n- Filter: Price / Brand / Rating\n\n[Headphone A] [Headphone B] [Headphone C] …",
+    "metadata": {
+      "title": "Search results for \"headphones\"",
+      "description": "Showing 248 results for headphones. Filter by price, brand, rating.",
+      "sourceUrl": "https://shopmart.example/search?q=headphones"
+    }
+  },
+  "attributes": {
+    "title": "Search results for \"headphones\"",
+    "description": "Showing 248 results for headphones. Filter by price, brand, rating.",
+    "mainImageUrl": null,
+    "sourceUrl": "https://shopmart.example/search?q=headphones",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": null,
+  "storeName": "shopmart.example"
+}

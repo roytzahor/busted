@@ -1,0 +1,23 @@
+{
+  "prediction": {
+    "verdict": "legit",
+    "isLikelyDropship": false,
+    "confidence": 0.85,
+    "productCategory": "Apparel",
+    "aliexpressKeywords": [],
+    "reasoningSignals": [
+      "Established retail chain with physical store network",
+      "In-store pickup + returns across branches",
+      "Recognized national brand"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": 34,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"legit\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

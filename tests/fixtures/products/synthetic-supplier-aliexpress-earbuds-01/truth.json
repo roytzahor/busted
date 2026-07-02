@@ -1,0 +1,11 @@
+{
+  "url": "https://www.aliexpress.com/item/1005005999001.html",
+  "category": "aliexpress_itself",
+  "capturedAt": "2026-07-02",
+  "expectedVerdict": "legit",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Already an AliExpress listing — the pipeline must NOT run a supplier search on top of it."
+  },
+  "notes": "Synthetic aliexpress_itself. detectProductSource → supplier_marketplace → rule-based 'legit', search skipped."
+}

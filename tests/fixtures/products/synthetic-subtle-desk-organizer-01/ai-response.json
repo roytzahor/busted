@@ -1,0 +1,32 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.66,
+    "productCategory": "Desk Organizer",
+    "aliexpressKeywords": [
+      "bamboo desk organizer phone stand",
+      "wooden desk organizer pen holder"
+    ],
+    "reasoningSignals": [
+      "2-4 week delivery window indicates overseas fulfillment",
+      "Generic unbranded product with house label applied",
+      "Free worldwide shipping on a low-cost bulky item"
+    ],
+    "missingSignals": [
+      "No manufacturer attribution",
+      "No physical business address"
+    ],
+    "redFlags": [
+      "Long overseas shipping",
+      "House-branded generic commodity"
+    ],
+    "estimatedStorePriceUsd": 44,
+    "estimatedSupplierPriceUsd": 8,
+    "estimatedMarkupPercent": 450
+  },
+  "rawResponse": "{\"verdict\":\"dropship\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

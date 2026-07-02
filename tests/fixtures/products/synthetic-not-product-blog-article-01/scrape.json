@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# The 10 Best Kitchen Gadgets of 2026\n\nBy the Editorial Team · 12 min read\n\nWe tested dozens of gadgets this year. Here are our top picks...\n\n## 1. Air Fryer\n## 2. Smart Scale\n## 3. Immersion Blender\n\n_This article may contain affiliate links._",
+    "metadata": {
+      "title": "The 10 Best Kitchen Gadgets of 2026",
+      "description": "Our editors round up the best kitchen gadgets you can buy this year, from air fryers to smart scales.",
+      "ogImage": "https://gadgetblog.example/img/hero.jpg",
+      "sourceUrl": "https://gadgetblog.example/best-kitchen-gadgets-2026"
+    }
+  },
+  "attributes": {
+    "title": "The 10 Best Kitchen Gadgets of 2026",
+    "description": "Our editors round up the best kitchen gadgets you can buy this year, from air fryers to smart scales.",
+    "mainImageUrl": "https://gadgetblog.example/img/hero.jpg",
+    "sourceUrl": "https://gadgetblog.example/best-kitchen-gadgets-2026",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": null,
+  "storeName": "gadgetblog.example"
+}

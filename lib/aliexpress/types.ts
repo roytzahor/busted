@@ -44,11 +44,13 @@ export interface SupplierMatchResult {
   bestEffortOnly?: boolean;
   searchMeta: {
     keywords: string;
-    provider: "aliexpress_api" | "firecrawl_scrape";
+    provider: "aliexpress_api" | "firecrawl_scrape" | "ebay" | "amazon";
     candidateCount: number;
     winnerProductId: string;
     affiliateLinkValidated: boolean;
-    affiliateProvider: "aliexpress_api" | "admitad" | "direct";
+    affiliateProvider: "aliexpress_api" | "admitad" | "direct" | "ebay";
+    /** Which supplier network produced the winning match. Absent = aliexpress. */
+    sourceNetwork?: "aliexpress" | "ebay" | "amazon" | "temu_aggregator";
     variantMatched?: boolean;
     variantSkuId?: string;
     /** Set when no category vocab entry matched — value is the unresolved category string. */

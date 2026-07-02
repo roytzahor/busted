@@ -610,6 +610,12 @@ async function runAnalysisPipeline(
   let supplierImageMatchSameFunction: boolean | undefined;
   let supplierImageMatchReasoning: string | undefined;
   let supplierBestEffortOnly: boolean | undefined;
+  let supplierNetwork:
+    | "aliexpress"
+    | "ebay"
+    | "amazon"
+    | "temu_aggregator"
+    | undefined;
   let supplierDebug: AnalyzeDebugInfo["supplier"] | undefined;
   let browseCandidates: AliExpressBrowseCandidate[] | undefined;
   let browseQuery: string | undefined;
@@ -682,6 +688,7 @@ async function runAnalysisPipeline(
     supplierImageMatchSameFunction = match.imageMatchSameFunction;
     supplierImageMatchReasoning = match.imageMatchReasoning;
     supplierBestEffortOnly = match.bestEffortOnly;
+    supplierNetwork = match.searchMeta.sourceNetwork ?? "aliexpress";
 
     const imgNote =
       typeof match.imageMatchScore === "number"
@@ -795,6 +802,7 @@ async function runAnalysisPipeline(
     supplierImageMatchSameFunction,
     supplierImageMatchReasoning,
     supplierBestEffortOnly,
+    supplierNetwork,
     sourceType,
     dropshipPrediction: aiResult.prediction,
     ...(browseCandidates !== undefined ? { browseCandidates } : {}),

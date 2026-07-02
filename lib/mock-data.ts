@@ -44,6 +44,8 @@ export interface ProductComparisonResult {
   imageMatchReasoning?: string;
   /** True when no confident match was found — link is shown as "similar product" not exact match. */
   bestEffortOnly?: boolean;
+  /** Supplier network the match came from. Absent = aliexpress. */
+  supplierNetwork?: "aliexpress" | "ebay" | "amazon" | "temu_aggregator";
 }
 
 export interface ScanHistoryItem {

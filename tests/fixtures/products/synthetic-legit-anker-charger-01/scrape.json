@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Anker Nano II 65W USB-C Charger\n\n**$55.99**\n\nGaN II tech in a pocket-size body. Model A2637.\n\n- 2-year warranty\n- ActiveShield temperature monitoring\n- Ships 2-4 business days\n\nAnker · Support: support@anker.com",
+    "metadata": {
+      "title": "Anker Nano II 65W USB-C Charger (711)",
+      "description": "Anker Nano II 65W GaN II fast charger. 2-year warranty. Model A2637. Ships from regional Anker warehouses in 2-4 days.",
+      "ogImage": "https://cdn.anker.com/nano-ii-65w.jpg",
+      "sourceUrl": "https://www.anker.com/products/a2637-nano-ii-65w"
+    }
+  },
+  "attributes": {
+    "title": "Anker Nano II 65W USB-C Charger (711)",
+    "description": "Anker Nano II 65W GaN II fast charger. 2-year warranty. Model A2637. Ships from regional Anker warehouses in 2-4 days.",
+    "mainImageUrl": "https://cdn.anker.com/nano-ii-65w.jpg",
+    "sourceUrl": "https://www.anker.com/products/a2637-nano-ii-65w",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 55.99,
+  "storeName": "anker.com"
+}

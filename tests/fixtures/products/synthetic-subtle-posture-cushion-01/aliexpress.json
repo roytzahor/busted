@@ -1,0 +1,39 @@
+{
+  "keywords": "orthopedic memory foam seat cushion coccyx office chair",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005006220001",
+      "title": "Memory Foam Seat Cushion Orthopedic Coccyx Office Chair Car Pad",
+      "priceUsd": 11.9,
+      "productUrl": "https://www.aliexpress.com/item/1005006220001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/cushion-1.jpg",
+      "orderCount": 9800,
+      "sellerRating": 4.8,
+      "shippingDays": 15,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006220002",
+      "title": "Ergonomic Coccyx Cushion Memory Foam Tailbone Back Pain Relief",
+      "priceUsd": 8.4,
+      "productUrl": "https://www.aliexpress.com/item/1005006220002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/cushion-2.jpg",
+      "orderCount": 5200,
+      "sellerRating": 4.7,
+      "shippingDays": 18,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006220003",
+      "title": "Non-Slip Memory Foam Office Chair Seat Cushion Washable Cover",
+      "priceUsd": 15.6,
+      "productUrl": "https://www.aliexpress.com/item/1005006220003.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/cushion-3.jpg",
+      "orderCount": 2700,
+      "sellerRating": 4.9,
+      "shippingDays": 12,
+      "promotionLink": null
+    }
+  ]
+}

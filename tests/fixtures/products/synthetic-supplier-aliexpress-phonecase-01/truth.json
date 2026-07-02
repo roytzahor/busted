@@ -1,0 +1,11 @@
+{
+  "url": "https://www.aliexpress.com/item/1005005999002.html",
+  "category": "aliexpress_itself",
+  "capturedAt": "2026-07-02",
+  "expectedVerdict": "legit",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Already an AliExpress listing — no supplier search should run."
+  },
+  "notes": "Synthetic aliexpress_itself. Confirms supplier-marketplace short-circuit."
+}

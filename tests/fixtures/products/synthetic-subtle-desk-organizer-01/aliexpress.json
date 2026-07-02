@@ -1,0 +1,39 @@
+{
+  "keywords": "bamboo desk organizer phone stand pen holder",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005006200001",
+      "title": "Bamboo Desk Organizer with Phone Stand Pen Holder Office Storage",
+      "priceUsd": 8.42,
+      "productUrl": "https://www.aliexpress.com/item/1005006200001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/bamboo-org-1.jpg",
+      "orderCount": 6200,
+      "sellerRating": 4.8,
+      "shippingDays": 15,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006200002",
+      "title": "Wooden Bamboo Desktop Organizer Pen Holder Tablet Slot",
+      "priceUsd": 6.9,
+      "productUrl": "https://www.aliexpress.com/item/1005006200002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/bamboo-org-2.jpg",
+      "orderCount": 3100,
+      "sellerRating": 4.7,
+      "shippingDays": 20,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006200003",
+      "title": "Multifunctional Bamboo Office Desk Organizer Storage Box",
+      "priceUsd": 11.5,
+      "productUrl": "https://www.aliexpress.com/item/1005006200003.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/bamboo-org-3.jpg",
+      "orderCount": 1450,
+      "sellerRating": 4.9,
+      "shippingDays": 12,
+      "promotionLink": null
+    }
+  ]
+}

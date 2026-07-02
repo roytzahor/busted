@@ -70,6 +70,8 @@ interface AnalyzeSuccessBase {
   supplierImageMatchReasoning?: string;
   /** True when the link is the closest candidate found, not a confident exact match. */
   supplierBestEffortOnly?: boolean;
+  /** Which supplier network produced the match. Absent = aliexpress. */
+  supplierNetwork?: "aliexpress" | "ebay" | "amazon" | "temu_aggregator";
   sourceType: ProductSourceType;
   dropshipPrediction: DropshipPrediction | null;
   /**

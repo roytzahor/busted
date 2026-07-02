@@ -1,0 +1,12 @@
+{
+  "url": "https://www.castro.com/products/classic-oxford-shirt",
+  "category": "legit_brand",
+  "capturedAt": "2026-07-02",
+  "expectedVerdict": "legit",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Established Israeli fashion chain with physical stores + in-store pickup. Not dropship despite Hebrew."
+  },
+  "notes": "Synthetic legit_brand, Hebrew. FP protection: non-Latin storefront that is a REAL brand (guards against 'Hebrew store == dropship' bias)."
+}

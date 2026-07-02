@@ -1,0 +1,32 @@
+{
+  "prediction": {
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.63,
+    "productCategory": "Seat Cushion",
+    "aliexpressKeywords": [
+      "orthopedic memory foam seat cushion coccyx",
+      "office chair car seat cushion"
+    ],
+    "reasoningSignals": [
+      "2-3 week delivery indicates dropship fulfillment",
+      "Generic coccyx-cutout cushion under a house brand",
+      "Markup consistent with dropship economics"
+    ],
+    "missingSignals": [
+      "No brand track record",
+      "No company registration"
+    ],
+    "redFlags": [
+      "Long shipping window",
+      "Commodity product, house brand"
+    ],
+    "estimatedStorePriceUsd": 59,
+    "estimatedSupplierPriceUsd": 11,
+    "estimatedMarkupPercent": 436
+  },
+  "rawResponse": "{\"verdict\":\"dropship\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

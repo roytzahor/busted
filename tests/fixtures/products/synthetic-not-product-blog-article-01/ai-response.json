@@ -1,0 +1,21 @@
+{
+  "prediction": {
+    "verdict": "not_a_product",
+    "isLikelyDropship": false,
+    "confidence": 0.88,
+    "productCategory": "",
+    "aliexpressKeywords": [],
+    "reasoningSignals": [
+      "Page is an editorial article/listicle, not a product detail page"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": null,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"not_a_product\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

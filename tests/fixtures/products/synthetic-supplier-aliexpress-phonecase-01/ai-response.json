@@ -1,0 +1,7 @@
+{
+  "prediction": null,
+  "rawResponse": "{\"verdict\":null}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": "synthetic: no prediction"
+}
