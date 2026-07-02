@@ -1,0 +1,35 @@
+{
+  "prediction": {
+    "reasoning": "synthetic fixture",
+    "styleTokens": [],
+    "materialPriors": [],
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.72,
+    "productCategory": "Pet Hair Remover",
+    "aliexpressKeywords": [
+      "reusable pet hair remover roller",
+      "self cleaning lint roller pet"
+    ],
+    "reasoningSignals": [
+      "10-18 business day shipping indicates overseas fulfillment",
+      "Well-known viral commodity gadget sold under a house brand",
+      "High markup on a sub-$5 item"
+    ],
+    "missingSignals": [
+      "No brand history",
+      "No warehouse info"
+    ],
+    "redFlags": [
+      "Overseas shipping window",
+      "Generic viral gadget"
+    ],
+    "estimatedStorePriceUsd": 29.99,
+    "estimatedSupplierPriceUsd": 3.5,
+    "estimatedMarkupPercent": 757
+  },
+  "rawResponse": "{\"verdict\":\"dropship\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

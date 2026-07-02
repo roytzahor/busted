@@ -41,6 +41,14 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
   const { storeProduct, supplierProduct, savingsUsd, savingsPercent, cache } = result;
   const matchQuality = result.matchQuality ?? "high";
   const isBestEffort = result.bestEffortOnly === true;
+  // Which marketplace the match came from — labels adapt so an eBay/Amazon
+  // fallback match never renders as "AliExpress".
+  const networkLabel =
+    result.supplierNetwork === "ebay"
+      ? "eBay"
+      : result.supplierNetwork === "amazon"
+        ? "Amazon"
+        : "AliExpress";
   const isUncertainMatch = isBestEffort || matchQuality === "medium" || matchQuality === "low";
   const matchPct =
     typeof result.matchConfidence === "number"
@@ -129,7 +137,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                 >
                   Closest match on{" "}
                   <span className="bg-gradient-to-r from-primary to-amber-400 bg-clip-text text-transparent">
-                    AliExpress
+                    {networkLabel}
                   </span>
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -149,7 +157,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                 </h2>
                 <p className="mt-1 tabular-nums text-sm text-muted-foreground">
                   {formatMoney(storeProduct.priceUsd)} retail vs{" "}
-                  {formatMoney(supplierProduct.priceUsd)} on AliExpress
+                  {formatMoney(supplierProduct.priceUsd)} on {networkLabel}
                 </p>
               </>
             )}
@@ -160,7 +168,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
               <div className="bg-gradient-to-br from-primary to-amber-400 bg-clip-text text-5xl font-black tabular-nums leading-none text-transparent">
                 {formatMoney(supplierProduct.priceUsd)}
               </div>
-              <div className="text-xs text-muted-foreground">on AliExpress</div>
+              <div className="text-xs text-muted-foreground">on {networkLabel}</div>
             </div>
           ) : (
             <div className="text-right">
@@ -211,7 +219,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
         {/* Supplier product — glass card, green tint */}
         <ProductCard
           variant="supplier"
-          label={isBestEffort ? "Closest match on AliExpress" : "Original AliExpress Supplier"}
+          label={isBestEffort ? `Closest match on ${networkLabel}` : `Original ${networkLabel} Supplier`}
           title={supplierProduct.title}
           price={supplierProduct.priceUsd}
           imageUrl={supplierProduct.imageUrl}
@@ -244,8 +252,8 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
             </p>
             <p className="text-muted-foreground">
               {isBestEffort
-                ? "We couldn’t confirm this is the exact same product. Open the AliExpress link and compare images + specs before buying."
-                : <>Our match confidence is only <span className="tabular-nums">{matchPct}%</span>. Open the AliExpress link and compare images + specs to confirm it&apos;s the same product.</>
+                ? `We couldn’t confirm this is the exact same product. Open the ${networkLabel} link and compare images + specs before buying.`
+                : <>Our match confidence is only <span className="tabular-nums">{matchPct}%</span>. Open the {networkLabel} link and compare images + specs to confirm it&apos;s the same product.</>
               }
             </p>
             {result.imageMatchReasoning ? (
@@ -275,7 +283,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <p className="font-semibold">
-              {isBestEffort ? "Shop similar on AliExpress" : "Ready to skip the markup?"}
+              {isBestEffort ? `Shop similar on ${networkLabel}` : "Ready to skip the markup?"}
             </p>
             <p className="text-sm text-muted-foreground">
               {formatOrders(supplierProduct.orderCount)} sold ·{" "}
@@ -315,7 +323,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                   })
                 }
               >
-                {isBestEffort ? "View on AliExpress" : "Buy Original on AliExpress & Save"}
+                {isBestEffort ? `View on ${networkLabel}` : `Buy Original on ${networkLabel} & Save`}
                 <ExternalLink className="ml-1.5 size-4" aria-hidden="true" />
               </a>
             </Button>
@@ -352,7 +360,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
             {isBestEffort ? (
               <>
                 <p className="text-xs font-medium text-muted-foreground">
-                  Closest match on AliExpress
+                  Closest match on {networkLabel}
                 </p>
                 <p className="text-lg font-black leading-tight tabular-nums text-primary">
                   {formatMoney(supplierProduct.priceUsd)}

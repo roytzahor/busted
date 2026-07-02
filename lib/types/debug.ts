@@ -22,12 +22,12 @@ export interface AnalyzeDebugAi {
 
 export interface AnalyzeDebugSupplier {
   keywords: string;
-  provider: "aliexpress_api" | "firecrawl_scrape";
+  provider: "aliexpress_api" | "firecrawl_scrape" | "ebay" | "amazon";
   candidateCount: number;
   winnerProductId: string;
   winnerTitle: string;
   winnerPriceUsd: number;
-  affiliateProvider: "aliexpress_api" | "admitad" | "direct";
+  affiliateProvider: "aliexpress_api" | "admitad" | "direct" | "ebay";
   affiliateLinkValidated: boolean;
   preprocess?: {
     attempted: boolean;

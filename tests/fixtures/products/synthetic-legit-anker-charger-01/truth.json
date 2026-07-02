@@ -1,0 +1,12 @@
+{
+  "url": "https://www.anker.com/products/a2637-nano-ii-65w",
+  "category": "legit_brand",
+  "capturedAt": "2026-07-02",
+  "expectedVerdict": "legit",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Established electronics brand with model number + warranty. Not dropship."
+  },
+  "notes": "Synthetic legit_brand. FP protection for a branded electronics product."
+}

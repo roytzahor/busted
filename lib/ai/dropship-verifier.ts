@@ -1,5 +1,6 @@
 import { getAIClient } from "@/lib/ai/client";
 import type { ScrapedProductAttributes } from "@/lib/scraping/types";
+import type { ProductIdentity } from "@/lib/services/types";
 
 export type DropshipVerdict =
   | "dropship"
@@ -86,6 +87,7 @@ HARD RULES (violating these = wrong output):
 14. DROPSHIP PRODUCT CATEGORIES — The following categories are overwhelmingly dropshipped/fulfilled via third-party services regardless of where the store is located: (a) baby/mother charm necklaces, photo locket jewelry, encrypted-photo jewelry; (b) paint-by-numbers kits; (c) personalized wooden puzzle gifts ("made with CNC technology" is a fulfillment-service red flag, not proof of genuine manufacture — CNC laser/cutting services are widely used by dropship resellers); (d) smart touch bracelets for couples; (e) LED galaxy projectors, posture correctors, massage devices. When a page sells these categories AND has no verifiable manufacturer or brand history AND no price detected, lean strongly toward "dropship" even if the copy sounds professional or claims local production. NOTE: fine jewelry (gold, silver, gemstones sold at $20+ prices) from stores with an established brand-name domain (e.g. brandname.com) is NOT in this list.
 15. NO-PRICE SIGNAL — detectedStorePriceUsd=null on a Shopify /products/ page is a weak dropship signal in combination with other signals. Alone it is not enough.
 16. PORTFOLIO / GALLERY SITES — If the scrape title is a business name (not a product name) and the content describes product TYPES or categories without individual prices or explicit "Add to Cart" / "Buy Now" buttons visible in the scraped content, use "not_a_product". Critical: a "Shop" navigation link, an empty basket indicator (€0 / £0 / $0 / 0 items), or descriptive prose about product types are NOT evidence of a shoppable collection — they appear on every brand homepage and portfolio site. A true "collection_page" requires MULTIPLE distinct items WITH individual prices OR explicit buy CTAs clearly visible in the scraped markdown. When in doubt between "not_a_product" and "collection_page" for a brand homepage with no prices in the scraped content: always choose "not_a_product".
+17. VISION IDENTITY — When a "visionIdentity" object is present it is an image-grounded read of the product (canonicalName = generic function, plus category/productType/visualFeatures/materialGuess). Use it to (a) set productCategory accurately when the title is a brand slug that hides the product ("CapBlast" → canonicalName "bottle cap launcher"), and (b) recognize a generic commodity behind polished marketing copy. It is CORROBORATING evidence only — a genuine brand can also have a clear vision identity, so it never proves "dropship" on its own and never overrides rules 1-16 or the confidence-humility rules. If visionIdentity is absent, judge from the scrape exactly as before.
 
 EXAMPLES:
 
@@ -251,10 +253,27 @@ Output: {
   "estimatedMarkupPercent": null
 }`;
 
+/** Compact, image-grounded identity block surfaced to the verdict prompt.
+ *  Only the fields useful for classification — keeps token cost negligible. */
+function buildVisionIdentityBlock(
+  identity: ProductIdentity,
+): Record<string, unknown> {
+  return {
+    canonicalName: identity.canonicalName,
+    category: identity.category,
+    productType: identity.productType,
+    functionDescription: identity.functionDescription,
+    visualFeatures: identity.visualFeatures.slice(0, 6),
+    materialGuess: identity.materialGuess,
+    confidence: identity.confidence,
+  };
+}
+
 function buildUserPrompt(
   attributes: ScrapedProductAttributes,
   markdownExcerpt: string,
   storePriceUsd: number | null,
+  identity?: ProductIdentity | null,
 ): string {
   // For non-Latin-script titles, an English translation is precomputed in
   // lib/scraping/router.ts. We surface it as `titleTranslation` (alongside
@@ -273,6 +292,7 @@ function buildUserPrompt(
       description: attributes.description.slice(0, 600),
       mainImageUrl: attributes.mainImageUrl,
       detectedStorePriceUsd: storePriceUsd,
+      ...(identity ? { visionIdentity: buildVisionIdentityBlock(identity) } : {}),
       markdownExcerpt: markdownExcerpt.slice(0, 2000),
     },
     null,
@@ -462,6 +482,10 @@ export async function verifyDropshipLikelihood(params: {
   attributes: ScrapedProductAttributes;
   markdownExcerpt: string;
   storePriceUsd: number | null;
+  /** Vision-grounded identity (from ProductIdentifierService). When present it
+   *  is surfaced to the prompt as corroborating evidence; absent = today's
+   *  text-only behavior, so existing callers are unaffected. */
+  identity?: ProductIdentity | null;
 }): Promise<DropshipVerificationResult> {
   let clientModel = process.env.GOOGLE_AI_MODEL ?? "gemini-3.5-flash";
   const attributeCount = countAttributeSignals(params.attributes, params.storePriceUsd);
@@ -479,6 +503,7 @@ export async function verifyDropshipLikelihood(params: {
             params.attributes,
             params.markdownExcerpt,
             params.storePriceUsd,
+            params.identity,
           ),
         },
       ],

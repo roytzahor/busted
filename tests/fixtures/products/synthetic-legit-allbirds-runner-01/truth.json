@@ -1,0 +1,12 @@
+{
+  "url": "https://www.allbirds.com/products/mens-wool-runners",
+  "category": "legit_brand",
+  "capturedAt": "2026-07-02",
+  "expectedVerdict": "legit",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Established DTC brand with domestic fulfillment + sustainability credentials. Must NOT be flagged dropship."
+  },
+  "notes": "Synthetic legit_brand. FP protection: real brand, real warehouse, no dropship tells."
+}

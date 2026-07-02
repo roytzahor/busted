@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# מכשיר עיסוי צוואר חשמלי\n\n**₪149.00**\n\nמכשיר עיסוי צוואר נטען עם חימום ושלוש עוצמות עיסוי.\n\n- נטען ב-USB\n- פונקציית חימום\n- משלוח חינם\n\n*אספקה: 2-3 שבועות*",
+    "metadata": {
+      "title": "מכשיר עיסוי צוואר חשמלי | RelaxPro",
+      "description": "מכשיר עיסוי צוואר חשמלי נטען עם חימום. שלוש עוצמות. משלוח תוך 2-3 שבועות.",
+      "ogImage": "https://relaxpro.co.il/img/neck.jpg",
+      "sourceUrl": "https://relaxpro.co.il/products/neck-massager"
+    }
+  },
+  "attributes": {
+    "title": "מכשיר עיסוי צוואר חשמלי | RelaxPro",
+    "description": "מכשיר עיסוי צוואר חשמלי נטען עם חימום. שלוש עוצמות. משלוח תוך 2-3 שבועות.",
+    "mainImageUrl": "https://relaxpro.co.il/img/neck.jpg",
+    "sourceUrl": "https://relaxpro.co.il/products/neck-massager",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 39.9,
+  "storeName": "relaxpro.co.il"
+}

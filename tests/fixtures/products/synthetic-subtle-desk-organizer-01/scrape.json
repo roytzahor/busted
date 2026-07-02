@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Bamboo Desk Organizer\n\n**$44.00**\n\nHandsome bamboo desk organizer with phone stand and pen slots. Sustainably sourced.\n\n- Natural bamboo\n- Phone + tablet slot\n- Free shipping worldwide\n\n*Estimated delivery: 2-4 weeks*",
+    "metadata": {
+      "title": "Bamboo Desk Organizer — The Workspace Co.",
+      "description": "Handsome bamboo desk organizer with phone stand and pen slots. Sustainably sourced. Ships in 2-4 weeks.",
+      "ogImage": "https://theworkspace-co.com/img/bamboo-organizer.jpg",
+      "sourceUrl": "https://theworkspace-co.com/products/bamboo-desk-organizer"
+    }
+  },
+  "attributes": {
+    "title": "Bamboo Desk Organizer — The Workspace Co.",
+    "description": "Handsome bamboo desk organizer with phone stand and pen slots. Sustainably sourced. Ships in 2-4 weeks.",
+    "mainImageUrl": "https://theworkspace-co.com/img/bamboo-organizer.jpg",
+    "sourceUrl": "https://theworkspace-co.com/products/bamboo-desk-organizer",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 44,
+  "storeName": "theworkspace-co.com"
+}

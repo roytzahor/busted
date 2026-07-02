@@ -1,0 +1,26 @@
+{
+  "prediction": {
+    "reasoning": "synthetic fixture",
+    "styleTokens": [],
+    "materialPriors": [],
+    "verdict": "legit",
+    "isLikelyDropship": false,
+    "confidence": 0.88,
+    "productCategory": "Phone Charger",
+    "aliexpressKeywords": [],
+    "reasoningSignals": [
+      "Named brand with specific model number (A2637)",
+      "2-year warranty + support contact",
+      "Regional fast fulfillment"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": 55.99,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"legit\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

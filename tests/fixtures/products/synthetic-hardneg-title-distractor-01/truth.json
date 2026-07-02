@@ -1,0 +1,16 @@
+{
+  "url": "https://trendypicks-shop.com/products/magnetic-phone-holder",
+  "category": "dropship_obvious",
+  "capturedAt": "2026-07-02",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.5,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      1,
+      8
+    ],
+    "notes": "Pool contains the correct magnetic car mount PLUS a high-volume unrelated distractor (phone charger). Text overlap must rank the correct mount first."
+  },
+  "notes": "Synthetic hard-negative (title distractor). Guards against a high-order-count unrelated item winning on trust alone."
+}

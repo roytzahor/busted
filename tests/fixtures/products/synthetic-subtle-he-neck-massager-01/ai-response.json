@@ -1,0 +1,35 @@
+{
+  "prediction": {
+    "reasoning": "synthetic fixture",
+    "styleTokens": [],
+    "materialPriors": [],
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.68,
+    "productCategory": "Neck Massager",
+    "aliexpressKeywords": [
+      "electric neck massager heating rechargeable",
+      "cervical neck massager usb"
+    ],
+    "reasoningSignals": [
+      "2-3 week delivery window indicates overseas fulfillment",
+      "Generic rechargeable massager under a house brand",
+      "Non-Latin storefront reselling a commodity gadget"
+    ],
+    "missingSignals": [
+      "No brand history",
+      "No importer details"
+    ],
+    "redFlags": [
+      "Long overseas shipping",
+      "Commodity electronic gadget"
+    ],
+    "estimatedStorePriceUsd": 39.9,
+    "estimatedSupplierPriceUsd": 12,
+    "estimatedMarkupPercent": 232
+  },
+  "rawResponse": "{\"verdict\":\"dropship\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

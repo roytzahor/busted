@@ -1,0 +1,11 @@
+{
+  "url": "https://shopmart.example/search?q=headphones",
+  "category": "not_a_product",
+  "capturedAt": "2026-07-02",
+  "expectedVerdict": "not_a_product",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Search-results listing page, not a single product — no supplier search."
+  },
+  "notes": "Synthetic not_a_product. Multi-item results page with no single PDP."
+}

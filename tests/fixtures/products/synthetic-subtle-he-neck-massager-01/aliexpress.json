@@ -1,0 +1,39 @@
+{
+  "keywords": "electric neck massager heating rechargeable cervical",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005006230001",
+      "title": "Electric Neck Massager Heating Rechargeable Cervical Pain Relief",
+      "priceUsd": 12.3,
+      "productUrl": "https://www.aliexpress.com/item/1005006230001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/neck-1.jpg",
+      "orderCount": 11200,
+      "sellerRating": 4.8,
+      "shippingDays": 16,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006230002",
+      "title": "USB Rechargeable Neck Massager 3 Modes Heat Cervical Massage",
+      "priceUsd": 9.75,
+      "productUrl": "https://www.aliexpress.com/item/1005006230002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/neck-2.jpg",
+      "orderCount": 6400,
+      "sellerRating": 4.7,
+      "shippingDays": 19,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006230003",
+      "title": "Portable Electric Cervical Neck Massage Device Heating Function",
+      "priceUsd": 16.9,
+      "productUrl": "https://www.aliexpress.com/item/1005006230003.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/neck-3.jpg",
+      "orderCount": 3300,
+      "sellerRating": 4.9,
+      "shippingDays": 13,
+      "promotionLink": null
+    }
+  ]
+}

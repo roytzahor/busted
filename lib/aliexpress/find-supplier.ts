@@ -58,6 +58,23 @@ import {
   REPUTATION_PENALTY_MULTIPLIER,
 } from "@/lib/aliexpress/reputation";
 
+/**
+ * ── AI-COST ESCALATION LADDER (single source of truth) ──────────────────────
+ * The supplier match escalates through tiers of increasing cost, and each tier
+ * fires ONLY when the cheaper tier below it left the result ambiguous. Keep new
+ * cost-bearing steps on this ladder — don't add unconditional AI calls.
+ *
+ *   Tier 0  Text match          always     ~$0        Jaccard title + price + trust
+ *   Tier 1  SmartMatch (url)    always*    ~$0        raw image-URL arm (*API + image)
+ *   Tier 2  Batch image rerank  score<0.85 ~$0.0001   TEXT_SCORE_SKIP_IMAGE_THRESHOLD
+ *   Tier 3  Deep image match    score<0.85 ~$0.0001   per-candidate verification
+ *   Tier 4  Preprocess+base64   score<0.60 ~$0.039    PREPROCESS_TRIGGER_THRESHOLD,
+ *                                                      gated by isPreprocessEnabled()
+ *
+ * A confident text match (≥0.85) short-circuits the whole ladder — no image
+ * spend. The projected cost of each tier is tracked in scripts/eval/run-fixtures
+ * (COST_USD) and can be budget-gated with `npm run eval -- --enforce-cost`.
+ */
 const TEXT_SCORE_SKIP_IMAGE_THRESHOLD = 0.85;
 
 /**

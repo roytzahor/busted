@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# TWS Wireless Earbuds Bluetooth 5.3\n\n**US $12.99**\n\n4.8 ★ | 12,000+ sold\n\nTWS wireless earbuds, Bluetooth 5.3, ENC noise cancelling, 30h battery.\n\nStore: TopAudio Official Store",
+    "metadata": {
+      "title": "TWS Wireless Earbuds Bluetooth 5.3 Noise Cancelling",
+      "description": "TWS wireless earbuds with Bluetooth 5.3, ENC noise cancelling, 30h battery. Direct from factory store.",
+      "ogImage": "https://ae01.alicdn.com/kf/earbuds-listing.jpg",
+      "sourceUrl": "https://www.aliexpress.com/item/1005005999001.html"
+    }
+  },
+  "attributes": {
+    "title": "TWS Wireless Earbuds Bluetooth 5.3 Noise Cancelling",
+    "description": "TWS wireless earbuds with Bluetooth 5.3, ENC noise cancelling, 30h battery. Direct from factory store.",
+    "mainImageUrl": "https://ae01.alicdn.com/kf/earbuds-listing.jpg",
+    "sourceUrl": "https://www.aliexpress.com/item/1005005999001.html",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 12.99,
+  "storeName": "AliExpress"
+}

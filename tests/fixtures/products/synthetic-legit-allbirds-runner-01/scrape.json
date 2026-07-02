@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Men's Wool Runners — Natural Grey\n\n**$98.00**\n\nOur iconic Wool Runners, made with ZQ Merino wool from certified farms.\n\n- Carbon footprint: 7.1 kg CO2e\n- Machine washable\n- B-Corp certified\n- Free 30-day returns · Ships 3-5 business days\n\nAllbirds · San Francisco, CA",
+    "metadata": {
+      "title": "Men's Wool Runners — Natural Grey | Allbirds",
+      "description": "Allbirds Wool Runners made with ZQ Merino wool. Machine washable. Carbon footprint labeled. Ships in 3-5 business days from US warehouses.",
+      "ogImage": "https://cdn.allbirds.com/image/wool-runner-grey.jpg",
+      "sourceUrl": "https://www.allbirds.com/products/mens-wool-runners"
+    }
+  },
+  "attributes": {
+    "title": "Men's Wool Runners — Natural Grey | Allbirds",
+    "description": "Allbirds Wool Runners made with ZQ Merino wool. Machine washable. Carbon footprint labeled. Ships in 3-5 business days from US warehouses.",
+    "mainImageUrl": "https://cdn.allbirds.com/image/wool-runner-grey.jpg",
+    "sourceUrl": "https://www.allbirds.com/products/mens-wool-runners",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 98,
+  "storeName": "allbirds.com"
+}

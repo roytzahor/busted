@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# חולצת אוקספורד קלאסית\n\n**₪129.90**\n\nחולצת אוקספורד כותנה 100%, גזרה קלאסית.\n\n- כותנה 100%\n- איסוף מהחנות\n- החזרות תוך 30 יום ברשת הסניפים\n\nCastro · רשת אופנה",
+    "metadata": {
+      "title": "חולצת אוקספורד קלאסית | Castro",
+      "description": "חולצת אוקספורד כותנה 100%, גזרה קלאסית. מותג אופנה ישראלי מוכר עם חנויות פיזיות. איסוף מהחנות או משלוח תוך 3-5 ימים.",
+      "ogImage": "https://castro.com/img/oxford-shirt.jpg",
+      "sourceUrl": "https://www.castro.com/products/classic-oxford-shirt"
+    }
+  },
+  "attributes": {
+    "title": "חולצת אוקספורד קלאסית | Castro",
+    "description": "חולצת אוקספורד כותנה 100%, גזרה קלאסית. מותג אופנה ישראלי מוכר עם חנויות פיזיות. איסוף מהחנות או משלוח תוך 3-5 ימים.",
+    "mainImageUrl": "https://castro.com/img/oxford-shirt.jpg",
+    "sourceUrl": "https://www.castro.com/products/classic-oxford-shirt",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 34,
+  "storeName": "castro.com"
+}

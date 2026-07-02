@@ -182,6 +182,7 @@ export function mapAnalyzeResponseToComparison(
         imageMatchSameFunction: response.supplierImageMatchSameFunction,
         imageMatchReasoning: response.supplierImageMatchReasoning,
         bestEffortOnly: response.supplierBestEffortOnly,
+        supplierNetwork: response.supplierNetwork ?? "aliexpress",
       },
       dropshipAnalysis: null,
       browse: null,

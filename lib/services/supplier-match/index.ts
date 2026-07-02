@@ -13,6 +13,10 @@
 import { isSupplierSearchEnabled } from "@/lib/aliexpress/supplier-enabled";
 import { findAliExpressSupplier } from "@/lib/aliexpress/find-supplier";
 import {
+  findCrossNetworkSupplier,
+  isMultiSupplierEnabled,
+} from "@/lib/supplier/fallback-match";
+import {
   AliExpressSearchError,
   type SupplierMatchResult,
 } from "@/lib/aliexpress/types";
@@ -69,24 +73,50 @@ export async function findSupplier(
     emit("find:start", "Running supplier search", {
       keywordSource: input.identity ? "vision-grounded-identity" : "text-only-verdict",
     });
+
+    const fallbackInput = {
+      attributes: input.attributes,
+      storePriceUsd: input.storePriceUsd,
+      productCategory: input.prediction?.productCategory,
+      aiKeywords: input.prediction?.aliexpressKeywords,
+      identity: input.identity ?? null,
+    };
+    const runFallback = (): Promise<SupplierMatchResult | null> =>
+      isMultiSupplierEnabled()
+        ? findCrossNetworkSupplier(fallbackInput)
+        : Promise.resolve(null);
+
+    const emitMatch = (match: SupplierMatchResult, source: string): void => {
+      emit(
+        "find:done",
+        `Match: ${match.searchMeta.winnerProductId} (${(match.matchConfidence * 100).toFixed(0)}% confidence, ${source})`,
+        {
+          winnerProductId: match.searchMeta.winnerProductId,
+          candidateCount: match.searchMeta.candidateCount,
+          matchConfidence: match.matchConfidence,
+          matchQuality: match.matchQuality,
+          imageMatchScore: match.imageMatchScore,
+          sourceNetwork: match.searchMeta.sourceNetwork ?? "aliexpress",
+        },
+      );
+    };
+
     try {
-      const match = await findAliExpressSupplier({
-        attributes: input.attributes,
-        storePriceUsd: input.storePriceUsd,
-        productCategory: input.prediction?.productCategory,
-        aiKeywords: input.prediction?.aliexpressKeywords,
-        identity: input.identity ?? null,
-      });
+      const aeMatch = await findAliExpressSupplier(fallbackInput);
 
-      emit("find:done", `Match: ${match.searchMeta.winnerProductId} (${(match.matchConfidence * 100).toFixed(0)}% confidence)`, {
-        winnerProductId: match.searchMeta.winnerProductId,
-        candidateCount: match.searchMeta.candidateCount,
-        matchConfidence: match.matchConfidence,
-        matchQuality: match.matchQuality,
-        imageMatchScore: match.imageMatchScore,
-      });
+      // Cost short-circuit: a confident AliExpress match wins outright — no
+      // cross-network fan-out. Only escalate to eBay/Amazon when AliExpress is
+      // weak (best-effort). Highest confidence wins across networks.
+      if (aeMatch.bestEffortOnly) {
+        const alt = await runFallback();
+        if (alt && alt.matchConfidence > aeMatch.matchConfidence) {
+          emitMatch(alt, `cross-network:${alt.searchMeta.sourceNetwork}`);
+          return ok<SupplierMatchOutput>({ kind: "matched", match: alt });
+        }
+      }
 
-      return ok<SupplierMatchOutput>({ kind: "matched", match });
+      emitMatch(aeMatch, "aliexpress");
+      return ok<SupplierMatchOutput>({ kind: "matched", match: aeMatch });
     } catch (e) {
       if (e instanceof AliExpressSearchError) {
         const isSoftSkip =
@@ -94,6 +124,13 @@ export async function findSupplier(
           e.code === "ALIEXPRESS_NO_RESULTS";
         emit("find:soft-skip", e.message, { code: e.code });
         if (isSoftSkip) {
+          // AliExpress found nothing usable — try the other networks before
+          // giving up, so a scan still returns an affiliate link when possible.
+          const alt = await runFallback();
+          if (alt) {
+            emitMatch(alt, `cross-network:${alt.searchMeta.sourceNetwork}`);
+            return ok<SupplierMatchOutput>({ kind: "matched", match: alt });
+          }
           return ok<SupplierMatchOutput>({ kind: "no_match", reason: e.message });
         }
         return err<SupplierMatchOutput>({

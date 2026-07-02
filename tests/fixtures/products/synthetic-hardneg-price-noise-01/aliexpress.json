@@ -1,0 +1,39 @@
+{
+  "keywords": "mini usb humidifier led portable desktop 300ml",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005006300001",
+      "title": "Mini USB Humidifier LED Night Light Portable Desktop 300ml Air",
+      "priceUsd": 5.2,
+      "productUrl": "https://www.aliexpress.com/item/1005006300001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/hum-1.jpg",
+      "orderCount": 18400,
+      "sellerRating": 4.8,
+      "shippingDays": 15,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006300002",
+      "title": "Industrial Ultrasonic Humidifier Commercial Machine 20L Warehouse",
+      "priceUsd": 9184233,
+      "productUrl": "https://www.aliexpress.com/item/1005006300002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/hum-2.jpg",
+      "orderCount": 12,
+      "sellerRating": 4.2,
+      "shippingDays": 30,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006300003",
+      "title": "Mini Humidifier Portable Aroma Diffuser Deluxe Bundle Gift Box",
+      "priceUsd": 399,
+      "productUrl": "https://www.aliexpress.com/item/1005006300003.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/hum-3.jpg",
+      "orderCount": 40,
+      "sellerRating": 4.9,
+      "shippingDays": 12,
+      "promotionLink": null
+    }
+  ]
+}

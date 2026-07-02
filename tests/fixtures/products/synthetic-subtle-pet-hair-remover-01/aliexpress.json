@@ -1,0 +1,39 @@
+{
+  "keywords": "reusable pet hair remover roller self cleaning",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005006210001",
+      "title": "Reusable Pet Hair Remover Roller Self-Cleaning Lint Dog Cat Fur",
+      "priceUsd": 3.21,
+      "productUrl": "https://www.aliexpress.com/item/1005006210001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/roller-1.jpg",
+      "orderCount": 22100,
+      "sellerRating": 4.8,
+      "shippingDays": 14,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006210002",
+      "title": "Self Cleaning Pet Hair Remover Reusable Lint Roller Sofa Bed",
+      "priceUsd": 2.55,
+      "productUrl": "https://www.aliexpress.com/item/1005006210002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/roller-2.jpg",
+      "orderCount": 15400,
+      "sellerRating": 4.7,
+      "shippingDays": 16,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006210003",
+      "title": "Double Sided Pet Fur Remover Roller Washable Reusable",
+      "priceUsd": 4.8,
+      "productUrl": "https://www.aliexpress.com/item/1005006210003.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/roller-3.jpg",
+      "orderCount": 8900,
+      "sellerRating": 4.9,
+      "shippingDays": 13,
+      "promotionLink": null
+    }
+  ]
+}
