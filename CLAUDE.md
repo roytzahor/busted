@@ -10,7 +10,7 @@ Brand name in code: "Busted" (SVG aria-label). Repo name is "BuyPass".
 - **UI**: Tailwind CSS + Radix UI + shadcn/ui (`components/ui/`). All className merging goes through `cn()` in `lib/utils.ts` — the most-connected node in the graph (63 edges).
 - **Database**: Prisma + Neon Postgres. Schema is managed via `prisma/`. Client is `@prisma/client`.
 - **AI**: `lib/ai/client.ts` provides a unified `AIClient` that wraps Google Generative AI (`@google/generative-ai`). Two AI modules: `dropship-verifier.ts` and `supplier-marketplace-analysis.ts`.
-- **Scraping**: Firecrawl (`lib/scraping/firecrawl.ts`) as primary; Playwright (`lib/scraping/playwright-fallback.ts`) as fallback. Entry point: `scrapeProductUrl()` in `lib/scraping/router.ts`.
+- **Scraping**: Crawlbase JS-render (primary) → Firecrawl markdown (fallback) → Playwright headless (last resort). Order is dynamic: `lib/learning/priors.ts` hoists a domain's `preferredProvider` and drops `skipProvider` at runtime. Entry point: `scrapeProductUrl()` in `lib/scraping/router.ts`.
 - **Affiliate**: Admitad integration in `lib/affiliate/` (`convert-link.ts`, `validate-link.ts`).
 - **AliExpress**: OAuth + product search in `lib/aliexpress/`. API client + scrape fallback.
 
@@ -245,3 +245,7 @@ transition-colors hover:border-white/12 hover:bg-white/[0.05]
 - **`IMAGE_MATCH_ENABLED=false`** in env is the emergency kill switch — leave the code path intact even when disabled.
 - When changing `DropshipPrediction` shape, update `parseCachedAiPrediction()` in `lib/types/cache.ts` to keep back-compat for older cached entries.
 - New eval fixtures must include a hand-edited `truth.json` — never trust the auto-stubbed one from `eval:capture`.
+
+## Lessons
+
+Read `.claude/lessons.md` before non-trivial work. Append a one-line lesson whenever something goes wrong or an invariant surprises you.
