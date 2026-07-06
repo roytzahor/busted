@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
+import type { PresenceTier } from "@/lib/analyze/presence-tier";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
 
 /**
@@ -74,6 +75,12 @@ interface AnalyzeSuccessBase {
   supplierNetwork?: "aliexpress" | "ebay" | "amazon" | "temu_aggregator";
   sourceType: ProductSourceType;
   dropshipPrediction: DropshipPrediction | null;
+  /**
+   * Extension badge contract — server-computed from the verdict so the UI
+   * can never be more confident than the engine. Absent on partial/error
+   * responses, which clients must treat as "silent".
+   */
+  presenceTier?: PresenceTier;
   /**
    * Browse-mode candidates — present only when the AI verdict is
    * `collection_page`. Populated by a single keyword search against the

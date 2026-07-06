@@ -18,11 +18,14 @@ import { detectProductSource } from "@/lib/scraping/detect-source";
 import type { ScrapedProductAttributes } from "@/lib/scraping/types";
 import { runService } from "@/lib/services/run";
 import { err, ok, type ProductIdentity, type Result } from "@/lib/services/types";
+import { isTier0Enabled, runStoreFingerprint } from "@/lib/tier0/store-fingerprint";
 
 export interface DropshipVerdictInput {
   url: string;
   attributes: ScrapedProductAttributes;
   markdown: string;
+  /** Raw page HTML when the scraper captured it — enables Tier-0 app-footprint signals. */
+  html?: string;
   storePriceUsd: number | null;
   /** Vision-grounded identity from ProductIdentifierService, when available.
    *  Passed to the AI verifier as corroborating evidence. */
@@ -63,6 +66,38 @@ export async function verify(
         error: null,
         isSupplierListing: true,
       });
+    }
+
+    // Tier-0 fingerprint gate — deterministic multi-signal detection of
+    // template dropship stores. Fires only on overwhelming static evidence
+    // (see lib/tier0/store-fingerprint.ts) and short-circuits the AI call.
+    // TIER0_FINGERPRINT_ENABLED=false is the kill switch.
+    if (isTier0Enabled()) {
+      const tier0 = runStoreFingerprint({
+        attributes: input.attributes,
+        markdown: input.markdown,
+        html: input.html,
+        storePriceUsd: input.storePriceUsd,
+      });
+      if (tier0.fired && tier0.prediction) {
+        emit(
+          "verify:tier0",
+          `Tier-0 fingerprint verdict in ${tier0.elapsedMs.toFixed(1)}ms — AI call skipped`,
+          {
+            verdict: tier0.prediction.verdict,
+            confidence: tier0.prediction.confidence,
+            signals: tier0.signals,
+          },
+        );
+        return ok<DropshipVerdictOutput>({
+          prediction: tier0.prediction,
+          provider: "rules",
+          model: "tier0-store-fingerprint",
+          rawResponse: JSON.stringify(tier0.prediction, null, 2),
+          error: null,
+          isSupplierListing: false,
+        });
+      }
     }
 
     emit("verify:ai", "Calling AI dropship verifier", {
