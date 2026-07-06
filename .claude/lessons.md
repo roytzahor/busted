@@ -13,3 +13,5 @@ Project-specific corrections. One line per lesson, newest last — same protocol
 - [2026-07-06] [cache] When changing the `DropshipPrediction` shape, update `parseCachedAiPrediction()` in `lib/types/cache.ts` — older cached entries (including legacy boolean-only ones) must keep parsing.
 - [2026-07-06] [scraping] Default scrape order is crawlbase → firecrawl → playwright; `lib/learning/priors.ts` can override it per-domain at runtime — never hardcode the order in the route handler.
 - [2026-07-06] [ui] Dark mode is the only mode — `<html>` always has the `dark` class; never add a light-mode toggle without explicit instruction. All className merging goes through `cn()`.
+- [2026-07-06] [tier0] When adding deterministic verdict rules, measure FIRE RATE on dropship fixtures, not just false-fire rate — the first rule set had 0 false fires and 0 recall (required 2 shipping signals; real pages carry 1 shipping + template copy). Tune against the fixture signal distribution.
+- [2026-07-06] [extension] chrome.runtime messages from a popup have NO sender.tab (only content scripts do) — the popup must pass tabId/url explicitly in the message payload.
