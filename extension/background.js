@@ -1,0 +1,276 @@
+/**
+ * background.js — MV3 Service Worker for Busted
+ * 
+ * Responsibilities:
+ * - Cache scan results per tab and per session URL
+ * - Auto-scan tabs on page complete (feature-flagged)
+ * - Set badge (flame/amber/silent) per tab
+ * - Handle on-demand scan via popup message
+ * - Fetch with 45s timeout; silence on error
+ */
+
+// Per-tab cache: Map<tabId, result>
+const tabCache = new Map();
+
+// Session URL cache: Map<url, result>, capped at 50 entries (LRU)
+const sessionCache = new Map();
+const SESSION_CACHE_CAP = 50;
+
+// Per-tab debounce timers: Map<tabId, timeoutId>
+const debounceTimers = new Map();
+const DEBOUNCE_MS = 1500;
+
+// API base, loaded from storage at startup
+let apiBase = 'http://localhost:3000';
+
+// Load apiBase from storage on startup
+chrome.storage.sync.get(['apiBase'], (result) => {
+  if (result.apiBase) {
+    apiBase = result.apiBase;
+  }
+});
+
+// Listen for apiBase changes
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.apiBase) {
+    apiBase = changes.apiBase.newValue || 'http://localhost:3000';
+  }
+});
+
+/**
+ * Fetch result from API, handling timeout and errors gracefully.
+ * @param {string} url - Product URL to scan
+ * @returns {Promise<object>} - Result object with presenceTier (defaults to "silent" on error)
+ */
+async function fetchScanResult(url) {
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), 45000);
+
+  try {
+    const response = await fetch(`${apiBase}/api/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+      signal: abortController.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    // Non-200 response or status "error" → treat as silent
+    if (!response.ok || response.status !== 200) {
+      return { presenceTier: 'silent', error: true };
+    }
+
+    const data = await response.json();
+
+    // If API returns status "error" or missing status, treat as silent
+    if (!data.status || data.status === 'error') {
+      return { presenceTier: 'silent', error: true };
+    }
+
+    // Normalize: missing presenceTier defaults to "silent"
+    if (!data.presenceTier) {
+      data.presenceTier = 'silent';
+    }
+
+    return data;
+  } catch (err) {
+    // Any error (timeout, network, parse, etc.) → silent
+    clearTimeout(timeoutId);
+    return { presenceTier: 'silent', error: true };
+  }
+}
+
+/**
+ * Set badge for a tab based on presenceTier.
+ * @param {number} tabId
+ * @param {string} presenceTier - "flame" | "amber" | "silent"
+ */
+function setBadgeForTab(tabId, presenceTier) {
+  let badgeText = '';
+  let badgeColor = '';
+
+  if (presenceTier === 'flame') {
+    badgeText = '🔥';
+    badgeColor = '#E4572E';
+  } else if (presenceTier === 'amber') {
+    badgeText = '!';
+    badgeColor = '#D99A2B';
+  }
+  // "silent" → no badge
+
+  chrome.action.setBadgeText({ text: badgeText, tabId });
+  if (badgeColor) {
+    chrome.action.setBadgeBackgroundColor({ color: badgeColor, tabId });
+  }
+}
+
+/**
+ * Clear badge and caches for a tab (e.g., on navigation or tab close).
+ * @param {number} tabId
+ */
+function clearTabState(tabId) {
+  chrome.action.setBadgeText({ text: '', tabId });
+  tabCache.delete(tabId);
+  const timer = debounceTimers.get(tabId);
+  if (timer) {
+    clearTimeout(timer);
+    debounceTimers.delete(tabId);
+  }
+}
+
+/**
+ * Perform a scan: fetch result, cache it, set badge.
+ * @param {number} tabId
+ * @param {string} url
+ * @returns {Promise<object>}
+ */
+async function scanTab(tabId, url) {
+  // Check session cache first
+  if (sessionCache.has(url)) {
+    const cached = sessionCache.get(url);
+    tabCache.set(tabId, cached);
+    setBadgeForTab(tabId, cached.presenceTier);
+    return cached;
+  }
+
+  // Fetch from API
+  const result = await fetchScanResult(url);
+
+  // Cache result
+  tabCache.set(tabId, result);
+  sessionCache.set(url, result);
+
+  // Enforce LRU cap on session cache
+  if (sessionCache.size > SESSION_CACHE_CAP) {
+    const oldestKey = sessionCache.keys().next().value;
+    sessionCache.delete(oldestKey);
+  }
+
+  // Set badge
+  setBadgeForTab(tabId, result.presenceTier);
+
+  return result;
+}
+
+/**
+ * Check if a URL should be auto-scanned.
+ * Skip: localhost, obvious non-shopping hosts, non-http(s).
+ * @param {string} url
+ * @returns {boolean}
+ */
+function shouldAutoScan(url) {
+  // Only http(s)
+  if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    return false;
+  }
+
+  try {
+    const u = new URL(url);
+    const domain = u.hostname.toLowerCase();
+
+    // Skip non-shopping hosts
+    const skipDomains = [
+      'google.',
+      'youtube.',
+      'github.',
+      'gmail',
+      'mail.',
+      'docs.',
+      'localhost',
+      '127.0.0.1',
+    ];
+
+    for (const skip of skipDomains) {
+      if (domain.includes(skip) || domain === skip) {
+        return false;
+      }
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Listen for tab updates: if page loads completely and auto-scan is on, scan it
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // Navigation to a new URL invalidates the previous result — clear the
+  // badge immediately so a stale 🔥 never lingers on an unrelated page.
+  if (changeInfo.url) {
+    clearTabState(tabId);
+  }
+
+  if (changeInfo.status !== 'complete' || !tab.url) {
+    return;
+  }
+
+  // Check if auto-scan is enabled
+  chrome.storage.sync.get(['autoScan'], (result) => {
+    if (!result.autoScan) {
+      return;
+    }
+
+    // Skip obvious non-shopping hosts and localhost
+    if (!shouldAutoScan(tab.url)) {
+      return;
+    }
+
+    // Skip if already in session cache
+    if (sessionCache.has(tab.url)) {
+      const cached = tabCache.get(tabId) || sessionCache.get(tab.url);
+      tabCache.set(tabId, cached);
+      setBadgeForTab(tabId, cached.presenceTier);
+      return;
+    }
+
+    // Debounce per tab
+    const existingTimer = debounceTimers.get(tabId);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+    }
+
+    const newTimer = setTimeout(() => {
+      debounceTimers.delete(tabId);
+      scanTab(tabId, tab.url).catch(() => {
+        // Already handled in fetchScanResult, no need to escalate
+      });
+    }, DEBOUNCE_MS);
+
+    debounceTimers.set(tabId, newTimer);
+  });
+});
+
+// Listen for tab removal: clear state
+chrome.tabs.onRemoved.addListener((tabId) => {
+  clearTabState(tabId);
+});
+
+// Listen for messages from popup
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  // Handle SCAN_ACTIVE_TAB: scan the tab the popup passed. sender.tab is
+  // undefined for popup messages, so tabId/url must come from the request.
+  if (request.type === 'SCAN_ACTIVE_TAB') {
+    if (typeof request.tabId !== 'number' || !request.url) {
+      sendResponse({ presenceTier: 'silent', error: true });
+      return;
+    }
+
+    scanTab(request.tabId, request.url).then((result) => {
+      sendResponse(result);
+    }).catch(() => {
+      sendResponse({ presenceTier: 'silent', error: true });
+    });
+
+    // Return true to indicate we'll respond asynchronously
+    return true;
+  }
+
+  // Handle GET_RESULT: return cached result for a tab
+  if (request.type === 'GET_RESULT') {
+    const { tabId } = request;
+    const result = tabCache.get(tabId);
+    sendResponse(result || { presenceTier: 'silent' });
+    return;
+  }
+});

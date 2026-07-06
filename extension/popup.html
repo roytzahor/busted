@@ -1,30 +1,108 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Busted</title>
-    <link rel="stylesheet" href="popup.css" />
-  </head>
-  <body>
-    <header>
-      <span class="logo" aria-hidden="true">🔥</span>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Busted</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <!-- Brand row -->
+  <div class="brand-row">
+    <div class="brand">
       <h1>Busted</h1>
-    </header>
+      <p>Smoke alarm, not weather forecast.</p>
+    </div>
+  </div>
 
-    <p class="tagline">They're busted. We got you.</p>
+  <!-- Idle state: scan button + settings -->
+  <section id="state-idle" class="state hidden">
+    <button id="scan-button" class="scan-button">Scan this page</button>
+    
+    <div class="settings-section">
+      <label class="toggle-label">
+        <input type="checkbox" id="auto-scan-toggle" />
+        <span>Auto-scan enabled</span>
+      </label>
+      
+      <div id="settings-expanded" class="settings-expanded hidden">
+        <label for="api-base-input" class="input-label">API Base URL</label>
+        <input
+          id="api-base-input"
+          type="text"
+          placeholder="http://localhost:3000"
+          class="api-input"
+        />
+        <button id="save-api-button" class="save-button">Save</button>
+      </div>
 
-    <button id="bust-current" type="button">
-      Bust this page
-    </button>
+      <button id="settings-toggle" class="settings-toggle">⚙️ Settings</button>
+    </div>
+  </section>
 
-    <a id="open-home" href="https://buy-pass-silk.vercel.app/" target="_blank">
-      Open Busted.app
-    </a>
+  <!-- Scanning state: pulsing indicator -->
+  <section id="state-scanning" class="state hidden">
+    <div class="scanning-indicator">
+      <div class="pulse"></div>
+      <p>Scanning…</p>
+    </div>
+  </section>
 
-    <p class="footer">
-      Spot the dropship · Find the source
-    </p>
+  <!-- Flame result state: 🔥 bust panel -->
+  <section id="state-flame" class="state hidden">
+    <div class="result-header flame">
+      <h2>🔥 Busted.</h2>
+    </div>
 
-    <script src="popup.js"></script>
-  </body>
+    <div class="result-content">
+      <div class="product-title-row">
+        <p id="flame-product-title" class="product-title"></p>
+      </div>
+
+      <div class="price-comparison">
+        <div class="price-block">
+          <p class="price-label">Store Price</p>
+          <p id="flame-store-price" class="price struck-through"></p>
+        </div>
+        <div class="price-block">
+          <p class="price-label">Supplier Price</p>
+          <p id="flame-supplier-price" class="price success"></p>
+        </div>
+      </div>
+
+      <div class="markup-stat">
+        <p class="stat-value" id="flame-markup"></p>
+        <p class="stat-label">Markup</p>
+      </div>
+
+      <p class="confidence" id="flame-confidence"></p>
+
+      <button id="flame-cta-button" class="cta-button hidden">
+        See the source →
+      </button>
+    </div>
+  </section>
+
+  <!-- Amber result state: cautious panel -->
+  <section id="state-amber" class="state hidden">
+    <div class="result-header amber">
+      <h2>⚠️ Dropship signals detected</h2>
+    </div>
+
+    <div class="result-content amber-content">
+      <p class="confidence" id="amber-confidence"></p>
+      <p class="reasoning" id="amber-reasoning"></p>
+    </div>
+  </section>
+
+  <!-- Silent result state: calm all-clear -->
+  <section id="state-silent" class="state hidden">
+    <div class="result-header silent">
+      <h2>✓ Nothing to report on this page.</h2>
+    </div>
+    <p class="silent-subtext">When we speak, we're sure.</p>
+  </section>
+
+  <script src="popup.js"></script>
+</body>
 </html>
