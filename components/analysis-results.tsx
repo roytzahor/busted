@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { useMoney } from "@/components/currency-provider";
+import { useCurrency, useMoney } from "@/components/currency-provider";
+import { estimateLandedCost } from "@/lib/pricing/landed-cost";
 import { MatchFeedback } from "@/components/match-feedback";
 import { ProductImage } from "@/components/product-image";
 import { ShareButton } from "@/components/share-button";
@@ -415,6 +416,38 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
   );
 }
 
+/**
+ * "≈ $X landed" under the supplier price — import VAT for the user's market
+ * (keyed by their display currency). Renders nothing when there is no VAT to
+ * disclose (US de minimis, IL under-$75 exemption): silence over noise.
+ */
+function LandedCostLine({
+  itemUsd,
+  shippingUsd,
+}: {
+  itemUsd: number;
+  shippingUsd: number | null;
+}) {
+  const { currency, formatMoney } = useCurrency();
+  const estimate = estimateLandedCost({ itemUsd, shippingUsd, currency });
+  if (estimate.vatUsd <= 0) return null;
+  return (
+    <p
+      className="tabular-nums text-xs text-muted-foreground"
+      title={estimate.notes.join(" ")}
+    >
+      ≈{" "}
+      <span className="font-semibold text-foreground">
+        {formatMoney(estimate.landedUsd)}
+      </span>{" "}
+      landed{" "}
+      <span className="text-muted-foreground/70">
+        (incl. {Math.round(estimate.vatRate * 100)}% import VAT)
+      </span>
+    </p>
+  );
+}
+
 interface ProductCardProps {
   variant: "store" | "supplier";
   label: string;
@@ -553,6 +586,11 @@ function ProductCard({
               (+{formatMoney(shippingCostUsd)} ship)
             </span>
           </p>
+        ) : null}
+
+        {/* Landed cost — the honest total after import VAT for the user's market */}
+        {!isStore ? (
+          <LandedCostLine itemUsd={price} shippingUsd={shippingCostUsd ?? null} />
         ) : null}
       </div>
 
