@@ -1,0 +1,32 @@
+{
+  "prediction": {
+    "reasoning": "synthetic fixture",
+    "styleTokens": [],
+    "materialPriors": [],
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.86,
+    "productCategory": "Galaxy Star Projector",
+    "aliexpressKeywords": [
+      "galaxy star projector",
+      "led nebula night light projector"
+    ],
+    "reasoningSignals": [
+      "DSers dropship fulfillment app script present in page source",
+      "Free worldwide shipping + 'today only' urgency template copy",
+      "Well-known viral dropship gadget category"
+    ],
+    "missingSignals": [],
+    "redFlags": [
+      "Fulfillment app footprint",
+      "Urgency template copy"
+    ],
+    "estimatedStorePriceUsd": 39.99,
+    "estimatedSupplierPriceUsd": 8,
+    "estimatedMarkupPercent": 400
+  },
+  "rawResponse": "{\"verdict\":\"dropship\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

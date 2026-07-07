@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Trail Runner 2\n\n**$129.00**\n\nOur flagship trail running shoe, redesigned. Vibram outsole, recycled knit upper, made in our Portugal factory.\n\nShipping: domestic orders arrive in 2-4 days. International orders: please allow 7-10 business days for delivery.",
+    "metadata": {
+      "title": "Trail Runner 2 — Atlas Footwear",
+      "description": "Our flagship trail running shoe, redesigned. Vibram outsole, recycled knit upper, made in our Portugal factory. Free returns for 60 days.",
+      "ogImage": "https://atlasfootwear.com/img/trail-runner-2.jpg",
+      "sourceUrl": "https://atlasfootwear.com/products/trail-runner-2"
+    }
+  },
+  "attributes": {
+    "title": "Trail Runner 2 — Atlas Footwear",
+    "description": "Our flagship trail running shoe, redesigned. Vibram outsole, recycled knit upper, made in our Portugal factory. Free returns for 60 days.",
+    "mainImageUrl": "https://atlasfootwear.com/img/trail-runner-2.jpg",
+    "sourceUrl": "https://atlasfootwear.com/products/trail-runner-2",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 129,
+  "storeName": "atlasfootwear.com"
+}

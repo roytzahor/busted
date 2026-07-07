@@ -1,0 +1,12 @@
+{
+  "url": "https://atlasfootwear.com/products/trail-runner-2",
+  "category": "legit_brand",
+  "capturedAt": "2026-07-07",
+  "expectedVerdict": "legit",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Established brand with own factory — no supplier match expected."
+  },
+  "notes": "Synthetic tier0 NEGATIVE: exactly one shipping-policy signal (7-10 day international window) and zero template signals. Tier-0 MUST NOT fire on a single signal."
+}

@@ -1,0 +1,22 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# Galaxy Star Projector\n\n**$39.99** ~~$79.99~~ 50% off today only!\n\nTransform any room into a galaxy. LED star projector with nebula cloud effects.\n\n- Free worldwide shipping\n- Remote control + timer\n- Not sold in stores",
+    "html": "<html><head><meta name=\"generator\" content=\"Shopify\"><script src=\"https://cdn.shopify.com/extensions/dsers-fulfillment/assets/app.js\" defer></script></head><body><h1>Galaxy Star Projector</h1><p>Free worldwide shipping. 50% off today only!</p></body></html>",
+    "metadata": {
+      "title": "Galaxy Star Projector — Lumina Glow",
+      "description": "Transform any room into a galaxy. LED star projector with nebula cloud effects, remote control and built-in timer.",
+      "ogImage": "https://lumina-glow.shop/img/galaxy-projector.jpg",
+      "sourceUrl": "https://lumina-glow.shop/products/galaxy-star-projector"
+    }
+  },
+  "attributes": {
+    "title": "Galaxy Star Projector — Lumina Glow",
+    "description": "Transform any room into a galaxy. LED star projector with nebula cloud effects, remote control and built-in timer.",
+    "mainImageUrl": "https://lumina-glow.shop/img/galaxy-projector.jpg",
+    "sourceUrl": "https://lumina-glow.shop/products/galaxy-star-projector",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 39.99,
+  "storeName": "lumina-glow.shop"
+}

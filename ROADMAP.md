@@ -82,8 +82,10 @@ are tightened with data, not vibes.
 5. ◐ Instant badge, no scrape: quick-lookup v2 returns `presenceTier` from
    cached per-URL scans; extension badges passively on every page load.
    Domain-level (store-wide) verdicts still open.
-6. ☐ Grow fixtures toward 300 via synthetic seeder + captures; precision gate
-   in CI.
+6. ◐ Precision gate in CI: `.github/workflows/eval.yml` runs lint + tsc +
+   `eval --skip-ai --enforce-cost` on every PR (fails on any fixture failure
+   or Tier-0 false fire). Corpus at 51 (added 4 Tier-0 positives/negatives);
+   growth toward 300 needs live captures (blocked on creds).
 
 **Exit criteria:** shown-verdict precision ≥ 95% on eval, extension usable
 end-to-end against local pipeline, first shareable card.

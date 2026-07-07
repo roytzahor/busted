@@ -1,0 +1,47 @@
+name: Eval — precision gate
+
+# The regression guardrail for the verdict pipeline. Replays the fixture
+# corpus with cached AI responses (zero API spend) and fails on:
+#   - any verdict/supplier fixture failure
+#   - any Tier-0 fingerprint false fire (non-dropship fixture firing)
+#   - mean projected scan cost over budget (--enforce-cost)
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  eval:
+    name: Lint + typecheck + fixture replay
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # npm run eval passes --env-file=.env to tsx, which errors when the
+      # file is missing. The replay needs no secrets — an empty file is fine.
+      - name: Create empty .env
+        run: touch .env
+
+      - name: Fixture replay (cached AI, cost-enforced)
+        run: npm run eval -- --skip-ai --enforce-cost

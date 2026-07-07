@@ -1,0 +1,16 @@
+{
+  "url": "https://alignpro-wellness.com/products/posture-corrector-back-brace",
+  "category": "dropship_obvious",
+  "capturedAt": "2026-07-07",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      3,
+      12
+    ],
+    "notes": "Generic posture corrector, $4-9 on AliExpress, retailed at $35."
+  },
+  "notes": "Synthetic tier0 positive: overseas warehouse + 10-20 day window + tracking disclaimer = 3 shipping-policy signals. Tier-0 rule C must fire."
+}
