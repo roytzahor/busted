@@ -91,11 +91,19 @@ are tightened with data, not vibes.
 end-to-end against local pipeline, first shareable card.
 
 ### Phase 2 — The Index — "From pipeline to lookup"
-Catalog crawler → multimodal embeddings (pgvector on Neon) → ANN lookup
-replaces keyword search as primary path (keyword search demoted to
-flag-gated fallback). Canonical product clustering across
-AliExpress/eBay/Temu. Landed-cost engine (US + IL + EU). Community
-verification buttons → auto-fixture pipeline. Programmatic SEO store pages.
+1. ☐ Catalog crawler → multimodal embeddings (pgvector on Neon) → ANN lookup
+   replaces keyword search as primary path (keyword search demoted to
+   flag-gated fallback). Needs embedding creds + crawler infra decisions.
+2. ☐ Canonical product clustering across AliExpress/eBay/Temu.
+3. ✅ Landed-cost engine (`lib/pricing/landed-cost.ts`): import VAT per market
+   (US/IL/EU/UK) keyed by display currency; duty never invented (note only);
+   "≈ $X landed" line on the supplier card.
+4. ✅ Community verification: widget + API + MatchFeedback existed (sprint 13);
+   added the missing bridge — `npm run eval:harvest` turns right/wrong
+   feedback into draft fixture candidates (hand-verified before promotion).
+5. ✅ Programmatic SEO store pages: `/store/[domain]` ("Is {domain} legit?"),
+   hourly ISR, store-level tier requires ≥2 decisive scans (smoke-alarm rule
+   applies at store level), wired into sitemap.xml per scanned domain.
 
 **Exit criteria:** median supplier-match latency < 500ms, supplier accuracy
 ≥ 90%, organic search is the #1 acquisition channel.
