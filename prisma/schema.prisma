@@ -1,11 +1,13 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  directUrl  = env("DIRECT_URL")
+  extensions = [vector]
 }
 
 /// Cached product analysis — 14-day TTL enforced at query time.
@@ -327,6 +329,34 @@ model VerticalKeywordPrior {
   updatedAt           DateTime @updatedAt
 
   @@index([vertical])
+}
+
+/// Canonical product index — ROADMAP Phase 2 item 1 (groundwork).
+///
+/// One row per known product listing (scanned retail product or matched
+/// supplier listing), embedded with Gemini text-embedding-004 (768 dims).
+/// Vector reads/writes go through raw SQL in lib/index/embeddings.ts —
+/// Prisma client can't type pgvector columns. ANN lookup uses the HNSW
+/// index (cosine) added in the same migration.
+model ProductEmbedding {
+  id        String                       @id @default(cuid())
+  /// Source ScannedProduct.id when the row came from a retail scan.
+  scanId    String?
+  /// "retail" | "aliexpress" | "ebay" — which side of a match this is.
+  network   String
+  /// Supplier network product id when network != "retail".
+  productId String?
+  title     String
+  sourceUrl String                       @unique
+  priceUsd  Float?
+  imageUrl  String?
+  embedding Unsupported("vector(768)")?
+  /// Embedding model id — rows must only be compared within one model.
+  model     String
+  createdAt DateTime                     @default(now())
+
+  @@index([network])
+  @@index([scanId])
 }
 
 /// Client-side error capture — Sprint 11 Stage 29.

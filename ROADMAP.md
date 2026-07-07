@@ -91,10 +91,17 @@ are tightened with data, not vibes.
 end-to-end against local pipeline, first shareable card.
 
 ### Phase 2 — The Index — "From pipeline to lookup"
-1. ☐ Catalog crawler → multimodal embeddings (pgvector on Neon) → ANN lookup
-   replaces keyword search as primary path (keyword search demoted to
-   flag-gated fallback). Needs embedding creds + crawler infra decisions.
-2. ☐ Canonical product clustering across AliExpress/eBay/Temu.
+1. ◐ Vector index groundwork LIVE: pgvector 0.8 enabled on Neon,
+   `ProductEmbedding` table + HNSW cosine index (schema via `db push` — this
+   repo does not use migrate). `lib/index/embeddings.ts` wraps
+   `gemini-embedding-001` @ 768 dims (REST, `outputDimensionality`;
+   text-embedding-004 is retired). `npm run index:ingest` embeds cached
+   scans + matched supplier listings; ANN round-trip verified live.
+   Kill switch `VECTOR_INDEX_ENABLED` (default OFF). Remaining: catalog
+   crawler at scale, ANN path wired into find-supplier behind the flag,
+   retrieval eval before enabling.
+2. ☐ Canonical product clustering across AliExpress/eBay/Temu (builds on the
+   embedding table above — cluster by distance + image AI confirmation).
 3. ✅ Landed-cost engine (`lib/pricing/landed-cost.ts`): import VAT per market
    (US/IL/EU/UK) keyed by display currency; duty never invented (note only);
    "≈ $X landed" line on the supplier card.
