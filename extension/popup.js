@@ -141,11 +141,18 @@ async function initializePopup() {
     return;
   }
 
-  // Try to get cached result
+  // Try to get cached result. Quick-lookup results carry a tier but no
+  // dropshipPrediction — the badge already shows the tier, so the popup
+  // stays idle and offers a full scan instead of a half-empty bust panel.
   const message = { type: 'GET_RESULT', tabId: tab.id };
   chrome.runtime.sendMessage(message, (cachedResult) => {
-    if (cachedResult && cachedResult.presenceTier && cachedResult.presenceTier !== 'silent') {
-      // We have a cached non-silent result; render it
+    if (
+      cachedResult &&
+      cachedResult.presenceTier &&
+      cachedResult.presenceTier !== 'silent' &&
+      !cachedResult.quickLookup
+    ) {
+      // We have a cached full-scan result; render it
       renderResult(cachedResult);
     } else {
       // No cached result; show idle state for user to trigger scan

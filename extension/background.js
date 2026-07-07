@@ -154,6 +154,71 @@ async function scanTab(tabId, url) {
 }
 
 /**
+ * Cache-only quick-lookup: single DB read on the backend, never triggers a
+ * scrape or AI call. Free enough to run on every page load — this is the
+ * "instant badge" path. Returns the parsed payload or null on any failure.
+ * @param {string} url
+ * @returns {Promise<object|null>}
+ */
+async function quickLookup(url) {
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => abortController.abort(), 5000);
+  try {
+    const res = await fetch(
+      `${apiBase}/api/extension/quick-lookup?url=${encodeURIComponent(url)}`,
+      { signal: abortController.signal },
+    );
+    clearTimeout(timeoutId);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    clearTimeout(timeoutId);
+    return null;
+  }
+}
+
+/**
+ * Passive presence flow for a loaded tab: badge from the cached verdict if
+ * the backend has one; otherwise fall through to a full scan ONLY when the
+ * user opted into auto-scan. Quick-lookup results live in tabCache only —
+ * sessionCache is reserved for full scan results so a manual "Scan this
+ * page" always runs the real pipeline.
+ * @param {number} tabId
+ * @param {string} url
+ */
+async function passiveThenMaybeScan(tabId, url) {
+  if (sessionCache.has(url)) {
+    const cached = sessionCache.get(url);
+    tabCache.set(tabId, cached);
+    setBadgeForTab(tabId, cached.presenceTier);
+    return;
+  }
+
+  const quick = await quickLookup(url);
+  if (quick && quick.found === true) {
+    const result = {
+      presenceTier: quick.presenceTier || 'silent',
+      quickLookup: true,
+      permalink: quick.permalink,
+      savingsPercent: quick.savingsPercent,
+      storeTitle: quick.storeTitle,
+    };
+    tabCache.set(tabId, result);
+    setBadgeForTab(tabId, result.presenceTier);
+    return;
+  }
+
+  chrome.storage.sync.get(['autoScan'], (result) => {
+    if (!result.autoScan) {
+      return;
+    }
+    scanTab(tabId, url).catch(() => {
+      // Already handled in fetchScanResult, no need to escalate
+    });
+  });
+}
+
+/**
  * Check if a URL should be auto-scanned.
  * Skip: localhost, obvious non-shopping hosts, non-http(s).
  * @param {string} url
@@ -205,40 +270,24 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     return;
   }
 
-  // Check if auto-scan is enabled
-  chrome.storage.sync.get(['autoScan'], (result) => {
-    if (!result.autoScan) {
-      return;
-    }
+  // Skip obvious non-shopping hosts, localhost, and non-http(s)
+  if (!shouldAutoScan(tab.url)) {
+    return;
+  }
 
-    // Skip obvious non-shopping hosts and localhost
-    if (!shouldAutoScan(tab.url)) {
-      return;
-    }
+  // Debounce per tab, then run the passive quick-lookup (always) followed
+  // by a full scan only if auto-scan is enabled and there was no cache hit.
+  const existingTimer = debounceTimers.get(tabId);
+  if (existingTimer) {
+    clearTimeout(existingTimer);
+  }
 
-    // Skip if already in session cache
-    if (sessionCache.has(tab.url)) {
-      const cached = tabCache.get(tabId) || sessionCache.get(tab.url);
-      tabCache.set(tabId, cached);
-      setBadgeForTab(tabId, cached.presenceTier);
-      return;
-    }
+  const newTimer = setTimeout(() => {
+    debounceTimers.delete(tabId);
+    passiveThenMaybeScan(tabId, tab.url);
+  }, DEBOUNCE_MS);
 
-    // Debounce per tab
-    const existingTimer = debounceTimers.get(tabId);
-    if (existingTimer) {
-      clearTimeout(existingTimer);
-    }
-
-    const newTimer = setTimeout(() => {
-      debounceTimers.delete(tabId);
-      scanTab(tabId, tab.url).catch(() => {
-        // Already handled in fetchScanResult, no need to escalate
-      });
-    }, DEBOUNCE_MS);
-
-    debounceTimers.set(tabId, newTimer);
-  });
+  debounceTimers.set(tabId, newTimer);
 });
 
 // Listen for tab removal: clear state

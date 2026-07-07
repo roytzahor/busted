@@ -77,7 +77,9 @@ are tightened with data, not vibes.
 3. ✅ Chrome extension MV3 scaffold (`extension/`) — passive badge + popup,
    confidence-tiered UI (this milestone).
 4. ☐ Busted Card (shareable verdict artifact) + savings ledger.
-5. ☐ Precomputed store-level verdicts (instant badge, no scrape).
+5. ◐ Instant badge, no scrape: quick-lookup v2 returns `presenceTier` from
+   cached per-URL scans; extension badges passively on every page load.
+   Domain-level (store-wide) verdicts still open.
 6. ☐ Grow fixtures toward 300 via synthetic seeder + captures; precision gate
    in CI.
 

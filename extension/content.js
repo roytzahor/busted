@@ -1,23 +1,38 @@
 /**
- * Content script — Sprint 12 Stage 36.
+ * Content script — in-page presence pill.
  *
- * Two-stage pill:
+ * Two-stage flow:
  *   1. Detect product page (JSON-LD Product schema / og:type=product / Shopify
  *      price meta).
- *   2. Quick-lookup the URL against busted.app. If we've previously scanned
- *      it, render a rich pill showing the supplier price + savings %.
- *      Otherwise render the v0.1 generic "Bust this product" pill.
+ *   2. Quick-lookup the URL against the backend (cache-only, free). A pill is
+ *      rendered ONLY on a confident cached flame verdict with real savings —
+ *      silence is the default ("smoke alarm, not weather forecast"). The v0.2
+ *      generic "Bust this product" pill on every product page was removed for
+ *      violating that rule; manual scans live in the toolbar popup.
  */
 
 (function () {
   "use strict";
 
-  // Single source of truth — keep in sync with extension/popup.js and the
-  // README. If you fork the extension, change this only.
-  const BUSTED_URL = "https://buy-pass-silk.vercel.app/";
-  const QUICK_LOOKUP_URL =
-    "https://buy-pass-silk.vercel.app/api/extension/quick-lookup";
+  // Default backend — overridden by the apiBase setting shared with the
+  // popup/background (chrome.storage.sync).
+  const DEFAULT_API_BASE = "https://buy-pass-silk.vercel.app";
   const PILL_ID = "busted-extension-pill";
+
+  let apiBase = DEFAULT_API_BASE;
+
+  function loadApiBase() {
+    return new Promise((resolve) => {
+      try {
+        chrome.storage.sync.get(["apiBase"], (result) => {
+          if (result && result.apiBase) apiBase = result.apiBase;
+          resolve();
+        });
+      } catch {
+        resolve(); // storage unavailable — keep the default
+      }
+    });
+  }
 
   function looksLikeProductPage() {
     const scripts = document.querySelectorAll(
@@ -54,16 +69,8 @@
     return false;
   }
 
-  function buildBustedUrl(extra) {
-    const u = new URL(BUSTED_URL);
-    u.searchParams.set("url", window.location.href);
-    u.searchParams.set("utm_source", "chrome_extension");
-    if (extra) Object.entries(extra).forEach(([k, v]) => u.searchParams.set(k, v));
-    return u.toString();
-  }
-
   function buildPermalinkUrl(permalink) {
-    const u = new URL(permalink, BUSTED_URL);
+    const u = new URL(permalink, apiBase);
     u.searchParams.set("utm_source", "chrome_extension");
     return u.toString();
   }
@@ -83,21 +90,6 @@
           return "&#39;";
       }
     });
-  }
-
-  function injectGenericPill() {
-    if (document.getElementById(PILL_ID)) return;
-    const pill = document.createElement("a");
-    pill.id = PILL_ID;
-    pill.className = "busted-pill--generic";
-    pill.href = buildBustedUrl();
-    pill.target = "_blank";
-    pill.rel = "noopener noreferrer";
-    pill.setAttribute("aria-label", "Bust this product on Busted");
-    pill.innerHTML =
-      '<span class="busted-icon" aria-hidden="true">🔥</span>' +
-      '<span class="busted-label">Bust this product</span>';
-    document.documentElement.appendChild(pill);
   }
 
   function injectRichPill(lookup) {
@@ -125,12 +117,8 @@
     if (!looksLikeProductPage()) return;
     if (document.getElementById(PILL_ID)) return;
 
-    // Optimistically show the generic pill while we check the cache. If we
-    // get a hit, we'll swap it for the rich variant.
-    injectGenericPill();
-
     try {
-      const lookupUrl = new URL(QUICK_LOOKUP_URL);
+      const lookupUrl = new URL("/api/extension/quick-lookup", apiBase);
       lookupUrl.searchParams.set("url", window.location.href);
       const res = await fetch(lookupUrl.toString(), {
         method: "GET",
@@ -139,24 +127,31 @@
       });
       if (!res.ok) return;
       const data = await res.json();
+      // Flame + real savings only. Legacy backends without presenceTier
+      // required an AliExpress match to return found=true, so savings>0
+      // alone is an acceptable stand-in there.
+      const tierOk =
+        data && (data.presenceTier === "flame" || data.presenceTier === undefined);
       if (
         data &&
         data.found === true &&
+        tierOk &&
         typeof data.savingsPercent === "number" &&
         data.savingsPercent > 0
       ) {
-        document.getElementById(PILL_ID)?.remove();
         injectRichPill(data);
       }
     } catch {
-      // network failed — keep the generic pill
+      // network failed — stay silent
     }
   }
 
   // Initial + retry passes for SPAs that render product schema lazily.
-  void tryInject();
-  setTimeout(tryInject, 1500);
-  setTimeout(tryInject, 3500);
+  void loadApiBase().then(() => {
+    void tryInject();
+    setTimeout(tryInject, 1500);
+    setTimeout(tryInject, 3500);
+  });
 
   let lastUrl = location.href;
   new MutationObserver(() => {
