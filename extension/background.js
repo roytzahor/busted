@@ -150,7 +150,58 @@ async function scanTab(tabId, url) {
   // Set badge
   setBadgeForTab(tabId, result.presenceTier);
 
+  // Accrue the savings ledger on confirmed busts (idempotent per scanId)
+  recordBustInLedger(result);
+
   return result;
+}
+
+// Savings ledger — cumulative "markup dodged" across confirmed busts.
+// Persisted in chrome.storage.local (survives browser restarts).
+const LEDGER_KEY = 'savingsLedger';
+const LEDGER_IDS_CAP = 200;
+
+/**
+ * Record a confirmed bust into the ledger. Only flame results with a real
+ * positive price delta accrue, and each scan counts exactly once.
+ * @param {object} result - full-scan API response
+ */
+function recordBustInLedger(result) {
+  if (!result || result.presenceTier !== 'flame') return;
+
+  const storeUsd = result.storeProduct ? result.storeProduct.priceUsd : null;
+  let supplierUsd = null;
+  if (result.aliexpressData && typeof result.aliexpressData.priceUsd === 'number') {
+    supplierUsd = result.aliexpressData.priceUsd;
+  } else if (
+    result.dropshipPrediction &&
+    typeof result.dropshipPrediction.estimatedSupplierPriceUsd === 'number'
+  ) {
+    supplierUsd = result.dropshipPrediction.estimatedSupplierPriceUsd;
+  }
+  if (typeof storeUsd !== 'number' || supplierUsd === null) return;
+
+  const dodged = storeUsd - supplierUsd;
+  if (dodged <= 0) return;
+
+  const id = result.scanId || result.originalUrl;
+  if (!id) return;
+
+  chrome.storage.local.get([LEDGER_KEY], (data) => {
+    const ledger = data[LEDGER_KEY] || {
+      totalDodgedUsd: 0,
+      bustCount: 0,
+      countedIds: [],
+    };
+    if (ledger.countedIds.includes(id)) return;
+    ledger.totalDodgedUsd += dodged;
+    ledger.bustCount += 1;
+    ledger.countedIds.push(id);
+    if (ledger.countedIds.length > LEDGER_IDS_CAP) {
+      ledger.countedIds = ledger.countedIds.slice(-LEDGER_IDS_CAP);
+    }
+    chrome.storage.local.set({ [LEDGER_KEY]: ledger });
+  });
 }
 
 /**

@@ -229,5 +229,16 @@ document.getElementById('scan-button').addEventListener('click', async () => {
   );
 });
 
+// Savings ledger — loss-aversion framing: "almost paid", not "saved"
+chrome.storage.local.get(['savingsLedger'], (data) => {
+  const ledger = data.savingsLedger;
+  if (!ledger || !ledger.bustCount) return;
+  const el = document.getElementById('ledger-line');
+  if (!el) return;
+  const busts = ledger.bustCount === 1 ? 'bust' : 'busts';
+  el.textContent = `You've dodged $${ledger.totalDodgedUsd.toFixed(2)} in markup across ${ledger.bustCount} ${busts}.`;
+  el.classList.remove('hidden');
+});
+
 // Initialize on popup open
 initializePopup();

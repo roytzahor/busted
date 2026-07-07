@@ -76,7 +76,9 @@ are tightened with data, not vibes.
 2. ✅ Tier-0 store fingerprint gate (this milestone).
 3. ✅ Chrome extension MV3 scaffold (`extension/`) — passive badge + popup,
    confidence-tiered UI (this milestone).
-4. ☐ Busted Card (shareable verdict artifact) + savings ledger.
+4. ✅ Busted Card: OG image existed (sprint 12) — added Share button on
+   `/scan/[id]` (`components/share-bust-button.tsx`). Savings ledger lives in
+   the extension (chrome.storage.local, flame results only, once per scanId).
 5. ◐ Instant badge, no scrape: quick-lookup v2 returns `presenceTier` from
    cached per-URL scans; extension badges passively on every page load.
    Domain-level (store-wide) verdicts still open.

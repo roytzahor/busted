@@ -5,6 +5,7 @@ import { AnalysisResults } from "@/components/analysis-results";
 import { BrowseAnalysisResults } from "@/components/browse-analysis-results";
 import { DropshipAnalysisResults } from "@/components/dropship-analysis-results";
 import { Button } from "@/components/ui/button";
+import { ShareBustButton } from "@/components/share-bust-button";
 import { loadScanById } from "@/lib/cache/lookup-by-id";
 import { BRAND_NAME, BRAND_TAGLINE } from "@/lib/brand";
 import { ArrowLeft, Search } from "lucide-react";
@@ -115,18 +116,27 @@ export default async function ScanPermalinkPage({ params }: PageProps) {
               Home
             </Link>
           </Button>
-          <Button
-            asChild
-            size="sm"
-            className="gap-1.5 bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90"
-          >
-            <Link
-              href={`/?url=${encodeURIComponent(loaded.originalUrl)}&forceRefresh=1`}
+          <div className="flex items-center gap-2">
+            <ShareBustButton
+              title={
+                comparison?.storeProduct.title ??
+                loaded.response.storeProduct.title
+              }
+              savingsPercent={comparison?.savingsPercent ?? null}
+            />
+            <Button
+              asChild
+              size="sm"
+              className="gap-1.5 bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90"
             >
-              <Search className="size-4" aria-hidden="true" />
-              Re-scan
-            </Link>
-          </Button>
+              <Link
+                href={`/?url=${encodeURIComponent(loaded.originalUrl)}&forceRefresh=1`}
+              >
+                <Search className="size-4" aria-hidden="true" />
+                Re-scan
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {browse ? (

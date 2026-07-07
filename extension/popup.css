@@ -403,6 +403,19 @@ body {
   display: none;
 }
 
+/* Savings ledger — quiet cumulative stat under every state */
+.ledger {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
 /* Utility: hidden state */
 .hidden {
   display: none !important;
