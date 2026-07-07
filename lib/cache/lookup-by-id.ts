@@ -7,6 +7,7 @@
  * cache HIT — no duplicated decoding logic.
  */
 
+import { computePresenceTier } from "@/lib/analyze/presence-tier";
 import { prisma } from "@/lib/prisma";
 import {
   detectProductSource,
@@ -76,6 +77,7 @@ export async function loadScanById(id: string): Promise<LoadedScan | null> {
     supplierSkipReason,
     sourceType,
     dropshipPrediction: ai.prediction,
+    presenceTier: computePresenceTier(ai.prediction),
     lastScrapedAt: row.lastScrapedAt.toISOString(),
     storeProduct: {
       title: scrape.attributes.title,

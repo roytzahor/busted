@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { domainFromUrl } from "@/lib/learning/priors";
 import { prisma } from "@/lib/prisma";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -36,14 +37,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "weekly",
         priority: 0.7,
       });
-      try {
-        const host = new URL(row.originalUrl).hostname
-          .toLowerCase()
-          .replace(/^www\./, "");
-        if (!storeDomains.has(host)) storeDomains.set(host, row.lastScrapedAt);
-      } catch {
-        /* unparseable URL — skip domain entry */
-      }
+      const host = domainFromUrl(row.originalUrl);
+      if (host && !storeDomains.has(host)) storeDomains.set(host, row.lastScrapedAt);
     }
     // Per-store "is {domain} legit" report pages — one per scanned domain.
     for (const [host, lastModified] of storeDomains) {

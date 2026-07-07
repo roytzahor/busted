@@ -7,6 +7,7 @@
  * least MIN_DECISIVE_SCANS of them. One bad scan never brands a store.
  */
 
+import { domainFromUrl } from "@/lib/learning/priors";
 import { prisma } from "@/lib/prisma";
 import { parseAliExpressData } from "@/lib/types/analyze";
 import { parseCachedAiPrediction, parseCachedScrapeData } from "@/lib/types/cache";
@@ -29,7 +30,6 @@ export interface StoreReport {
   totalScans: number;
   dropshipCount: number;
   legitCount: number;
-  otherCount: number;
   /** Mean savings across scans that had a confident supplier match. */
   avgSavingsPercent: number | null;
   tier: StoreTier;
@@ -60,32 +60,33 @@ export function normalizeDomainParam(raw: string): string | null {
   return cleaned;
 }
 
-function hostnameOf(url: string): string | null {
-  try {
-    return new URL(url).hostname.toLowerCase().replace(/^www\./, "");
-  } catch {
-    return null;
-  }
-}
-
 export async function loadStoreReport(domain: string): Promise<StoreReport | null> {
   // `contains` over-fetches (path hits, sibling domains); the hostname
-  // filter below is the source of truth.
+  // filter below is the source of truth. Note: LIKE '%domain%' can't use the
+  // originalUrl index — fine at current row counts; at scale this needs a
+  // normalized domain column with its own index.
   const rows = await prisma.scannedProduct.findMany({
     where: { originalUrl: { contains: domain } },
+    select: {
+      id: true,
+      originalUrl: true,
+      lastScrapedAt: true,
+      scrapeData: true,
+      aiPrediction: true,
+      aliexpressData: true,
+    },
     orderBy: { lastScrapedAt: "desc" },
     take: 200,
   });
 
   const matching = rows.filter((row) => {
-    const host = hostnameOf(row.originalUrl);
+    const host = domainFromUrl(row.originalUrl);
     return host === domain || host?.endsWith(`.${domain}`) === true;
   });
   if (matching.length === 0) return null;
 
   let dropshipCount = 0;
   let legitCount = 0;
-  let otherCount = 0;
   const savings: number[] = [];
   const scans: StoreScanSummary[] = [];
 
@@ -97,7 +98,6 @@ export async function loadStoreReport(domain: string): Promise<StoreReport | nul
 
     if (verdict === "dropship") dropshipCount += 1;
     else if (verdict === "legit" || verdict === "collection_page") legitCount += 1;
-    else otherCount += 1;
 
     const storePrice =
       ai?.prediction?.estimatedStorePriceUsd ?? scrape?.detectedStorePriceUsd ?? null;
@@ -134,7 +134,6 @@ export async function loadStoreReport(domain: string): Promise<StoreReport | nul
     totalScans: matching.length,
     dropshipCount,
     legitCount,
-    otherCount,
     avgSavingsPercent:
       savings.length > 0
         ? Math.round(savings.reduce((s, n) => s + n, 0) / savings.length)

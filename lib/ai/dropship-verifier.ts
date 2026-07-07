@@ -300,7 +300,12 @@ function buildUserPrompt(
   );
 }
 
-function countAttributeSignals(
+/**
+ * Counts the scrape-attribute signals behind humility rule 7. Exported so
+ * the Tier-0 fingerprint gate applies the exact same product-page-shape
+ * threshold — the two must never drift.
+ */
+export function countAttributeSignals(
   attributes: ScrapedProductAttributes,
   storePriceUsd: number | null,
 ): number {

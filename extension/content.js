@@ -127,15 +127,12 @@
       });
       if (!res.ok) return;
       const data = await res.json();
-      // Flame + real savings only. Legacy backends without presenceTier
-      // required an AliExpress match to return found=true, so savings>0
-      // alone is an acceptable stand-in there.
-      const tierOk =
-        data && (data.presenceTier === "flame" || data.presenceTier === undefined);
+      // Flame + real savings only. Missing presenceTier means silence —
+      // the tier contract (CLAUDE.md) forbids re-deriving tiers client-side.
       if (
         data &&
         data.found === true &&
-        tierOk &&
+        data.presenceTier === "flame" &&
         typeof data.savingsPercent === "number" &&
         data.savingsPercent > 0
       ) {

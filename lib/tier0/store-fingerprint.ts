@@ -16,7 +16,7 @@
  * Kill switch: TIER0_FINGERPRINT_ENABLED=false (code path stays intact).
  */
 
-import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
+import { countAttributeSignals, type DropshipPrediction } from "@/lib/ai/dropship-verifier";
 import type { ScrapedProductAttributes } from "@/lib/scraping/types";
 
 export interface StoreFingerprintInput {
@@ -134,20 +134,17 @@ const TEMPLATE_SIGNALS: TextSignal[] = [
 ];
 
 /**
- * Mirrors the AI humility clamp (dropship-verifier rule 7): fewer than 3 of
- * {title, price, description, image} → this isn't judgeable as a product page,
- * so Tier-0 must stay silent and let the AI return insufficient_evidence.
+ * The AI humility clamp's product-page-shape gate (dropship-verifier rule 7):
+ * fewer than 3 of {title, price, description, image} → not judgeable as a
+ * product page, so Tier-0 must stay silent and let the AI return
+ * insufficient_evidence. Delegates to the verifier's own counter so the two
+ * thresholds can never drift.
  */
 function looksLikeProductPage(
   attributes: ScrapedProductAttributes,
   storePriceUsd: number | null,
 ): boolean {
-  const attrCount =
-    Number(attributes.title.trim().length > 5) +
-    Number(storePriceUsd !== null) +
-    Number(attributes.description.trim().length > 50) +
-    Number(attributes.mainImageUrl !== null);
-  return attrCount >= 3;
+  return countAttributeSignals(attributes, storePriceUsd) >= 3;
 }
 
 function buildPrediction(
@@ -184,12 +181,9 @@ function buildPrediction(
 
 /**
  * Runs the fingerprint scan. Pure and synchronous — never throws, never
- * calls the network. Firing rules (any one — every rule needs ≥2 independent
- * signals, and text-only rules need ≥3):
- *   A. ≥1 fulfillment-app footprint AND ≥1 other signal        → conf 0.8
- *   B. ≥2 shipping-policy signals AND ≥1 template signal        → conf 0.72
- *   C. ≥3 shipping-policy signals                               → conf 0.72
- *   D. ≥1 shipping-policy signal AND ≥2 template signals        → conf 0.72
+ * calls the network. Firing rules (any one):
+ *   A. ≥1 fulfillment-app footprint AND ≥1 other signal            → conf 0.8
+ *   B. ≥1 shipping-policy signal AND ≥3 independent text signals   → conf 0.72
  */
 export function runStoreFingerprint(
   input: StoreFingerprintInput,
@@ -224,13 +218,12 @@ export function runStoreFingerprint(
   if (appSignals.length >= 1 && shippingSignals.length + templateSignals.length >= 1) {
     return done(true, signals, 0.8);
   }
-  if (shippingSignals.length >= 2 && templateSignals.length >= 1) {
-    return done(true, signals, 0.72);
-  }
-  if (shippingSignals.length >= 3) {
-    return done(true, signals, 0.72);
-  }
-  if (shippingSignals.length >= 1 && templateSignals.length >= 2) {
+  // Text-only rule: at least one shipping-policy signal anchoring ≥3
+  // independent text signals total. Template copy alone never fires.
+  if (
+    shippingSignals.length >= 1 &&
+    shippingSignals.length + templateSignals.length >= 3
+  ) {
     return done(true, signals, 0.72);
   }
   return done(false, signals);

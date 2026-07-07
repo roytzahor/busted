@@ -19,6 +19,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
+import { domainFromUrl } from "@/lib/learning/priors";
 import { prisma } from "@/lib/prisma";
 import { parseCachedAiPrediction, parseCachedScrapeData } from "@/lib/types/cache";
 import { parseAliExpressData } from "@/lib/types/analyze";
@@ -33,12 +34,7 @@ function parseDays(): number {
 }
 
 function slugify(url: string, scanId: string): string {
-  let host = "unknown";
-  try {
-    host = new URL(url).hostname.replace(/^www\./, "").replace(/[^a-z0-9.-]/gi, "");
-  } catch {
-    /* keep "unknown" */
-  }
+  const host = (domainFromUrl(url) ?? "unknown").replace(/[^a-z0-9.-]/g, "");
   return `feedback-${host.replace(/\./g, "-")}-${scanId.slice(0, 6)}`;
 }
 
