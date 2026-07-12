@@ -4,7 +4,8 @@
   "expectedVerdict": "dropship",
   "expectedSupplier": {
     "shouldFindMatch": true,
-    "notes": "Heated belly massage device. Classic dropship. Expect supplier match on AliExpress."
+    "blockedOnFixtureData": true,
+    "notes": "Heated belly massage device. Classic dropship. Expect supplier match on AliExpress. No aliexpress.json captured yet — blocked on AliExpress API credentials (see memory: busted-accuracy-refactor)."
   },
   "notes": "Heated belly massage device. Classic dropship. Expect supplier match on AliExpress.",
   "capturedAt": "2026-06-27T08:15:36.548Z"

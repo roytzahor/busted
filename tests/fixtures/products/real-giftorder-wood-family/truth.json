@@ -4,7 +4,8 @@
   "expectedVerdict": "dropship",
   "expectedSupplier": {
     "shouldFindMatch": true,
-    "notes": "Wood family-of-lions gift. Classic dropship. Hebrew URL — translation pre-pass should fire."
+    "blockedOnFixtureData": true,
+    "notes": "Wood family-of-lions gift. Classic dropship. Hebrew URL — translation pre-pass should fire. Captured aliexpress.json was searched with the raw untranslated Hebrew title (candidates are unrelated products); cached ai-response.json's aliexpressKeywords are correct English terms. Needs a live re-capture against current search pipeline, blocked on AliExpress API credentials."
   },
   "notes": "Wood family-of-lions gift. Classic dropship. Hebrew URL — translation pre-pass should fire.",
   "capturedAt": "2026-06-27T08:19:14.712Z"

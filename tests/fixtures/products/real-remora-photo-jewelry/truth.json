@@ -4,7 +4,8 @@
   "expectedVerdict": "dropship",
   "expectedSupplier": {
     "shouldFindMatch": true,
-    "notes": "Sentimental photo jewelry. Classic dropship. Homepage — sparse-scrape fallback acceptable."
+    "blockedOnFixtureData": true,
+    "notes": "Sentimental photo jewelry. Classic dropship. Homepage — sparse-scrape fallback acceptable. Captured aliexpress.json was searched with the single mistranslated keyword 'encrypted' (candidates are unrelated electronics); cached ai-response.json's aliexpressKeywords are correct English terms. Needs a live re-capture, blocked on AliExpress API credentials."
   },
   "notes": "Sentimental photo jewelry. Classic dropship. Homepage — sparse-scrape fallback acceptable.",
   "capturedAt": "2026-06-27T08:18:53.554Z"

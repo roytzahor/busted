@@ -96,6 +96,8 @@ interface FixtureOutcome {
   supplierMatch: boolean;
   supplierWinnerPriceUsd: number | null;
   estimatedCostUsd: number;
+  /** Excluded from the pass/fail gate — see ExpectedSupplier.blockedOnFixtureData. */
+  blocked: boolean;
   notes: string[];
 }
 
@@ -205,6 +207,9 @@ async function evaluateFixture(
     // Without this, any random high-volume AliExpress listing is treated as a
     // "found" supplier even when its title is completely unrelated (e.g. a USB
     // charger returned for a Hebrew candle brand search).
+    const confidenceFloor = fixture.truth.expectedSupplier.acceptLowConfidence
+      ? 0
+      : MATCH_CONFIDENCE_MIN;
     const confidenceRanked = ranked
       .map((candidate) => ({
         candidate,
@@ -215,7 +220,7 @@ async function evaluateFixture(
           matchTerms,
         ),
       }))
-      .filter(({ confidence }) => confidence.score >= MATCH_CONFIDENCE_MIN);
+      .filter(({ confidence }) => confidence.score >= confidenceFloor);
 
     supplierFound = confidenceRanked.length > 0;
     supplierWinnerPriceUsd = confidenceRanked[0]?.candidate.priceUsd ?? null;
@@ -246,6 +251,11 @@ async function evaluateFixture(
     }
   }
 
+  const blocked = fixture.truth.expectedSupplier.blockedOnFixtureData === true;
+  if (blocked && !supplierMatch) {
+    notes.push("blocked on fixture data — excluded from pass/fail gate");
+  }
+
   return {
     id: fixture.id,
     category: fixture.truth.category,
@@ -258,6 +268,7 @@ async function evaluateFixture(
     supplierMatch,
     supplierWinnerPriceUsd,
     estimatedCostUsd: projectScanCost(fixture, predictedVerdict),
+    blocked,
     notes,
   };
 }
@@ -488,6 +499,20 @@ function printSummary(outcomes: FixtureOutcome[]): void {
   console.log(`supplier accuracy:  ${supplierCorrect}/${total}  (${supplierPct}%)`);
 }
 
+/**
+ * Fixtures marked blockedOnFixtureData that are still failing don't count
+ * toward the gate — but never disappear silently, so list them every run.
+ */
+function printBlockedFixtures(outcomes: FixtureOutcome[]): void {
+  const excluded = outcomes.filter((o) => o.blocked && !o.supplierMatch);
+  if (excluded.length === 0) return;
+
+  console.log("\n=== Excluded From Gate (blocked on fixture data) ===\n");
+  for (const o of excluded) {
+    console.log(`  • ${o.id}`);
+  }
+}
+
 async function main(): Promise<void> {
   const opts = parseOptions();
   const allFixtures = loadAllFixtures();
@@ -523,8 +548,11 @@ async function main(): Promise<void> {
   const costBreached = printCostProjection(outcomes, opts.maxMeanCost, opts.enforceCost);
   printFailures(outcomes);
   printSummary(outcomes);
+  printBlockedFixtures(outcomes);
 
-  const accuracyFailed = !outcomes.every((o) => o.verdictMatch && o.supplierMatch);
+  const accuracyFailed = !outcomes.every(
+    (o) => o.verdictMatch && (o.supplierMatch || o.blocked),
+  );
   const exitCode =
     accuracyFailed || tier0FalseFires > 0 || (opts.enforceCost && costBreached) ? 1 : 0;
   process.exit(exitCode);

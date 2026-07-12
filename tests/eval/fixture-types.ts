@@ -19,6 +19,19 @@ export interface ExpectedSupplier {
   shouldFindMatch: boolean;
   expectedPriceUsdBand?: [number, number];
   notes?: string;
+  /**
+   * Any ranked candidate counts as a match, bypassing MATCH_CONFIDENCE_MIN —
+   * for products with no true AliExpress equivalent (e.g. sourced from
+   * Alibaba) where a weak match is still the correct "found" outcome.
+   */
+  acceptLowConfidence?: boolean;
+  /**
+   * Excludes this fixture's supplier-match result from the eval's pass/fail
+   * gate. Use only when the fixture's captured data is known-stale or
+   * missing (blocked on a live re-capture), never to hide a real regression.
+   * Still evaluated and reported — just not counted toward exit code.
+   */
+  blockedOnFixtureData?: boolean;
 }
 
 export interface FixtureTruth {
