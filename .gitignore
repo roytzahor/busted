@@ -39,9 +39,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# prisma
-/prisma/migrations/**/migration_lock.toml
-
 # generated tool artifacts
 /graphify-out/
 /logs/
