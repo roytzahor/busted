@@ -4,6 +4,12 @@ import type { AliExpressProductCandidate } from "@/lib/aliexpress/types";
 
 const ITEM_ID_PATTERN = /(?:aliexpress\.(?:com|us)|\/item)\/(\d{10,})\.html/gi;
 
+/** Pulls the numeric AliExpress item id out of a product URL, or null if it doesn't match. */
+export function extractProductIdFromUrl(url: string): string | null {
+  const match = new RegExp(ITEM_ID_PATTERN.source, "i").exec(url);
+  return match?.[1] ?? null;
+}
+
 function extractTitleNearId(markdown: string, productId: string): string | null {
   const index = markdown.indexOf(productId);
   if (index < 0) return null;

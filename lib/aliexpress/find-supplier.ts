@@ -33,6 +33,12 @@ import { getVerticalPrior } from "@/lib/learning/priors";
 import { matchVariantToSku, type VariantMatchResult } from "@/lib/aliexpress/match-variant";
 import { fetchAliExpressProductDetail } from "@/lib/aliexpress/sku";
 import { searchAliExpressViaScrape } from "@/lib/aliexpress/search-scrape-fallback";
+import { extractProductIdFromUrl } from "@/lib/aliexpress/parse-search-markdown";
+import {
+  embedProductText,
+  findNearestProducts,
+  isVectorIndexEnabled,
+} from "@/lib/index/embeddings";
 import {
   deriveOutcomeVertical,
   filterByNegativeKeywords,
@@ -177,6 +183,66 @@ async function searchCandidates(
     }
   }
   return [];
+}
+
+// How many ANN nearest-neighbor rows to pull. Kept small — this arm only
+// ever adds to the pool that computeMatchConfidence() re-ranks; anything
+// off-topic gets filtered out downstream the same as a bad keyword-search
+// candidate would.
+const VECTOR_CANDIDATE_LIMIT = 5;
+
+/**
+ * ANN candidate arm — ROADMAP Phase 2 item 1 wiring. Embeds the query text
+ * and looks up nearest AliExpress-network rows in ProductEmbedding by cosine
+ * distance. Behind isVectorIndexEnabled() (default off); returns [] on any
+ * failure or when a NearestProduct's sourceUrl doesn't carry a parseable
+ * AliExpress item id (ingest never stored productId for aliexpress rows —
+ * see scripts/index/ingest-embeddings.ts).
+ *
+ * Deliberately does NOT skip scoring: results feed into the same
+ * mergeAndDeduplicateCandidates() + computeMatchConfidence() pipeline as
+ * every other arm, so a bad ANN hit is filtered the same way a bad keyword
+ * hit is — this arm only ever adds candidates, never picks a winner itself.
+ */
+async function findVectorCandidates(
+  queryText: string,
+): Promise<AliExpressProductCandidate[]> {
+  if (!isVectorIndexEnabled()) return [];
+
+  try {
+    const embedding = await embedProductText(queryText);
+    if (!embedding) return [];
+
+    const nearest = await findNearestProducts(embedding, {
+      network: "aliexpress",
+      limit: VECTOR_CANDIDATE_LIMIT,
+    });
+
+    const candidates: AliExpressProductCandidate[] = [];
+    for (const row of nearest) {
+      const productId = row.productId ?? extractProductIdFromUrl(row.sourceUrl);
+      if (!productId || row.priceUsd === null) continue;
+
+      candidates.push({
+        productId,
+        title: row.title,
+        priceUsd: row.priceUsd,
+        productUrl: row.sourceUrl,
+        imageUrl: row.imageUrl,
+        // Trust signals aren't captured by the embedding index — conservative
+        // defaults so match-confidence's 15% trust weight can't overstate an
+        // ANN hit relative to a keyword-search candidate with real seller data.
+        orderCount: 0,
+        sellerRating: 0,
+        shippingDays: null,
+        promotionLink: null,
+      });
+    }
+    return candidates;
+  } catch (err) {
+    console.warn("[find-supplier] vector candidate lookup failed", err);
+    return [];
+  }
 }
 
 function mergeAndDeduplicateCandidates(
@@ -395,6 +461,18 @@ export async function findAliExpressSupplier(params: {
     const categoryResults = await searchCandidates(categoryKeywords, provider, keywordOpts);
     candidates = mergeAndDeduplicateCandidates(candidates, categoryResults);
     if (categoryResults.length > 0) keywordsUsed.push(categoryKeywords);
+  }
+
+  // ── Vector ANN arm (ROADMAP Phase 2 item 1, behind VECTOR_INDEX_ENABLED) ──
+  // Same query text ingest-embeddings.ts embeds for retail rows (title +
+  // category), so query-time and index-time text construction stay in sync.
+  const vectorQueryText = [effectiveTitle, categorySource]
+    .filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+    .join(" — ");
+  const vectorCandidates = await findVectorCandidates(vectorQueryText);
+  if (vectorCandidates.length > 0) {
+    candidates = mergeAndDeduplicateCandidates(candidates, vectorCandidates);
+    keywordsUsed.push(`vector-ann (${vectorCandidates.length} candidates)`);
   }
 
   // ── Phase 5A: SmartMatch raw-URL arm (always, free) ────────────────────────
