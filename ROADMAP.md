@@ -100,8 +100,10 @@ end-to-end against local pipeline, first shareable card.
 
 ### Phase 2 — The Index — "From pipeline to lookup"
 1. ◐ Vector index groundwork LIVE: pgvector 0.8 enabled on Neon,
-   `ProductEmbedding` table + HNSW cosine index (schema via `db push` — this
-   repo does not use migrate). `lib/index/embeddings.ts` wraps
+   `ProductEmbedding` table + HNSW cosine index, tracked as migration
+   `20260707210542_add_pgvector_product_embedding` (its file was originally
+   applied but never committed — backfilled; `prisma migrate status` now
+   reports up to date). `lib/index/embeddings.ts` wraps
    `gemini-embedding-001` @ 768 dims (REST, `outputDimensionality`;
    text-embedding-004 is retired). `npm run index:ingest` embeds cached
    scans + matched supplier listings; ANN round-trip verified live.
