@@ -1,0 +1,32 @@
+{
+  "prediction": {
+    "reasoning": "synthetic fixture",
+    "styleTokens": [],
+    "materialPriors": [],
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.82,
+    "productCategory": "Posture Corrector",
+    "aliexpressKeywords": [
+      "posture corrector back brace",
+      "adjustable back posture support"
+    ],
+    "reasoningSignals": [
+      "Ships from overseas warehouse with 10-20 business day window",
+      "Tracking-delay disclaimer typical of AliExpress fulfillment",
+      "Generic commodity health gadget under house brand"
+    ],
+    "missingSignals": [],
+    "redFlags": [
+      "Overseas fulfillment disclosure",
+      "Long delivery window"
+    ],
+    "estimatedStorePriceUsd": 34.95,
+    "estimatedSupplierPriceUsd": 6,
+    "estimatedMarkupPercent": 483
+  },
+  "rawResponse": "{\"verdict\":\"dropship\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

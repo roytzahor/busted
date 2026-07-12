@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { computePresenceTier, type PresenceTier } from "@/lib/analyze/presence-tier";
 import { normalizeProductUrl } from "@/lib/cache/product-cache";
 import { parseAliExpressData } from "@/lib/types/analyze";
 import { parseCachedAiPrediction, parseCachedScrapeData } from "@/lib/types/cache";
@@ -25,7 +26,11 @@ type LookupResponse =
       scanId: string;
       storeTitle: string;
       storePriceUsd: number | null;
-      aliPriceUsd: number;
+      /** Badge contract — computed from the cached verdict server-side. */
+      presenceTier: PresenceTier;
+      verdict: string | null;
+      /** null when the scan had no confident supplier match. */
+      aliPriceUsd: number | null;
       savingsPercent: number;
       permalink: string;
     };
@@ -71,16 +76,18 @@ export async function GET(request: NextRequest): Promise<NextResponse<LookupResp
     const ai = parseCachedAiPrediction(row.aiPrediction);
     const ali = parseAliExpressData(row.aliexpressData);
 
-    if (!scrape || !ali) return notFound();
+    // A cached verdict without a supplier match is still a hit — the badge
+    // tier comes from the verdict; supplier prices are optional enrichment.
+    if (!scrape || !ai) return notFound();
 
     const storePrice =
-      ai?.prediction?.estimatedStorePriceUsd ??
+      ai.prediction?.estimatedStorePriceUsd ??
       scrape.detectedStorePriceUsd ??
       null;
-    const aliPrice = ali.priceUsd;
+    const aliPrice = ali?.priceUsd ?? null;
 
     let savingsPercent = 0;
-    if (storePrice && storePrice > aliPrice) {
+    if (storePrice && aliPrice !== null && storePrice > aliPrice) {
       savingsPercent = Math.round(((storePrice - aliPrice) / storePrice) * 100);
     }
 
@@ -89,6 +96,8 @@ export async function GET(request: NextRequest): Promise<NextResponse<LookupResp
       scanId: row.id,
       storeTitle: scrape.attributes.title,
       storePriceUsd: storePrice,
+      presenceTier: computePresenceTier(ai.prediction),
+      verdict: ai.prediction?.verdict ?? null,
       aliPriceUsd: aliPrice,
       savingsPercent,
       permalink: `/scan/${row.id}`,

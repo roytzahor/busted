@@ -22,6 +22,10 @@ export interface ScraperInput {
 export interface ScraperOutput {
   attributes: ScrapedProductAttributes;
   markdown: string;
+  /** Raw page HTML when the provider captured it — feeds the Tier-0
+   *  fingerprint gate (app footprints live in script/meta tags that
+   *  markdown strips). Absent for Playwright scrapes. */
+  html?: string;
   detectedStorePriceUsd: number | null;
   storeName: string;
   provider: ScrapeProvider;
@@ -47,6 +51,7 @@ export async function scrape(input: ScraperInput): Promise<Result<ScraperOutput>
       return ok<ScraperOutput>({
         attributes: result.attributes,
         markdown: result.raw.markdown,
+        html: result.raw.html,
         detectedStorePriceUsd,
         storeName,
         provider: result.raw.provider,

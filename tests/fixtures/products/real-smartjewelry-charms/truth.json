@@ -4,7 +4,8 @@
   "expectedVerdict": "dropship",
   "expectedSupplier": {
     "shouldFindMatch": true,
-    "notes": "Charm-bracelet dropship site. Homepage — scrape may be sparse and yield not_a_product/insufficient_evidence; acceptable secondary outcomes."
+    "blockedOnFixtureData": true,
+    "notes": "Charm-bracelet dropship site. Homepage — scrape may be sparse and yield not_a_product/insufficient_evidence; acceptable secondary outcomes. Captured aliexpress.json was searched with the truncated keyword 'tot' (candidates are unrelated products); cached ai-response.json's aliexpressKeywords are correct English terms. Needs a live re-capture, blocked on AliExpress API credentials."
   },
   "notes": "Charm-bracelet dropship site. Homepage — scrape may be sparse and yield not_a_product/insufficient_evidence; acceptable secondary outcomes.",
   "capturedAt": "2026-06-27T08:17:55.636Z"

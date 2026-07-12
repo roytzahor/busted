@@ -1,0 +1,16 @@
+{
+  "url": "https://lumina-glow.shop/products/galaxy-star-projector",
+  "category": "dropship_obvious",
+  "capturedAt": "2026-07-07",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.6,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [
+      4,
+      15
+    ],
+    "notes": "Classic galaxy projector, $6-12 on AliExpress, retailed at $40."
+  },
+  "notes": "Synthetic tier0 positive: DSers fulfillment-app script tag in HTML + template copy. Tier-0 rule A must fire (app footprint + other signal)."
+}

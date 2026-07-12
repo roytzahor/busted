@@ -1,0 +1,39 @@
+{
+  "keywords": "posture corrector back brace adjustable",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005006310001",
+      "title": "Adjustable Posture Corrector Back Brace Shoulder Support Men Women",
+      "priceUsd": 5.6,
+      "productUrl": "https://www.aliexpress.com/item/1005006310001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/posture-1.jpg",
+      "orderCount": 25600,
+      "sellerRating": 4.7,
+      "shippingDays": 15,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006310002",
+      "title": "Back Posture Corrector Brace Adjustable Support Belt Pain Relief",
+      "priceUsd": 4.3,
+      "productUrl": "https://www.aliexpress.com/item/1005006310002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/posture-2.jpg",
+      "orderCount": 14100,
+      "sellerRating": 4.8,
+      "shippingDays": 18,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006310003",
+      "title": "Breathable Posture Corrector Upper Back Brace Clavicle Support",
+      "priceUsd": 8.15,
+      "productUrl": "https://www.aliexpress.com/item/1005006310003.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/posture-3.jpg",
+      "orderCount": 7800,
+      "sellerRating": 4.9,
+      "shippingDays": 13,
+      "promotionLink": null
+    }
+  ]
+}

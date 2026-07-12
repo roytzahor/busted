@@ -8,6 +8,7 @@ import {
 import { checkRateLimit, resolveClientIp } from "@/lib/api/rate-limit";
 import { isValidProductUrl } from "@/lib/api/validate-url";
 import { PipelineWaterfall } from "@/lib/analyze/pipeline-waterfall";
+import { computePresenceTier } from "@/lib/analyze/presence-tier";
 import { findAliExpressSupplier } from "@/lib/aliexpress/find-supplier";
 import {
   searchBrowseCandidates,
@@ -342,6 +343,7 @@ async function runAnalysisPipeline(
           supplierImageMatchReasoning: resolvedImageMatchReasoning,
           sourceType,
           dropshipPrediction: ai.prediction,
+          presenceTier: computePresenceTier(ai.prediction),
           ...(resolvedBrowseCandidates !== undefined
             ? { browseCandidates: resolvedBrowseCandidates }
             : {}),
@@ -483,6 +485,7 @@ async function runAnalysisPipeline(
     url: normalizedUrl,
     attributes: scrapeOut.attributes,
     markdown: scrapeOut.markdown,
+    html: scrapeOut.html,
     storePriceUsd,
     identity,
   });
@@ -806,6 +809,7 @@ async function runAnalysisPipeline(
     supplierNetwork,
     sourceType,
     dropshipPrediction: aiResult.prediction,
+    presenceTier: computePresenceTier(aiResult.prediction),
     ...(browseCandidates !== undefined ? { browseCandidates } : {}),
     ...(browseQuery !== undefined ? { browseQuery } : {}),
     lastScrapedAt: persisted.lastScrapedAt.toISOString(),

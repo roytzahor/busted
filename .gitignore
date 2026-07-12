@@ -49,3 +49,6 @@ next-env.d.ts
 
 # Nested agent git worktrees (registered via git worktree — never commit into parent)
 .claude/worktrees/
+
+# Feedback-harvested fixture drafts — hand-verified before promotion to products/
+tests/fixtures/candidates/

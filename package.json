@@ -21,7 +21,9 @@
     "verify:categories": "tsx --env-file-if-exists=.env scripts/verify-category-ids.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "eval:harvest": "tsx --env-file=.env scripts/eval/harvest-feedback-fixtures.ts",
+    "index:ingest": "tsx --env-file=.env scripts/index/ingest-embeddings.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

@@ -1,0 +1,26 @@
+{
+  "prediction": {
+    "reasoning": "synthetic fixture",
+    "styleTokens": [],
+    "materialPriors": [],
+    "verdict": "legit",
+    "isLikelyDropship": false,
+    "confidence": 0.85,
+    "productCategory": "Trail Running Shoe",
+    "aliexpressKeywords": [],
+    "reasoningSignals": [
+      "Named factory and manufacturing origin (Portugal)",
+      "Branded flagship product line with model iteration",
+      "Domestic 2-4 day shipping with standard international window"
+    ],
+    "missingSignals": [],
+    "redFlags": [],
+    "estimatedStorePriceUsd": 129,
+    "estimatedSupplierPriceUsd": null,
+    "estimatedMarkupPercent": null
+  },
+  "rawResponse": "{\"verdict\":\"legit\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}

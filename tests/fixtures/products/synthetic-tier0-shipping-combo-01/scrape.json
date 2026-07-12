@@ -1,0 +1,21 @@
+{
+  "raw": {
+    "provider": "crawlbase",
+    "markdown": "# AlignPro Posture Corrector Back Brace\n\n**$34.95**\n\nAdjustable posture corrector for men and women. Relieves back and shoulder pain.\n\nShipping: ships from our overseas warehouse. Please allow 10-20 business days for delivery. Tracking information may take up to 7 days to update.",
+    "metadata": {
+      "title": "AlignPro Posture Corrector Back Brace",
+      "description": "Adjustable posture corrector back brace for men and women. Relieves back and shoulder pain. Breathable and discreet under clothes.",
+      "ogImage": "https://alignpro-wellness.com/img/posture-brace.jpg",
+      "sourceUrl": "https://alignpro-wellness.com/products/posture-corrector-back-brace"
+    }
+  },
+  "attributes": {
+    "title": "AlignPro Posture Corrector Back Brace",
+    "description": "Adjustable posture corrector back brace for men and women. Relieves back and shoulder pain. Breathable and discreet under clothes.",
+    "mainImageUrl": "https://alignpro-wellness.com/img/posture-brace.jpg",
+    "sourceUrl": "https://alignpro-wellness.com/products/posture-corrector-back-brace",
+    "provider": "crawlbase"
+  },
+  "detectedStorePriceUsd": 34.95,
+  "storeName": "alignpro-wellness.com"
+}

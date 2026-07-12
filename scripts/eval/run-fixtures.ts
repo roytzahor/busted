@@ -18,6 +18,7 @@ import {
 import { detectProductSource } from "@/lib/scraping/detect-source";
 import { buildSupplierMarketplacePrediction } from "@/lib/ai/supplier-marketplace-analysis";
 import { loadAllFixtures } from "@/lib/eval/fixture-store";
+import { runStoreFingerprint } from "@/lib/tier0/store-fingerprint";
 import type {
   ExpectedVerdict,
   FixtureCategory,
@@ -95,6 +96,8 @@ interface FixtureOutcome {
   supplierMatch: boolean;
   supplierWinnerPriceUsd: number | null;
   estimatedCostUsd: number;
+  /** Excluded from the pass/fail gate — see ExpectedSupplier.blockedOnFixtureData. */
+  blocked: boolean;
   notes: string[];
 }
 
@@ -204,6 +207,9 @@ async function evaluateFixture(
     // Without this, any random high-volume AliExpress listing is treated as a
     // "found" supplier even when its title is completely unrelated (e.g. a USB
     // charger returned for a Hebrew candle brand search).
+    const confidenceFloor = fixture.truth.expectedSupplier.acceptLowConfidence
+      ? 0
+      : MATCH_CONFIDENCE_MIN;
     const confidenceRanked = ranked
       .map((candidate) => ({
         candidate,
@@ -214,7 +220,7 @@ async function evaluateFixture(
           matchTerms,
         ),
       }))
-      .filter(({ confidence }) => confidence.score >= MATCH_CONFIDENCE_MIN);
+      .filter(({ confidence }) => confidence.score >= confidenceFloor);
 
     supplierFound = confidenceRanked.length > 0;
     supplierWinnerPriceUsd = confidenceRanked[0]?.candidate.priceUsd ?? null;
@@ -245,6 +251,11 @@ async function evaluateFixture(
     }
   }
 
+  const blocked = fixture.truth.expectedSupplier.blockedOnFixtureData === true;
+  if (blocked && !supplierMatch) {
+    notes.push("blocked on fixture data — excluded from pass/fail gate");
+  }
+
   return {
     id: fixture.id,
     category: fixture.truth.category,
@@ -257,6 +268,7 @@ async function evaluateFixture(
     supplierMatch,
     supplierWinnerPriceUsd,
     estimatedCostUsd: projectScanCost(fixture, predictedVerdict),
+    blocked,
     notes,
   };
 }
@@ -411,6 +423,45 @@ function printCostProjection(
   return breached;
 }
 
+/**
+ * Tier-0 fingerprint precision report. The gate runs in production BEFORE the
+ * AI verdict (lib/services/dropship-verdict), so a fire on a non-dropship
+ * fixture is a real production false positive — it fails the run. Fires on
+ * dropship fixtures are the win metric: each one is an AI call saved.
+ * Verdict/supplier metrics above are unaffected (they replay the cached AI),
+ * so results stay comparable with pre-Tier-0 baselines.
+ */
+function printTier0Report(fixtures: FixtureRecord[]): number {
+  console.log("\n=== Tier-0 Fingerprint Gate (deterministic — target: 0 false fires) ===\n");
+  let fired = 0;
+  let elapsedTotal = 0;
+  let maxElapsed = 0;
+  const falseFires: string[] = [];
+
+  for (const f of fixtures) {
+    const res = runStoreFingerprint({
+      attributes: f.scrape.attributes,
+      markdown: f.scrape.raw.markdown,
+      html: f.scrape.raw.html,
+      storePriceUsd: f.scrape.detectedStorePriceUsd,
+    });
+    elapsedTotal += res.elapsedMs;
+    maxElapsed = Math.max(maxElapsed, res.elapsedMs);
+    if (!res.fired) continue;
+    fired += 1;
+    if (f.truth.expectedVerdict !== "dropship") {
+      falseFires.push(`${f.id} [${f.truth.category}] — ${res.signals.join("; ")}`);
+    }
+  }
+
+  console.log(`fired: ${fired}/${fixtures.length} fixtures (each fire = one AI verdict call saved)`);
+  console.log(`latency: mean=${(elapsedTotal / fixtures.length).toFixed(2)}ms  max=${maxElapsed.toFixed(2)}ms`);
+  console.log(`false fires (non-dropship truth): ${falseFires.length}`);
+  falseFires.forEach((s) => console.log(`  ✗ ${s}`));
+  if (falseFires.length === 0) console.log("✓ no false fires");
+  return falseFires.length;
+}
+
 function printFailures(outcomes: FixtureOutcome[]): void {
   const failures = outcomes.filter((o) => !o.verdictMatch || !o.supplierMatch);
   if (failures.length === 0) {
@@ -448,6 +499,20 @@ function printSummary(outcomes: FixtureOutcome[]): void {
   console.log(`supplier accuracy:  ${supplierCorrect}/${total}  (${supplierPct}%)`);
 }
 
+/**
+ * Fixtures marked blockedOnFixtureData that are still failing don't count
+ * toward the gate — but never disappear silently, so list them every run.
+ */
+function printBlockedFixtures(outcomes: FixtureOutcome[]): void {
+  const excluded = outcomes.filter((o) => o.blocked && !o.supplierMatch);
+  if (excluded.length === 0) return;
+
+  console.log("\n=== Excluded From Gate (blocked on fixture data) ===\n");
+  for (const o of excluded) {
+    console.log(`  • ${o.id}`);
+  }
+}
+
 async function main(): Promise<void> {
   const opts = parseOptions();
   const allFixtures = loadAllFixtures();
@@ -479,12 +544,17 @@ async function main(): Promise<void> {
   printConfidenceBuckets(outcomes);
   printSupplierAccuracy(outcomes);
   printFalsePositives(outcomes);
+  const tier0FalseFires = printTier0Report(fixtures);
   const costBreached = printCostProjection(outcomes, opts.maxMeanCost, opts.enforceCost);
   printFailures(outcomes);
   printSummary(outcomes);
+  printBlockedFixtures(outcomes);
 
-  const accuracyFailed = !outcomes.every((o) => o.verdictMatch && o.supplierMatch);
-  const exitCode = accuracyFailed || (opts.enforceCost && costBreached) ? 1 : 0;
+  const accuracyFailed = !outcomes.every(
+    (o) => o.verdictMatch && (o.supplierMatch || o.blocked),
+  );
+  const exitCode =
+    accuracyFailed || tier0FalseFires > 0 || (opts.enforceCost && costBreached) ? 1 : 0;
   process.exit(exitCode);
 }
 

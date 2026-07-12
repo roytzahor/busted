@@ -41,6 +41,9 @@ type Spec = {
   description: string;
   imageUrl: string | null;
   markdown: string;
+  /** Raw page HTML — only needed by fixtures exercising the Tier-0
+   *  app-footprint signals (they match in attribute position, HTML only). */
+  html?: string;
   priceUsd: number | null;
   truth: Omit<FixtureTruth, "url" | "category" | "capturedAt">;
   ai: SynthPrediction;
@@ -595,6 +598,190 @@ const SPECS: Spec[] = [
       estimatedMarkupPercent: null,
     },
   },
+
+  // ── tier0: fixtures exercising the deterministic fingerprint gate ─────────
+  // Two MUST fire (app footprint / shipping combo) and two MUST stay silent
+  // (prose mention of app names / single weak shipping signal). The eval's
+  // Tier-0 report fails the run if either negative fires.
+  {
+    id: "synthetic-tier0-app-footprint-01",
+    category: "dropship_obvious",
+    url: "https://lumina-glow.shop/products/galaxy-star-projector",
+    storeName: "lumina-glow.shop",
+    title: "Galaxy Star Projector — Lumina Glow",
+    description:
+      "Transform any room into a galaxy. LED star projector with nebula cloud effects, remote control and built-in timer.",
+    imageUrl: "https://lumina-glow.shop/img/galaxy-projector.jpg",
+    priceUsd: 39.99,
+    markdown:
+      "# Galaxy Star Projector\n\n**$39.99** ~~$79.99~~ 50% off today only!\n\nTransform any room into a galaxy. LED star projector with nebula cloud effects.\n\n- Free worldwide shipping\n- Remote control + timer\n- Not sold in stores",
+    html:
+      '<html><head><meta name="generator" content="Shopify"><script src="https://cdn.shopify.com/extensions/dsers-fulfillment/assets/app.js" defer></script></head><body><h1>Galaxy Star Projector</h1><p>Free worldwide shipping. 50% off today only!</p></body></html>',
+    truth: {
+      expectedVerdict: "dropship",
+      confidenceMin: 0.6,
+      expectedSupplier: {
+        shouldFindMatch: true,
+        expectedPriceUsdBand: [4, 15],
+        notes: "Classic galaxy projector, $6-12 on AliExpress, retailed at $40.",
+      },
+      notes:
+        "Synthetic tier0 positive: DSers fulfillment-app script tag in HTML + template copy. Tier-0 rule A must fire (app footprint + other signal).",
+    },
+    ai: {
+      verdict: "dropship",
+      isLikelyDropship: true,
+      confidence: 0.86,
+      productCategory: "Galaxy Star Projector",
+      aliexpressKeywords: ["galaxy star projector", "led nebula night light projector"],
+      reasoningSignals: [
+        "DSers dropship fulfillment app script present in page source",
+        "Free worldwide shipping + 'today only' urgency template copy",
+        "Well-known viral dropship gadget category",
+      ],
+      missingSignals: [],
+      redFlags: ["Fulfillment app footprint", "Urgency template copy"],
+      estimatedStorePriceUsd: 39.99,
+      estimatedSupplierPriceUsd: 8,
+      estimatedMarkupPercent: 400,
+    },
+    aliexpress: {
+      keywords: "galaxy star projector led nebula night light",
+      provider: "aliexpress_api",
+      candidates: [
+        { productId: "1005006300001", title: "Galaxy Star Projector LED Nebula Night Light Remote Control Timer", priceUsd: 8.9, productUrl: "https://www.aliexpress.com/item/1005006300001.html", imageUrl: "https://ae01.alicdn.com/kf/galaxy-1.jpg", orderCount: 18700, sellerRating: 4.8, shippingDays: 14, promotionLink: null },
+        { productId: "1005006300002", title: "LED Star Galaxy Projector Nebula Cloud Night Light Bedroom", priceUsd: 6.75, productUrl: "https://www.aliexpress.com/item/1005006300002.html", imageUrl: "https://ae01.alicdn.com/kf/galaxy-2.jpg", orderCount: 9400, sellerRating: 4.7, shippingDays: 17, promotionLink: null },
+        { productId: "1005006300003", title: "Starry Sky Galaxy Projector Light USB Nebula Lamp Remote", priceUsd: 11.2, productUrl: "https://www.aliexpress.com/item/1005006300003.html", imageUrl: "https://ae01.alicdn.com/kf/galaxy-3.jpg", orderCount: 5300, sellerRating: 4.9, shippingDays: 12, promotionLink: null },
+      ],
+    },
+  },
+  {
+    id: "synthetic-tier0-shipping-combo-01",
+    category: "dropship_obvious",
+    url: "https://alignpro-wellness.com/products/posture-corrector-back-brace",
+    storeName: "alignpro-wellness.com",
+    title: "AlignPro Posture Corrector Back Brace",
+    description:
+      "Adjustable posture corrector back brace for men and women. Relieves back and shoulder pain. Breathable and discreet under clothes.",
+    imageUrl: "https://alignpro-wellness.com/img/posture-brace.jpg",
+    priceUsd: 34.95,
+    markdown:
+      "# AlignPro Posture Corrector Back Brace\n\n**$34.95**\n\nAdjustable posture corrector for men and women. Relieves back and shoulder pain.\n\nShipping: ships from our overseas warehouse. Please allow 10-20 business days for delivery. Tracking information may take up to 7 days to update.",
+    truth: {
+      expectedVerdict: "dropship",
+      confidenceMin: 0.6,
+      expectedSupplier: {
+        shouldFindMatch: true,
+        expectedPriceUsdBand: [3, 12],
+        notes: "Generic posture corrector, $4-9 on AliExpress, retailed at $35.",
+      },
+      notes:
+        "Synthetic tier0 positive: overseas warehouse + 10-20 day window + tracking disclaimer = 3 shipping-policy signals. Tier-0 rule C must fire.",
+    },
+    ai: {
+      verdict: "dropship",
+      isLikelyDropship: true,
+      confidence: 0.82,
+      productCategory: "Posture Corrector",
+      aliexpressKeywords: ["posture corrector back brace", "adjustable back posture support"],
+      reasoningSignals: [
+        "Ships from overseas warehouse with 10-20 business day window",
+        "Tracking-delay disclaimer typical of AliExpress fulfillment",
+        "Generic commodity health gadget under house brand",
+      ],
+      missingSignals: [],
+      redFlags: ["Overseas fulfillment disclosure", "Long delivery window"],
+      estimatedStorePriceUsd: 34.95,
+      estimatedSupplierPriceUsd: 6,
+      estimatedMarkupPercent: 483,
+    },
+    aliexpress: {
+      keywords: "posture corrector back brace adjustable",
+      provider: "aliexpress_api",
+      candidates: [
+        { productId: "1005006310001", title: "Adjustable Posture Corrector Back Brace Shoulder Support Men Women", priceUsd: 5.6, productUrl: "https://www.aliexpress.com/item/1005006310001.html", imageUrl: "https://ae01.alicdn.com/kf/posture-1.jpg", orderCount: 25600, sellerRating: 4.7, shippingDays: 15, promotionLink: null },
+        { productId: "1005006310002", title: "Back Posture Corrector Brace Adjustable Support Belt Pain Relief", priceUsd: 4.3, productUrl: "https://www.aliexpress.com/item/1005006310002.html", imageUrl: "https://ae01.alicdn.com/kf/posture-2.jpg", orderCount: 14100, sellerRating: 4.8, shippingDays: 18, promotionLink: null },
+        { productId: "1005006310003", title: "Breathable Posture Corrector Upper Back Brace Clavicle Support", priceUsd: 8.15, productUrl: "https://www.aliexpress.com/item/1005006310003.html", imageUrl: "https://ae01.alicdn.com/kf/posture-3.jpg", orderCount: 7800, sellerRating: 4.9, shippingDays: 13, promotionLink: null },
+      ],
+    },
+  },
+  {
+    id: "synthetic-tier0-negative-blog-01",
+    category: "not_a_product",
+    url: "https://ecommerce-insider.net/blog/best-dropshipping-apps-2026",
+    storeName: "ecommerce-insider.net",
+    title: "The 7 Best Dropshipping Apps for Shopify in 2026",
+    description:
+      "We compared DSers, Zendrop, Spocket, AutoDS and EPROLO on pricing, supplier quality and automation to find the best dropshipping app for your store.",
+    imageUrl: "https://ecommerce-insider.net/img/apps-cover.jpg",
+    priceUsd: null,
+    markdown:
+      "# The 7 Best Dropshipping Apps for Shopify in 2026\n\nDSers is the most popular Oberlo replacement, while Zendrop and Spocket focus on faster US fulfillment. AutoDS and EPROLO round out the automation-heavy tier. Here's how they compare on pricing and supplier quality.",
+    html:
+      '<html><body><article><h1>The 7 Best Dropshipping Apps for Shopify in 2026</h1><p>DSers is the most popular Oberlo replacement, while Zendrop and Spocket focus on faster US fulfillment. AutoDS and EPROLO round out the automation-heavy tier.</p></article></body></html>',
+    truth: {
+      expectedVerdict: "not_a_product",
+      expectedSupplier: {
+        shouldFindMatch: false,
+        notes: "Editorial article about dropshipping apps — no supplier search.",
+      },
+      notes:
+        "Synthetic tier0 NEGATIVE: app names appear in prose (markdown + HTML text), never in attribute position. Tier-0 MUST NOT fire — a fire here is a regression.",
+    },
+    ai: {
+      verdict: "not_a_product",
+      isLikelyDropship: false,
+      confidence: 0.9,
+      productCategory: "",
+      aliexpressKeywords: [],
+      reasoningSignals: ["Editorial listicle about dropshipping tools, not a product page"],
+      missingSignals: [],
+      redFlags: [],
+      estimatedStorePriceUsd: null,
+      estimatedSupplierPriceUsd: null,
+      estimatedMarkupPercent: null,
+    },
+  },
+  {
+    id: "synthetic-tier0-negative-legit-shipping-01",
+    category: "legit_brand",
+    url: "https://atlasfootwear.com/products/trail-runner-2",
+    storeName: "atlasfootwear.com",
+    title: "Trail Runner 2 — Atlas Footwear",
+    description:
+      "Our flagship trail running shoe, redesigned. Vibram outsole, recycled knit upper, made in our Portugal factory. Free returns for 60 days.",
+    imageUrl: "https://atlasfootwear.com/img/trail-runner-2.jpg",
+    priceUsd: 129,
+    markdown:
+      "# Trail Runner 2\n\n**$129.00**\n\nOur flagship trail running shoe, redesigned. Vibram outsole, recycled knit upper, made in our Portugal factory.\n\nShipping: domestic orders arrive in 2-4 days. International orders: please allow 7-10 business days for delivery.",
+    truth: {
+      expectedVerdict: "legit",
+      confidenceMin: 0.6,
+      expectedSupplier: {
+        shouldFindMatch: false,
+        notes: "Established brand with own factory — no supplier match expected.",
+      },
+      notes:
+        "Synthetic tier0 NEGATIVE: exactly one shipping-policy signal (7-10 day international window) and zero template signals. Tier-0 MUST NOT fire on a single signal.",
+    },
+    ai: {
+      verdict: "legit",
+      isLikelyDropship: false,
+      confidence: 0.85,
+      productCategory: "Trail Running Shoe",
+      aliexpressKeywords: [],
+      reasoningSignals: [
+        "Named factory and manufacturing origin (Portugal)",
+        "Branded flagship product line with model iteration",
+        "Domestic 2-4 day shipping with standard international window",
+      ],
+      missingSignals: [],
+      redFlags: [],
+      estimatedStorePriceUsd: 129,
+      estimatedSupplierPriceUsd: null,
+      estimatedMarkupPercent: null,
+    },
+  },
 ];
 
 function toRecord(spec: Spec): Omit<FixtureRecord, "id"> {
@@ -610,6 +797,7 @@ function toRecord(spec: Spec): Omit<FixtureRecord, "id"> {
       raw: {
         provider: "crawlbase",
         markdown: spec.markdown,
+        ...(spec.html ? { html: spec.html } : {}),
         metadata: {
           title: spec.title,
           description: spec.description,
@@ -633,8 +821,14 @@ function toRecord(spec: Spec): Omit<FixtureRecord, "id"> {
 }
 
 function main(): void {
+  // --only <substr> re-seeds a subset without touching (and re-dating)
+  // every other synthetic fixture on disk.
+  const onlyIdx = process.argv.indexOf("--only");
+  const only = onlyIdx !== -1 ? process.argv[onlyIdx + 1] : undefined;
+
   let written = 0;
   for (const spec of SPECS) {
+    if (only && !spec.id.includes(only)) continue;
     saveFixture(spec.id, toRecord(spec));
     console.log(`  ✓ ${spec.id} [${spec.category}]`);
     written += 1;

@@ -1,65 +1,139 @@
-# Busted — Chrome extension (MV3)
+# Busted Chrome Extension
 
-Floating "Bust this product" pill on any product page that matches a
-JSON-LD Product schema, an `og:type=product` meta, or a Shopify product
-price meta tag.
+**Smoke alarm, not weather forecast.** Real-time dropship markup detection for e-commerce.
 
-## Status
+## What it does
 
-**v0.2 (Sprint 12, Stage 36).** Two-stage pill — generic by default, rich
-with cached supplier price + savings % when we've previously scanned the
-URL. Manifest V3, vanilla JS, no build step. Not in the Chrome Web Store
-yet — install unpacked for now.
+The Busted extension analyzes product pages and alerts you when it detects dropship products with extreme markups. It talks to a Next.js backend API to:
 
-## Install locally
+1. Scrape the page and extract product attributes
+2. Run AI-powered dropship likelihood scoring
+3. Search AliExpress for the same product from the supplier
+4. Compute the markup % (store price vs. supplier cost)
+5. Verify the match via image AI (optional)
 
-1. Open `chrome://extensions`
-2. Toggle **Developer mode** (top right)
+## Installation
+
+### Load Unpacked (Development)
+
+1. In Chrome, go to `chrome://extensions/`
+2. Enable **Developer mode** (toggle in top right)
 3. Click **Load unpacked**
-4. Pick the `extension/` directory in this repo
-5. Visit any Shopify-style product page — a "Bust this product" pill appears
-   bottom-right
-6. Click the pill or the toolbar icon → opens Busted with the URL pre-filled
+4. Select the `extension/` directory from this repository
+5. The extension appears in your toolbar
 
-## How it detects product pages
+### Setup the API
 
-Content script looks for one of:
+The extension defaults to `http://localhost:3000`. To start the backend:
 
-- `<script type="application/ld+json">` with `@type` "Product" (covers Shopify,
-  WooCommerce, BigCommerce, most modern carts)
-- `<meta property="og:type" content="product">`
-- `<meta property="product:price:amount">`
+```bash
+cd /Users/tzahore/github/busted
+npm run dev
+```
 
-When any of those fire, we inject the pill once per pageload, with a
-mutation-observer that re-checks on SPA navigation.
+The backend must be running for scans to work. You can change the API base URL in the extension popup's settings.
 
-## Excluded hosts
+## How to use
 
-The pill never shows on:
+1. **Click the Busted icon** in your toolbar to open the popup
+2. **Click "Scan this page"** to analyze the current product page
+3. The extension will show one of three states:
 
-- aliexpress.com (would be silly)
-- busted.app (would be silly)
-- google.com, youtube.com (false positives — they have product schema for ads)
+   - **🔥 Busted** (flame badge): Extreme markup detected. Shows store price (struck-through), supplier price, markup %, and a link to the source on AliExpress
+   - **⚠️ Dropship signals detected** (amber badge): Some indicators suggest dropship; confidence is lower. No supplier link shown
+   - **✓ Nothing to report** (no badge): Clean page, no concerns
 
-Add more in `manifest.json` → `content_scripts[0].exclude_matches`.
+## Tier Mapping
 
-## Roadmap
+| Tier | Badge | Appearance | UI |
+|------|-------|-----------|-----|
+| **flame** | 🔥 | Red/orange (#E4572E) | Full bust panel with prices & CTA |
+| **amber** | ! | Amber (#D99A2B) | Cautious panel, no supplier link |
+| **silent** | (none) | — | "Nothing to report" state |
 
-- **v0.2 (shipped):** Quick-lookup → rich pill with supplier price + savings
-  % when the URL is already in our 14-day cache
-- **v0.3:** Background scan trigger for unseen URLs — kick off `/api/analyze`
-  in the background, switch the pill from generic → rich as soon as it lands
-- **v0.4:** Inline price tag injected next to the page's price element
-- **v0.5:** chrome.notifications for big-savings finds (≥ 70%)
-- **v1.0:** Chrome Web Store publication (needs privacy policy + reviewer-
-  ready listing + 16/48/128 vector icons)
+The server is the source of truth for tiers. The extension never escalates a tier client-side.
 
-## Files
+## Settings
 
-| File | Purpose |
-|------|---------|
-| `manifest.json` | MV3 manifest, permissions, content-script rules |
-| `content.js` | Page detection + pill injection |
-| `content.css` | Pill styles, locked to `z-index: 2147483647` |
-| `popup.html/.css/.js` | Toolbar popup with "Bust this page" + "Open Busted" |
-| `icons/` | 16/48/128 PNG icons (currently the app icon for all sizes) |
+### Auto-scan (off by default)
+
+When enabled, the extension automatically scans product pages when you navigate to them. Auto-scan:
+
+- Respects the 10 requests/min rate limit
+- Skips obvious non-shopping hosts (Google, YouTube, GitHub, etc.)
+- Debounces rapidly repeated scans
+- Uses cached results when available
+
+**Disabled by default** to respect the backend's rate limit. Enable only if your backend has sufficient capacity.
+
+### API Base URL
+
+Default: `http://localhost:3000`
+
+If your backend runs on a different host/port, update this in the popup settings.
+
+**Non-localhost backends:** `host_permissions` in `manifest.json` only covers
+`http://localhost/*` (any port). If you point `apiBase` at a deployed HTTPS
+origin, add that origin (e.g. `"https://your-app.vercel.app/*"`) to
+`host_permissions` and reload the extension — otherwise the fetch is
+CORS-blocked. The permission is deliberately narrow; never restore `https://*/*`.
+
+## Error Handling
+
+The extension follows a **silence-on-error** philosophy:
+
+- Network timeout, non-200 response, missing `presenceTier`, or any fetch failure → treated as **silent** (no badge)
+- Never shows error alarms in the badge; popup may show a muted "couldn't scan" note
+- This prevents false alarms when the backend is slow or unreachable
+
+## Technical Details
+
+### Files
+
+- `manifest.json` — Manifest V3 config
+- `background.js` — Service worker; caches results, handles auto-scan, sets badges
+- `popup.html` — UI structure
+- `popup.js` — State management and API communication
+- `popup.css` — Dark glass aesthetic
+- `content.js` / `content.css` — v0.2 in-page overlay (predates the popup): calls the
+  deployed backend's `/api/extension/quick-lookup` directly for an instant
+  store-level hint. Standalone — no messaging with popup/background.
+- `icons/` — toolbar + store icons
+
+### Caching
+
+- **Per-tab cache**: In-memory; cleared when tab closes or navigates
+- **Session cache**: ~50 most-recent URL results; persists during the session
+- **Auto-scan**: Checks session cache before fetching from API
+
+### Design
+
+- **Dark glass aesthetic**: Deep warm dark background (#17120D) with frosted glass cards
+- **Cinematic**: Gradients, soft shadows, respect for `prefers-reduced-motion`
+- **Responsive**: Works at the minimum 340px popup width
+
+## Rate Limiting
+
+The backend is rate-limited to **10 requests/min per IP**. Each scan takes 10–30 seconds. Plan accordingly.
+
+## Development
+
+### Troubleshooting
+
+**Extension won't load**: Check that `manifest.json` is valid (run `node -e "require('./extension/manifest.json')"` to verify JSON)
+
+**Scans fail with "nothing to report"**: Check that the backend is running on the configured API base URL. Open DevTools for the popup (right-click → Inspect) and check the Network tab.
+
+**Auto-scan not triggering**: Verify "Auto-scan enabled" is toggled in the popup settings, and the current page passes the shopping-domain heuristic.
+
+### Modifying the extension
+
+All code is vanilla JavaScript with no build step. Edit the files directly and reload:
+
+1. Make your changes
+2. Go to `chrome://extensions/`
+3. Click the reload icon on the Busted card
+
+## License
+
+Same as the parent Busted repository.

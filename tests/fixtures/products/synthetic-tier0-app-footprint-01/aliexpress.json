@@ -1,0 +1,39 @@
+{
+  "keywords": "galaxy star projector led nebula night light",
+  "provider": "aliexpress_api",
+  "candidates": [
+    {
+      "productId": "1005006300001",
+      "title": "Galaxy Star Projector LED Nebula Night Light Remote Control Timer",
+      "priceUsd": 8.9,
+      "productUrl": "https://www.aliexpress.com/item/1005006300001.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/galaxy-1.jpg",
+      "orderCount": 18700,
+      "sellerRating": 4.8,
+      "shippingDays": 14,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006300002",
+      "title": "LED Star Galaxy Projector Nebula Cloud Night Light Bedroom",
+      "priceUsd": 6.75,
+      "productUrl": "https://www.aliexpress.com/item/1005006300002.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/galaxy-2.jpg",
+      "orderCount": 9400,
+      "sellerRating": 4.7,
+      "shippingDays": 17,
+      "promotionLink": null
+    },
+    {
+      "productId": "1005006300003",
+      "title": "Starry Sky Galaxy Projector Light USB Nebula Lamp Remote",
+      "priceUsd": 11.2,
+      "productUrl": "https://www.aliexpress.com/item/1005006300003.html",
+      "imageUrl": "https://ae01.alicdn.com/kf/galaxy-3.jpg",
+      "orderCount": 5300,
+      "sellerRating": 4.9,
+      "shippingDays": 12,
+      "promotionLink": null
+    }
+  ]
+}

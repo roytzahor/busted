@@ -1,0 +1,11 @@
+{
+  "url": "https://ecommerce-insider.net/blog/best-dropshipping-apps-2026",
+  "category": "not_a_product",
+  "capturedAt": "2026-07-07",
+  "expectedVerdict": "not_a_product",
+  "expectedSupplier": {
+    "shouldFindMatch": false,
+    "notes": "Editorial article about dropshipping apps — no supplier search."
+  },
+  "notes": "Synthetic tier0 NEGATIVE: app names appear in prose (markdown + HTML text), never in attribute position. Tier-0 MUST NOT fire — a fire here is a regression."
+}

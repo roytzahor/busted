@@ -10,7 +10,7 @@ Brand name in code: "Busted" (SVG aria-label). Repo name is "BuyPass".
 - **UI**: Tailwind CSS + Radix UI + shadcn/ui (`components/ui/`). All className merging goes through `cn()` in `lib/utils.ts` — the most-connected node in the graph (63 edges).
 - **Database**: Prisma + Neon Postgres. Schema is managed via `prisma/`. Client is `@prisma/client`.
 - **AI**: `lib/ai/client.ts` provides a unified `AIClient` that wraps Google Generative AI (`@google/generative-ai`). Two AI modules: `dropship-verifier.ts` and `supplier-marketplace-analysis.ts`.
-- **Scraping**: Firecrawl (`lib/scraping/firecrawl.ts`) as primary; Playwright (`lib/scraping/playwright-fallback.ts`) as fallback. Entry point: `scrapeProductUrl()` in `lib/scraping/router.ts`.
+- **Scraping**: Crawlbase JS-render (primary) → Firecrawl markdown (fallback) → Playwright headless (last resort). Order is dynamic: `lib/learning/priors.ts` hoists a domain's `preferredProvider` and drops `skipProvider` at runtime. Entry point: `scrapeProductUrl()` in `lib/scraping/router.ts`.
 - **Affiliate**: Admitad integration in `lib/affiliate/` (`convert-link.ts`, `validate-link.ts`).
 - **AliExpress**: OAuth + product search in `lib/aliexpress/`. API client + scrape fallback.
 
@@ -153,6 +153,10 @@ When modifying the prompt (`lib/ai/dropship-verifier.ts`) or scoring (`lib/aliex
 | `lib/aliexpress/match-confidence.ts` | `computeMatchConfidence()` + `foldImageMatchIntoConfidence()` — title/price/trust + image AI scoring for AliExpress candidates |
 | `lib/aliexpress/find-supplier.ts` | Wires match-confidence + image AI into the supplier search; soft-skips on `NO_CONFIDENT_MATCH` |
 | `lib/ai/image-match.ts` | `compareProductImagesWithAI()` — multimodal Gemini call comparing scraped image vs top AliExpress candidate images |
+| `lib/tier0/store-fingerprint.ts` | Tier-0 deterministic dropship fingerprint gate — zero-token verdict for template stores; short-circuits the AI call in the dropship-verdict service |
+| `lib/analyze/presence-tier.ts` | `computePresenceTier()` — server-side flame/amber/silent mapping, the extension badge contract |
+| `extension/` | Chrome extension MV3 (vanilla JS, no build step) — passive badge + popup; renders `presenceTier` verbatim, silence on error |
+| `ROADMAP.md` | Product vision, pillars, phase roadmap — durable across sessions; keep in sync with reality |
 | `lib/eval/fixture-store.ts` | Loader for the eval fixture system |
 | `tests/eval/fixture-types.ts` | Schema for `truth.json` + cached scrape/AI/AliExpress fixtures |
 | `scripts/eval/run-fixtures.ts` | `npm run eval` — confusion matrix + calibration + per-fixture failures |
@@ -243,5 +247,11 @@ transition-colors hover:border-white/12 hover:bg-white/[0.05]
 - **Match-confidence threshold (`MATCH_CONFIDENCE_MIN = 0.4`)**: only change after running `npm run eval` before and after — false positives (wrong supplier shown for legit/non-product pages) are the most damaging failure mode.
 - **Image AI never gates the basic flow**: `compareProductImagesWithAI()` returns `null` on any failure and the supplier search falls back to the text-only score. Don't add `throw` paths inside the image-match module.
 - **`IMAGE_MATCH_ENABLED=false`** in env is the emergency kill switch — leave the code path intact even when disabled.
+- **`TIER0_FINGERPRINT_ENABLED=false`** kills the Tier-0 fingerprint gate (`lib/tier0/store-fingerprint.ts`). Tier-0 fires only on multi-signal deterministic evidence and runs in the production verdict path — `npm run eval` fails on any Tier-0 false fire (non-dropship fixture firing), so changing its patterns requires a green eval.
+- **`presenceTier` is the only UI confidence contract**: flame/amber/silent is computed server-side in `lib/analyze/presence-tier.ts`. Clients (extension, web) must render it verbatim and treat missing/error as silent — never re-derive tiers from confidence client-side.
 - When changing `DropshipPrediction` shape, update `parseCachedAiPrediction()` in `lib/types/cache.ts` to keep back-compat for older cached entries.
 - New eval fixtures must include a hand-edited `truth.json` — never trust the auto-stubbed one from `eval:capture`.
+
+## Lessons
+
+Read `.claude/lessons.md` before non-trivial work. Append a one-line lesson whenever something goes wrong or an invariant surprises you.

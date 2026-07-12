@@ -4,7 +4,8 @@
   "expectedVerdict": "dropship",
   "expectedSupplier": {
     "shouldFindMatch": true,
-    "notes": "Paint-by-numbers kits. Classic dropship. Collection page — if scrape returns sparse data, insufficient_evidence is acceptable."
+    "blockedOnFixtureData": true,
+    "notes": "Paint-by-numbers kits. Classic dropship. Collection page — if scrape returns sparse data, insufficient_evidence is acceptable. No aliexpress.json captured yet — blocked on AliExpress API credentials."
   },
   "notes": "Paint-by-numbers kits. Classic dropship. Collection page — if scrape returns sparse data, insufficient_evidence is acceptable.",
   "capturedAt": "2026-06-27T08:18:34.157Z"
