@@ -316,6 +316,14 @@ export async function findAliExpressSupplier(params: {
    * to today's behavior (title + aiKeywords).
    */
   identity?: ProductIdentity | null;
+  /**
+   * Escalation trigger. When true, forces the Tier-2 vision preprocess on even
+   * if PREPROCESS_ENABLED is off or the cheap-arm score is already decent —
+   * used for a forced re-scan after a user marked the previous match "wrong".
+   * We pay the heavy compute once; a resulting high-confidence match is then
+   * auto-committed to the verified map by the route.
+   */
+  escalate?: boolean;
 }): Promise<SupplierMatchResult> {
   // Use the translated title for keyword extraction when the original title is
   // non-Latin script (Hebrew, Arabic, CJK). The translation is attached by the
@@ -620,11 +628,17 @@ export async function findAliExpressSupplier(params: {
   // yields significantly better recall on visually similar factory listings.
   // OCR traces and material tokens from the preprocess round-trip also seed
   // additional keyword searches before we re-score.
+  // Escalation widens the trigger: force preprocess on (overriding the global
+  // flag) and raise the score gate so we still spend the compute on a match
+  // that the cheap arms thought was "good enough" but the user rejected.
+  const escalate = params.escalate ?? false;
+  const preprocessAllowed = isPreprocessEnabled() || escalate;
+  const preprocessTrigger = escalate ? 0.95 : PREPROCESS_TRIGGER_THRESHOLD;
   if (
-    isPreprocessEnabled() &&
+    preprocessAllowed &&
     provider === "aliexpress_api" &&
     mainImageUrl &&
-    (scored[0]?.confidence.score ?? 0) < PREPROCESS_TRIGGER_THRESHOLD
+    (scored[0]?.confidence.score ?? 0) < preprocessTrigger
   ) {
     let cleanedBase64: string | undefined;
     let cleanedFormat: "jpg" | "png" | "webp" | undefined;

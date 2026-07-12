@@ -17,6 +17,12 @@ import {
 import { isSupplierSearchEnabled } from "@/lib/aliexpress/supplier-enabled";
 import { AliExpressSearchError } from "@/lib/aliexpress/types";
 import { findValidCachedProduct, normalizeProductUrl } from "@/lib/cache/product-cache";
+import {
+  findVerifiedMatch,
+  getVerifiedMatchTtlDays,
+  recordVerifiedMatch,
+} from "@/lib/cache/verified-map";
+import { prisma } from "@/lib/prisma";
 import { recordMatchOutcome } from "@/lib/learning/record-outcome";
 import { deriveOutcomeVertical } from "@/lib/aliexpress/category-map";
 import {
@@ -73,6 +79,60 @@ interface PipelineResult {
 }
 
 // ── Helper functions ──────────────────────────────────────────────────────────
+
+/**
+ * Minimum confidence for an *automatic* catch-and-commit into the verified map.
+ *
+ * Deliberately high (default 0.85). Auto-commit installs a 6-month hot-path
+ * bypass with zero AI re-checks, so a wrong-but-confident match would be served
+ * for the whole TTL window — the most damaging failure mode. We therefore only
+ * auto-commit a match that is high-confidence, NOT best-effort, and not flagged
+ * by image AI as a different function. Explicit user 👍 has no such gate.
+ */
+const VERIFIED_AUTOCOMMIT_DEFAULT_MIN = 0.85;
+
+function getVerifiedAutoCommitMin(): number {
+  const raw = process.env.VERIFIED_AUTOCOMMIT_MIN;
+  if (!raw) return VERIFIED_AUTOCOMMIT_DEFAULT_MIN;
+  const parsed = Number.parseFloat(raw);
+  return Number.isFinite(parsed) && parsed > 0 && parsed <= 1
+    ? parsed
+    : VERIFIED_AUTOCOMMIT_DEFAULT_MIN;
+}
+
+/**
+ * Catch & Commit — fire-and-forget. Persists a hard-won, high-confidence match
+ * to the VerifiedProductMap so the next scan of this URL hits the Gold Path.
+ * No-op unless the match clears the safety bar (see getVerifiedAutoCommitMin).
+ */
+function maybeAutoCommitVerified(p: {
+  originalUrl: string;
+  scanId?: string | null;
+  aliexpressUrl: string | null;
+  aliexpressData: import("@/lib/types/analyze").AliExpressProductData | null;
+  matchConfidence?: number;
+  matchQuality?: "high" | "medium" | "low" | "none";
+  imageSameFunction?: boolean;
+  bestEffortOnly?: boolean;
+  winnerProductId?: string;
+}): void {
+  if (!p.aliexpressUrl || !p.aliexpressData) return;
+  if (p.bestEffortOnly) return;
+  if (p.imageSameFunction === false) return; // image AI flagged a different function
+  if (typeof p.matchConfidence !== "number" || p.matchConfidence < getVerifiedAutoCommitMin()) {
+    return;
+  }
+  void recordVerifiedMatch({
+    originalUrl: p.originalUrl,
+    aliexpressUrl: p.aliexpressUrl,
+    aliexpressData: p.aliexpressData,
+    source: "auto_high_confidence",
+    scanId: p.scanId ?? null,
+    aliexpressProductId: p.winnerProductId ?? null,
+    matchConfidence: p.matchConfidence ?? null,
+    matchQuality: p.matchQuality ?? null,
+  });
+}
 
 function shouldIncludeDebug(requested: boolean | undefined): boolean {
   return process.env.NODE_ENV === "development" && requested === true;
@@ -225,6 +285,68 @@ async function runAnalysisPipeline(
   let partialDebug: AnalyzeDebugInfo | undefined;
   const waterfall = new PipelineWaterfall();
 
+  // ── 0. Verified hot path (Gold Path) ──────────────────────────────────────
+  // A confirmed retail→supplier mapping bypasses the ENTIRE pipeline: no
+  // scrape, no AI, no supplier search. Instant HIT, 0ms AI latency, $0 cost.
+  // forceRefresh (used by the "re-scan" / escalate flow) intentionally skips it.
+  if (!opts.forceRefresh) {
+    const verified = await findVerifiedMatch(normalizedUrl);
+    if (verified) {
+      // Restore store-side display data from the (possibly TTL-stale) scan row.
+      // We read it directly — the verified TTL outlives the 14-day scrape TTL,
+      // and a verified mapping means the store data is good enough to render.
+      const display = await prisma.scannedProduct
+        .findUnique({ where: { originalUrl: normalizedUrl } })
+        .catch(() => null);
+      const scrape = display ? parseCachedScrapeData(display.scrapeData) : null;
+      const ai = display ? parseCachedAiPrediction(display.aiPrediction) : null;
+
+      if (display && scrape && ai) {
+        emit({ type: "stage", stage: "cache-lookup", status: "hit", message: "Verified match — pipeline bypassed" });
+        emit({ type: "stage", stage: "scrape", status: "skipped", message: "Verified — no scrape needed" });
+        emit({ type: "stage", stage: "supplier-search", status: "skipped", message: "Verified — supplier already confirmed" });
+        waterfall.mark("cache", `Verified hot path HIT — confirmed mapping (TTL ${getVerifiedMatchTtlDays()}d). Skipped scrape + AI + supplier search.`, "complete");
+        waterfall.mark("supplier", "Supplier restored from verified mapping.", "complete");
+        waterfall.mark("persist", "Served from verified map — no live work.", "skipped");
+
+        const storePrice = resolveStorePrice(ai.prediction, scrape);
+        const verifiedResponse: AnalyzeResponse = {
+          status: "success",
+          cache: "HIT",
+          originalUrl: display.originalUrl,
+          scanId: display.id,
+          verified: true,
+          verifiedSource: verified.row.source === "user_feedback" ? "user_feedback" : "auto_high_confidence",
+          verifiedAt: verified.row.verifiedAt.toISOString(),
+          aliexpressUrl: verified.row.aliexpressUrl,
+          aliexpressData: verified.aliexpressData,
+          supplierStatus: "complete",
+          supplierMatchConfidence: verified.row.matchConfidence ?? undefined,
+          supplierMatchQuality:
+            (verified.row.matchQuality as "high" | "medium" | "low" | "none" | null) ?? undefined,
+          sourceType: detectProductSource(display.originalUrl),
+          dropshipPrediction: ai.prediction,
+          presenceTier: computePresenceTier(ai.prediction),
+          lastScrapedAt: display.lastScrapedAt.toISOString(),
+          storeProduct: {
+            title: scrape.attributes.title,
+            ...(scrape.attributes.translatedTitle
+              ? { translatedTitle: scrape.attributes.translatedTitle }
+              : {}),
+            priceUsd: storePrice,
+            imageUrl: scrape.attributes.mainImageUrl,
+            storeName: scrape.storeName,
+          },
+          ...(opts.includeDebug
+            ? { debug: buildDebugFromCache(normalizedUrl, scrape, ai, waterfall) }
+            : {}),
+        };
+        return { response: verifiedResponse, cacheHeader: "HIT" };
+      }
+      // No display data to render — fall through to the normal pipeline (rare).
+    }
+  }
+
   // ── 1. Cache lookup ──────────────────────────────────────────────────────────
   emit({ type: "stage", stage: "cache-lookup", status: "active", message: "Checking 14-day cache…" });
   waterfall.mark("cache", "Cache lookup initiated…");
@@ -303,6 +425,18 @@ async function runAnalysisPipeline(
               aliexpressData: match.aliexpressData,
             });
             waterfall.mark("persist", "AliExpress data patched into cache record.", "complete");
+            // Catch & Commit — a confident live match backfilled onto a cached scan.
+            maybeAutoCommitVerified({
+              originalUrl: normalizedUrl,
+              scanId: cached.id,
+              aliexpressUrl: match.aliexpressUrl,
+              aliexpressData: match.aliexpressData,
+              matchConfidence: match.matchConfidence,
+              matchQuality: match.matchQuality,
+              imageSameFunction: match.imageMatchSameFunction,
+              bestEffortOnly: match.bestEffortOnly,
+              winnerProductId: match.searchMeta.winnerProductId,
+            });
           } catch (err) {
             const msg = err instanceof Error ? err.message : "Supplier search failed.";
             resolvedSupplierSkipReason = msg;
@@ -664,6 +798,10 @@ async function runAnalysisPipeline(
     prediction: aiResult.prediction,
     isSupplierListing,
     identity,
+    // Escalation trigger: a forced re-scan (e.g. after the user marked the
+    // previous match "wrong") spends the heavy Tier-2 vision preprocess up
+    // front instead of waiting for the cheap arms to fall short.
+    escalate: opts.forceRefresh,
   });
   serviceEvents.push(...supplierRes.events);
 
@@ -858,6 +996,20 @@ async function runAnalysisPipeline(
       supplierDebug?.keywords?.split(" / ").filter((s) => s.trim().length > 0) ?? [],
     imageMatchScore: supplierImageMatchScore ?? null,
     sameFunction: supplierImageMatchSameFunction ?? null,
+  });
+
+  // Catch & Commit — if this (possibly escalated) match cleared the safety bar,
+  // pin it to the verified map so the next scan of this URL hits the Gold Path.
+  maybeAutoCommitVerified({
+    originalUrl: normalizedUrl,
+    scanId: persisted.id,
+    aliexpressUrl,
+    aliexpressData,
+    matchConfidence: supplierMatchConfidence,
+    matchQuality: supplierMatchQuality,
+    imageSameFunction: supplierImageMatchSameFunction,
+    bestEffortOnly: supplierBestEffortOnly,
+    winnerProductId: supplierDebug?.winnerProductId,
   });
 
   return { response: successResponse, cacheHeader: "MISS" };
