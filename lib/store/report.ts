@@ -43,6 +43,13 @@ const FLAGGED_SHARE = 0.6;
 const CLEAN_SHARE = 0.2;
 const SCAN_LIST_CAP = 25;
 
+function tierFromCounts(dropshipCount: number, legitCount: number): StoreTier {
+  const decisive = dropshipCount + legitCount;
+  if (decisive < MIN_DECISIVE_SCANS) return "insufficient";
+  const share = dropshipCount / decisive;
+  return share >= FLAGGED_SHARE ? "flagged" : share <= CLEAN_SHARE ? "clean" : "mixed";
+}
+
 /**
  * Sanitizes the [domain] route param. Returns null for anything that isn't
  * a plausible hostname — the page 404s rather than querying with junk.
@@ -122,13 +129,6 @@ export async function loadStoreReport(domain: string): Promise<StoreReport | nul
     }
   }
 
-  const decisive = dropshipCount + legitCount;
-  let tier: StoreTier = "insufficient";
-  if (decisive >= MIN_DECISIVE_SCANS) {
-    const share = dropshipCount / decisive;
-    tier = share >= FLAGGED_SHARE ? "flagged" : share <= CLEAN_SHARE ? "clean" : "mixed";
-  }
-
   return {
     domain,
     totalScans: matching.length,
@@ -138,8 +138,41 @@ export async function loadStoreReport(domain: string): Promise<StoreReport | nul
       savings.length > 0
         ? Math.round(savings.reduce((s, n) => s + n, 0) / savings.length)
         : null,
-    tier,
+    tier: tierFromCounts(dropshipCount, legitCount),
     scans,
     lastScannedAt: matching[0].lastScrapedAt.toISOString(),
   };
+}
+
+/**
+ * Lean version of loadStoreReport() for the extension's quick-lookup
+ * fallback — only the tier, no per-scan summaries or price aggregation.
+ * Selects just `aiPrediction` (skips scrapeData/aliexpressData) since tier
+ * only needs the verdict.
+ */
+export async function computeDomainTier(
+  domain: string,
+): Promise<{ tier: StoreTier; decisiveCount: number } | null> {
+  const rows = await prisma.scannedProduct.findMany({
+    where: { originalUrl: { contains: domain } },
+    select: { originalUrl: true, aiPrediction: true },
+    take: 200,
+  });
+
+  let dropshipCount = 0;
+  let legitCount = 0;
+  let matched = false;
+
+  for (const row of rows) {
+    const host = domainFromUrl(row.originalUrl);
+    if (host !== domain && host?.endsWith(`.${domain}`) !== true) continue;
+    matched = true;
+
+    const verdict = parseCachedAiPrediction(row.aiPrediction)?.prediction?.verdict ?? null;
+    if (verdict === "dropship") dropshipCount += 1;
+    else if (verdict === "legit" || verdict === "collection_page") legitCount += 1;
+  }
+
+  if (!matched) return null;
+  return { tier: tierFromCounts(dropshipCount, legitCount), decisiveCount: dropshipCount + legitCount };
 }

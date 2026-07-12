@@ -16,7 +16,7 @@
 
   // Default backend — overridden by the apiBase setting shared with the
   // popup/background (chrome.storage.sync).
-  const DEFAULT_API_BASE = "https://buy-pass-silk.vercel.app";
+  const DEFAULT_API_BASE = "http://localhost:3000";
   const PILL_ID = "busted-extension-pill";
 
   let apiBase = DEFAULT_API_BASE;

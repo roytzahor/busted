@@ -79,13 +79,21 @@ are tightened with data, not vibes.
 4. ✅ Busted Card: OG image existed (sprint 12) — added Share button on
    `/scan/[id]` (`components/share-bust-button.tsx`). Savings ledger lives in
    the extension (chrome.storage.local, flame results only, once per scanId).
-5. ◐ Instant badge, no scrape: quick-lookup v2 returns `presenceTier` from
-   cached per-URL scans; extension badges passively on every page load.
-   Domain-level (store-wide) verdicts still open.
-6. ◐ Precision gate in CI: `.github/workflows/eval.yml` runs lint + tsc +
+5. ✅ Instant badge, no scrape: quick-lookup v2 (`/api/extension/quick-lookup`)
+   returns `presenceTier` from cached per-URL scans; extension badges
+   passively on every page load. Domain-level fallback added: when there's
+   no usable per-URL scan (miss, unparseable, or past the 14-day cache TTL),
+   falls back to the store's aggregate tier (`computeDomainTier()` in
+   `lib/store/report.ts`) — only a "flagged" store (≥2 decisive scans, ≥60%
+   dropship) produces a signal, capped at `amber` (never `flame`, since it's
+   inferred from other products on the store, not a verdict on this one).
+6. ✅ Precision gate in CI: `.github/workflows/eval.yml` runs lint + tsc +
    `eval --skip-ai --enforce-cost` on every PR (fails on any fixture failure
-   or Tier-0 false fire). Corpus at 51 (added 4 Tier-0 positives/negatives);
-   growth toward 300 needs live captures (blocked on creds).
+   or Tier-0 false fire). Gate now excludes fixtures whose truth.json marks
+   them `blockedOnFixtureData` (missing/stale captures, tracked not hidden)
+   so genuine regressions still fail the build. Corpus at 51 (added 4 Tier-0
+   positives/negatives); growth toward 300 needs live captures (blocked on
+   creds).
 
 **Exit criteria:** shown-verdict precision ≥ 95% on eval, extension usable
 end-to-end against local pipeline, first shareable card.
