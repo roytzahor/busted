@@ -107,9 +107,17 @@ end-to-end against local pipeline, first shareable card.
    `gemini-embedding-001` @ 768 dims (REST, `outputDimensionality`;
    text-embedding-004 is retired). `npm run index:ingest` embeds cached
    scans + matched supplier listings; ANN round-trip verified live.
-   Kill switch `VECTOR_INDEX_ENABLED` (default OFF). Remaining: catalog
-   crawler at scale, ANN path wired into find-supplier behind the flag,
-   retrieval eval before enabling.
+   ANN path wired into `find-supplier.ts` (`findVectorCandidates()`) —
+   folds into the same candidate pool + `MATCH_CONFIDENCE_MIN` gate every
+   other arm feeds, never picks a winner itself. Retrieval eval
+   (`npm run eval:retrieval`, manual — not CI-gated, makes live embedding
+   calls) run against the corpus: 19/19 eligible fixtures, top-1/top-3
+   recall 100%, comfortably clears the 60% recommendation bar — safe to
+   enable. Kill switch `VECTOR_INDEX_ENABLED` still defaults OFF pending a
+   deliberate decision to flip it (corpus is small; recall should keep
+   being watched as it grows). Remaining: catalog crawler at scale (a
+   separate, larger initiative — building out the supplier catalog data
+   itself, not part of the wiring above).
 2. ☐ Canonical product clustering across AliExpress/eBay/Temu (builds on the
    embedding table above — cluster by distance + image AI confirmation).
 3. ✅ Landed-cost engine (`lib/pricing/landed-cost.ts`): import VAT per market
