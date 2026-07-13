@@ -396,8 +396,45 @@ model ProductEmbedding {
   model     String
   createdAt DateTime                     @default(now())
 
+  /// Canonical cluster membership (Phase 2 item 2). Null = not yet clustered.
+  canonicalId       String?
+  canonical         CanonicalProduct? @relation(fields: [canonicalId], references: [id], onDelete: SetNull)
+  /// Cosine distance to the cluster member this row was merged through.
+  /// 0 for cluster seeds (matched pairs joined by scanId, not distance).
+  canonicalDistance Float?
+
   @@index([network])
   @@index([scanId])
+  @@index([canonicalId])
+}
+
+/// Canonical product cluster — ROADMAP Phase 2 item 2.
+///
+/// Groups ProductEmbedding rows across networks (retail stores, AliExpress,
+/// eBay) that represent the same physical product. Dropshipping is a
+/// power-law catalog: thousands of stores sell the same few thousand SKUs,
+/// so indexing by canonical product makes every scan a permanent asset.
+///
+/// Built offline by `npm run index:cluster` (scripts/index/cluster-products.ts):
+/// matched retail↔supplier pairs seed clusters (already confidence-gated),
+/// then unassigned rows merge greedily by cosine distance — near matches on
+/// distance alone, borderline ones only with image-AI confirmation.
+/// Precision-first: an uncertain merge is left unclustered, never forced.
+model CanonicalProduct {
+  id          String   @id @default(cuid())
+  /// Representative title — from the cluster's retail seed when present.
+  title       String
+  imageUrl    String?
+  /// Member count at the last clustering run (denormalized for reporting).
+  memberCount Int      @default(1)
+  /// Distinct member networks, e.g. ["retail","aliexpress"].
+  networks    String[] @default([])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members ProductEmbedding[]
+
+  @@index([memberCount])
 }
 
 /// Client-side error capture — Sprint 11 Stage 29.

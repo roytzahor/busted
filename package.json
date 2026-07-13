@@ -24,7 +24,8 @@
     "test:ui": "vitest --ui",
     "eval:harvest": "tsx --env-file=.env scripts/eval/harvest-feedback-fixtures.ts",
     "eval:retrieval": "tsx --env-file=.env scripts/eval/retrieval-eval.ts",
-    "index:ingest": "tsx --env-file=.env scripts/index/ingest-embeddings.ts"
+    "index:ingest": "tsx --env-file=.env scripts/index/ingest-embeddings.ts",
+    "index:cluster": "tsx --env-file=.env scripts/index/cluster-products.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
