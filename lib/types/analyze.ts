@@ -71,6 +71,16 @@ interface AnalyzeSuccessBase {
   supplierImageMatchReasoning?: string;
   /** True when the link is the closest candidate found, not a confident exact match. */
   supplierBestEffortOnly?: boolean;
+  /**
+   * True when this result was served from the permanent VerifiedProductMap
+   * (the "Gold Path") — the scrape + AI + supplier-search pipeline was
+   * bypassed entirely. See lib/cache/verified-map.ts.
+   */
+  verified?: boolean;
+  /** How the verified mapping was established. Present only when `verified`. */
+  verifiedSource?: "user_feedback" | "auto_high_confidence";
+  /** ISO timestamp the mapping was last confirmed. Present only when `verified`. */
+  verifiedAt?: string;
   /** Which supplier network produced the match. Absent = aliexpress. */
   supplierNetwork?: "aliexpress" | "ebay" | "amazon" | "temu_aggregator";
   sourceType: ProductSourceType;

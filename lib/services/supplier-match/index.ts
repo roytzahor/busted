@@ -32,6 +32,12 @@ export interface SupplierMatchInput {
   isSupplierListing: boolean;
   /** Phase 4: vision-grounded identity. When present, its keywords win. */
   identity?: ProductIdentity | null;
+  /**
+   * Escalation trigger. When true (e.g. a forced re-scan after a "wrong"
+   * verdict), the matcher forces the Tier-2 vision preprocess on regardless
+   * of the cheap-arm trigger threshold or the global PREPROCESS_ENABLED flag.
+   */
+  escalate?: boolean;
 }
 
 export type SupplierMatchOutput =
@@ -102,7 +108,10 @@ export async function findSupplier(
     };
 
     try {
-      const aeMatch = await findAliExpressSupplier(fallbackInput);
+      const aeMatch = await findAliExpressSupplier({
+        ...fallbackInput,
+        escalate: input.escalate ?? false,
+      });
 
       // Cost short-circuit: a confident AliExpress match wins outright — no
       // cross-network fan-out. Only escalate to eBay/Amazon when AliExpress is

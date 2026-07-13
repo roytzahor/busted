@@ -51,6 +51,8 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
         ? "Amazon"
         : "AliExpress";
   const isUncertainMatch = isBestEffort || matchQuality === "medium" || matchQuality === "low";
+  const isVerifiedMatch = result.verified === true;
+  const verifiedByUser = result.verifiedSource === "user_feedback";
   const matchPct =
     typeof result.matchConfidence === "number"
       ? Math.round(result.matchConfidence * 100)
@@ -103,9 +105,23 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                   Save {savingsPercent}%
                 </Badge>
               )}
-              <Badge variant="outline" className="border-white/15 text-muted-foreground">
-                {cache === "HIT" ? "Cached result" : "Fresh analysis"}
-              </Badge>
+              {isVerifiedMatch ? (
+                <Badge
+                  className="border-success/40 bg-success/15 text-success"
+                  title={
+                    verifiedByUser
+                      ? "A user confirmed this exact match — served instantly, no AI re-run."
+                      : "High-confidence match locked in — served instantly, no AI re-run."
+                  }
+                >
+                  <ShieldCheck className="mr-1 size-3" aria-hidden="true" />
+                  {verifiedByUser ? "Verified match" : "Verified · instant"}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-white/15 text-muted-foreground">
+                  {cache === "HIT" ? "Cached result" : "Fresh analysis"}
+                </Badge>
+              )}
               {matchPct !== null && !isBestEffort ? (
                 <Badge
                   variant="outline"

@@ -9,14 +9,74 @@
  * recompute. We don't enforce that the outcome exists yet because a fast
  * user might click "wrong" before the fire-and-forget outcome write lands.
  *
+ * Beyond the learning loop, feedback drives the permanent VerifiedProductMap
+ * (the "Gold Path"):
+ *   - "right" → commit this scan's retail→supplier mapping so future scans of
+ *     the same URL skip the entire pipeline for the TTL window.
+ *   - "wrong" → invalidate any verified mapping AND clear the cached supplier
+ *     match so neither the gold path nor the 14-day cache re-serves it. The
+ *     raw scrape is intentionally kept so a re-scan never re-fetches the
+ *     retail page — the next scan re-runs supplier search only (escalated).
+ *   - "similar" → left as-is.
+ *
  * Returns 204 No Content on success. Never throws to the client.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import {
+  invalidateVerifiedMatch,
+  recordVerifiedMatch,
+} from "@/lib/cache/verified-map";
+import { parseAliExpressData } from "@/lib/types/analyze";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+/**
+ * Apply the verification side-effect of a feedback verdict. Fire-and-forget —
+ * never blocks the 204 and never throws. Loads the scan to recover the
+ * retail URL + winning supplier snapshot (neither is in the feedback payload).
+ */
+async function applyVerificationFeedback(
+  scanId: string,
+  verdict: string,
+): Promise<void> {
+  const scan = await prisma.scannedProduct
+    .findUnique({
+      where: { id: scanId },
+      select: { originalUrl: true, aliexpressUrl: true, aliexpressData: true },
+    })
+    .catch(() => null);
+  if (!scan) return;
+
+  if (verdict === "right") {
+    const aliexpressData = parseAliExpressData(scan.aliexpressData);
+    if (scan.aliexpressUrl && aliexpressData) {
+      await recordVerifiedMatch({
+        originalUrl: scan.originalUrl,
+        aliexpressUrl: scan.aliexpressUrl,
+        aliexpressData,
+        source: "user_feedback",
+        scanId,
+      });
+    }
+  } else if (verdict === "wrong") {
+    await invalidateVerifiedMatch(scan.originalUrl);
+    // Also clear the cached supplier match — otherwise the 14-day cache-hit
+    // path keeps re-serving the exact match the user just rejected. Scrape +
+    // AI verdict stay intact so the retry re-searches without re-fetching.
+    await prisma.scannedProduct
+      .update({
+        where: { id: scanId },
+        data: { aliexpressUrl: null, aliexpressData: Prisma.DbNull },
+      })
+      .catch(() => {
+        /* swallow — cache cleanup must never break the feedback ack */
+      });
+  }
+}
 
 const ALLOWED_VERDICTS = new Set(["right", "similar", "wrong"]);
 const MAX_NOTE_CHARS = 280;
@@ -87,6 +147,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   } catch (err) {
     console.error("[feedback] write failed", err);
   }
+
+  // Gold Path side-effect — fire-and-forget so it never blocks the response.
+  void applyVerificationFeedback(body.scanId, body.verdict).catch((err) => {
+    console.error("[feedback] verification side-effect failed", err);
+  });
 
   return new NextResponse(null, { status: 204 });
 }

@@ -144,6 +144,7 @@ When modifying the prompt (`lib/ai/dropship-verifier.ts`) or scoring (`lib/aliex
 | `lib/aliexpress/api-client.ts` | AliExpress product search |
 | `lib/aliexpress/oauth.ts` | AliExpress OAuth + request signing |
 | `lib/cache/product-cache.ts` | Product cache lookup |
+| `lib/cache/verified-map.ts` | VerifiedProductMap ("Gold Path") — confirmed retail→supplier mappings that bypass the whole pipeline; written by 👍 feedback or high-confidence auto-commit |
 | `lib/cache/persist-product.ts` | Cache write-back |
 | `lib/dev-monitor/service-probes.ts` | Health probes (AI, scraper, DB, affiliate) |
 | `lib/types/debug.ts` | `AnalyzeDebugInfo` — shared debug type (13 edges) |

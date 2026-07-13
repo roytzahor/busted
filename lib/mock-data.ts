@@ -46,6 +46,10 @@ export interface ProductComparisonResult {
   bestEffortOnly?: boolean;
   /** Supplier network the match came from. Absent = aliexpress. */
   supplierNetwork?: "aliexpress" | "ebay" | "amazon" | "temu_aggregator";
+  /** True when served from the permanent VerifiedProductMap (Gold Path). */
+  verified?: boolean;
+  /** How the verification was established. Present only when `verified`. */
+  verifiedSource?: "user_feedback" | "auto_high_confidence";
 }
 
 export interface ScanHistoryItem {

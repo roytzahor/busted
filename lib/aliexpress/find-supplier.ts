@@ -316,6 +316,15 @@ export async function findAliExpressSupplier(params: {
    * to today's behavior (title + aiKeywords).
    */
   identity?: ProductIdentity | null;
+  /**
+   * Escalation trigger. When true (a retry after the user marked the previous
+   * match "wrong"), the Tier-2 vision preprocess fires even when the cheap-arm
+   * score looks decent (trigger widened to 0.95). Requires PREPROCESS_ENABLED —
+   * kill switches stay absolute; with the flag off the retry runs the normal
+   * arms only. We pay the heavy compute once; a resulting high-confidence
+   * match is then auto-committed to the verified map by the route.
+   */
+  escalate?: boolean;
 }): Promise<SupplierMatchResult> {
   // Use the translated title for keyword extraction when the original title is
   // non-Latin script (Hebrew, Arabic, CJK). The translation is attached by the
@@ -620,11 +629,18 @@ export async function findAliExpressSupplier(params: {
   // yields significantly better recall on visually similar factory listings.
   // OCR traces and material tokens from the preprocess round-trip also seed
   // additional keyword searches before we re-score.
+  // Escalation widens the trigger threshold so we spend the compute even on a
+  // match the cheap arms thought was "good enough" but the user rejected. It
+  // does NOT override PREPROCESS_ENABLED — kill switches are absolute; with
+  // the flag off, an escalated retry just re-runs the normal search arms.
+  const escalate = params.escalate ?? false;
+  const preprocessAllowed = isPreprocessEnabled();
+  const preprocessTrigger = escalate ? 0.95 : PREPROCESS_TRIGGER_THRESHOLD;
   if (
-    isPreprocessEnabled() &&
+    preprocessAllowed &&
     provider === "aliexpress_api" &&
     mainImageUrl &&
-    (scored[0]?.confidence.score ?? 0) < PREPROCESS_TRIGGER_THRESHOLD
+    (scored[0]?.confidence.score ?? 0) < preprocessTrigger
   ) {
     let cleanedBase64: string | undefined;
     let cleanedFormat: "jpg" | "png" | "webp" | undefined;

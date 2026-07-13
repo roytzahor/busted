@@ -129,6 +129,17 @@ end-to-end against local pipeline, first shareable card.
 5. ✅ Programmatic SEO store pages: `/store/[domain]` ("Is {domain} legit?"),
    hourly ISR, store-level tier requires ≥2 decisive scans (smoke-alarm rule
    applies at store level), wired into sitemap.xml per scanned domain.
+6. ✅ Verified Product Map — the "Gold Path" (`lib/cache/verified-map.ts` +
+   `VerifiedProductMap` table): a confirmed retail→supplier mapping bypasses
+   the entire scrape + AI + supplier-search pipeline (instant HIT, $0).
+   Written two ways: user 👍 "Same product" feedback (which always outranks
+   auto-commits), or auto-commit when a match clears `VERIFIED_AUTOCOMMIT_MIN`
+   (0.85), is positively image-verified (`sameFunction === true`), not
+   best-effort, and AliExpress-network. 👎 "wrong" invalidates the mapping AND
+   clears the cached supplier match; the retry escalates (Tier-2 preprocess
+   trigger widened to 0.95 — only when `PREPROCESS_ENABLED`, kill switches
+   stay absolute). TTL `VERIFIED_MATCH_TTL_DAYS` (180d), enforced at query
+   time.
 
 **Exit criteria:** median supplier-match latency < 500ms, supplier accuracy
 ≥ 90%, organic search is the #1 acquisition channel.

@@ -29,6 +29,47 @@ model ScannedProduct {
   @@index([lastScrapedAt])
 }
 
+/// Permanent verified retail→supplier mapping — the "Gold Path".
+///
+/// One row per normalized retail URL that has been confirmed to map to a
+/// specific AliExpress supplier product, either by explicit user feedback
+/// (👍 "Same product") or auto-committed when the pipeline resolved a
+/// high-confidence, image-verified match (often only after the expensive
+/// escalation tiers ran).
+///
+/// TTL is enforced at query time via VERIFIED_MATCH_TTL_DAYS (default 180).
+/// A hot-path hit bypasses the entire scrape + AI + supplier-search pipeline:
+/// instant cache HIT, 0ms AI latency, $0 cost.
+model VerifiedProductMap {
+  id                  String   @id @default(cuid())
+  /// Normalized retail URL (see normalizeProductUrl) — the lookup key.
+  originalUrl         String   @unique
+  /// ScannedProduct.id this verification was derived from. Used to restore the
+  /// store-side display data (title/price/image/verdict) on a hot-path hit.
+  scanId              String?
+  /// Winning AliExpress product id (for dedupe / monitoring).
+  aliexpressProductId String?
+  /// Winning AliExpress listing URL (pre-affiliate, variant-resolved).
+  aliexpressUrl       String
+  /// Snapshot of the winning AliExpressProductData, returned verbatim on a
+  /// hot-path hit so we never re-run supplier search.
+  aliexpressData      Json
+  matchConfidence     Float?
+  matchQuality        String?
+  /// How this row was verified:
+  ///   "user_feedback"        — user tapped 👍 "Same product"
+  ///   "auto_high_confidence" — pipeline resolved a high-confidence verified match
+  source              String
+  /// TTL anchor. Hot-path hit only when now - verifiedAt < VERIFIED_MATCH_TTL_DAYS.
+  verifiedAt          DateTime @default(now())
+  hits                Int      @default(0)
+  lastHitAt           DateTime @default(now())
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([verifiedAt])
+}
+
 /// Per-service stage cache — lets us re-run individual pipeline stages
 /// (identifier, verdict, search, match) without re-scraping. Keyed by
 /// sha256(stage + promptVersion + inputHash).

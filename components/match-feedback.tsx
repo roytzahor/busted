@@ -115,10 +115,19 @@ export function MatchFeedback({
             <CheckCircle2 className="size-4 text-success" />
           </span>
           <div className="min-w-0 flex-1 space-y-1">
-            <p className="font-semibold">Thanks — that helps us tune the matcher.</p>
+            <p className="font-semibold">
+              {submitted === "right"
+                ? "Saved — we'll remember this match."
+                : submitted === "wrong"
+                  ? "Got it — we won't show that match again."
+                  : "Thanks — that helps us tune the matcher."}
+            </p>
             <p className="text-sm text-muted-foreground">
-              Your feedback feeds the prior we use to pick keywords + thresholds for the
-              next scan in this category.
+              {submitted === "right"
+                ? "The next scan of this product is instant — no AI, no waiting."
+                : submitted === "wrong"
+                  ? "We've cleared that mapping and will search again on the next scan."
+                  : "Your feedback feeds the prior we use to pick keywords + thresholds for the next scan in this category."}
             </p>
             {submitted === "wrong" && !noteSubmitted ? (
               <div className="mt-3 space-y-2">
