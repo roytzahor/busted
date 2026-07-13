@@ -13,15 +13,17 @@
  * (the "Gold Path"):
  *   - "right" → commit this scan's retail→supplier mapping so future scans of
  *     the same URL skip the entire pipeline for the TTL window.
- *   - "wrong" → invalidate any verified mapping so we stop serving it. The raw
- *     scrape is intentionally kept (FetchedPage + ScannedProduct) so a re-scan
- *     never re-fetches the retail page.
+ *   - "wrong" → invalidate any verified mapping AND clear the cached supplier
+ *     match so neither the gold path nor the 14-day cache re-serves it. The
+ *     raw scrape is intentionally kept so a re-scan never re-fetches the
+ *     retail page — the next scan re-runs supplier search only (escalated).
  *   - "similar" → left as-is.
  *
  * Returns 204 No Content on success. Never throws to the client.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
   invalidateVerifiedMatch,
@@ -62,6 +64,17 @@ async function applyVerificationFeedback(
     }
   } else if (verdict === "wrong") {
     await invalidateVerifiedMatch(scan.originalUrl);
+    // Also clear the cached supplier match — otherwise the 14-day cache-hit
+    // path keeps re-serving the exact match the user just rejected. Scrape +
+    // AI verdict stay intact so the retry re-searches without re-fetching.
+    await prisma.scannedProduct
+      .update({
+        where: { id: scanId },
+        data: { aliexpressUrl: null, aliexpressData: Prisma.DbNull },
+      })
+      .catch(() => {
+        /* swallow — cache cleanup must never break the feedback ack */
+      });
   }
 }
 

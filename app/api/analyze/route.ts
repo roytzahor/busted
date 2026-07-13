@@ -86,8 +86,12 @@ interface PipelineResult {
  * Deliberately high (default 0.85). Auto-commit installs a 6-month hot-path
  * bypass with zero AI re-checks, so a wrong-but-confident match would be served
  * for the whole TTL window — the most damaging failure mode. We therefore only
- * auto-commit a match that is high-confidence, NOT best-effort, and not flagged
- * by image AI as a different function. Explicit user 👍 has no such gate.
+ * auto-commit a match that is high-confidence, NOT best-effort, positively
+ * image-verified (sameFunction === true — a skipped or failed image check does
+ * NOT qualify; text score ≥ 0.85 skips image AI, so without this requirement a
+ * text-only match would clear the identical 0.85 bar unverified), and from the
+ * AliExpress network (the verified map stores AliExpress mappings only).
+ * Explicit user 👍 has no such gate.
  */
 const VERIFIED_AUTOCOMMIT_DEFAULT_MIN = 0.85;
 
@@ -115,10 +119,12 @@ function maybeAutoCommitVerified(p: {
   imageSameFunction?: boolean;
   bestEffortOnly?: boolean;
   winnerProductId?: string;
+  supplierNetwork?: "aliexpress" | "ebay" | "amazon" | "temu_aggregator";
 }): void {
   if (!p.aliexpressUrl || !p.aliexpressData) return;
   if (p.bestEffortOnly) return;
-  if (p.imageSameFunction === false) return; // image AI flagged a different function
+  if ((p.supplierNetwork ?? "aliexpress") !== "aliexpress") return;
+  if (p.imageSameFunction !== true) return; // must be positively image-verified
   if (typeof p.matchConfidence !== "number" || p.matchConfidence < getVerifiedAutoCommitMin()) {
     return;
   }
@@ -132,6 +138,30 @@ function maybeAutoCommitVerified(p: {
     matchConfidence: p.matchConfidence ?? null,
     matchQuality: p.matchQuality ?? null,
   });
+}
+
+/**
+ * True when the last match served for this URL was marked "wrong" by the user
+ * AFTER its scan was scraped — the signal that the upcoming supplier search is
+ * an escalation retry worth spending Tier-2 compute on, as opposed to a
+ * routine re-scan or first search. Defensive: false on any DB error, so the
+ * pipeline never depends on the feedback table being reachable.
+ */
+async function wasMatchMarkedWrong(normalizedUrl: string): Promise<boolean> {
+  try {
+    const scan = await prisma.scannedProduct.findUnique({
+      where: { originalUrl: normalizedUrl },
+      select: { id: true, lastScrapedAt: true },
+    });
+    if (!scan) return false;
+    const feedback = await prisma.matchFeedback.findUnique({
+      where: { scanId: scan.id },
+      select: { verdict: true, updatedAt: true },
+    });
+    return feedback?.verdict === "wrong" && feedback.updatedAt > scan.lastScrapedAt;
+  } catch {
+    return false;
+  }
 }
 
 function shouldIncludeDebug(requested: boolean | undefined): boolean {
@@ -341,6 +371,23 @@ async function runAnalysisPipeline(
             ? { debug: buildDebugFromCache(normalizedUrl, scrape, ai, waterfall) }
             : {}),
         };
+
+        // Learning loop — verified hits must stay visible to the cron
+        // aggregator, or gold-path coverage growth silently starves the
+        // per-domain priors (fire-and-forget).
+        recordMatchOutcome({
+          scanId: display.id,
+          originalUrl: display.originalUrl,
+          category: ai.prediction?.productCategory ?? null,
+          vertical: deriveOutcomeVertical(ai.prediction?.productCategory ?? null),
+          scrapeProvider: scrape.provider ?? null,
+          verdict: ai.prediction?.verdict ?? null,
+          matchConfidence: verified.row.matchConfidence,
+          matchQuality: verified.row.matchQuality,
+          bestEffortOnly: false,
+          winningKeywords: ai.prediction?.aliexpressKeywords ?? [],
+        });
+
         return { response: verifiedResponse, cacheHeader: "HIT" };
       }
       // No display data to render — fall through to the normal pipeline (rare).
@@ -403,6 +450,10 @@ async function runAnalysisPipeline(
               storePriceUsd: scrape.detectedStorePriceUsd,
               productCategory: ai.prediction?.productCategory,
               aiKeywords: ai.prediction?.aliexpressKeywords,
+              // A "wrong" verdict clears the cached supplier data, so the
+              // retry lands here — escalate it so the redo is materially
+              // better than the search the user just rejected.
+              escalate: await wasMatchMarkedWrong(normalizedUrl),
             });
             resolvedAliexpressData = match.aliexpressData;
             resolvedAliexpressUrl = match.aliexpressUrl;
@@ -798,10 +849,11 @@ async function runAnalysisPipeline(
     prediction: aiResult.prediction,
     isSupplierListing,
     identity,
-    // Escalation trigger: a forced re-scan (e.g. after the user marked the
-    // previous match "wrong") spends the heavy Tier-2 vision preprocess up
-    // front instead of waiting for the cheap arms to fall short.
-    escalate: opts.forceRefresh,
+    // Escalation trigger: only a re-scan that follows an explicit "wrong"
+    // verdict from the user widens the Tier-2 vision-preprocess gate. A
+    // routine forceRefresh (generic Re-scan button) must NOT escalate — it
+    // would spend the expensive preprocess on every curious re-click.
+    escalate: opts.forceRefresh ? await wasMatchMarkedWrong(normalizedUrl) : false,
   });
   serviceEvents.push(...supplierRes.events);
 
@@ -1010,6 +1062,7 @@ async function runAnalysisPipeline(
     imageSameFunction: supplierImageMatchSameFunction,
     bestEffortOnly: supplierBestEffortOnly,
     winnerProductId: supplierDebug?.winnerProductId,
+    supplierNetwork,
   });
 
   return { response: successResponse, cacheHeader: "MISS" };

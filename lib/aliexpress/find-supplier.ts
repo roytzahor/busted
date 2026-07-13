@@ -317,11 +317,12 @@ export async function findAliExpressSupplier(params: {
    */
   identity?: ProductIdentity | null;
   /**
-   * Escalation trigger. When true, forces the Tier-2 vision preprocess on even
-   * if PREPROCESS_ENABLED is off or the cheap-arm score is already decent —
-   * used for a forced re-scan after a user marked the previous match "wrong".
-   * We pay the heavy compute once; a resulting high-confidence match is then
-   * auto-committed to the verified map by the route.
+   * Escalation trigger. When true (a retry after the user marked the previous
+   * match "wrong"), the Tier-2 vision preprocess fires even when the cheap-arm
+   * score looks decent (trigger widened to 0.95). Requires PREPROCESS_ENABLED —
+   * kill switches stay absolute; with the flag off the retry runs the normal
+   * arms only. We pay the heavy compute once; a resulting high-confidence
+   * match is then auto-committed to the verified map by the route.
    */
   escalate?: boolean;
 }): Promise<SupplierMatchResult> {
@@ -628,11 +629,12 @@ export async function findAliExpressSupplier(params: {
   // yields significantly better recall on visually similar factory listings.
   // OCR traces and material tokens from the preprocess round-trip also seed
   // additional keyword searches before we re-score.
-  // Escalation widens the trigger: force preprocess on (overriding the global
-  // flag) and raise the score gate so we still spend the compute on a match
-  // that the cheap arms thought was "good enough" but the user rejected.
+  // Escalation widens the trigger threshold so we spend the compute even on a
+  // match the cheap arms thought was "good enough" but the user rejected. It
+  // does NOT override PREPROCESS_ENABLED — kill switches are absolute; with
+  // the flag off, an escalated retry just re-runs the normal search arms.
   const escalate = params.escalate ?? false;
-  const preprocessAllowed = isPreprocessEnabled() || escalate;
+  const preprocessAllowed = isPreprocessEnabled();
   const preprocessTrigger = escalate ? 0.95 : PREPROCESS_TRIGGER_THRESHOLD;
   if (
     preprocessAllowed &&

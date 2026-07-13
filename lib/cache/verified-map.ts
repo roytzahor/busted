@@ -117,6 +117,17 @@ export async function recordVerifiedMatch(params: {
   const normalizedUrl = safeNormalize(params.originalUrl);
   if (!normalizedUrl || !params.aliexpressUrl) return false;
 
+  // Source precedence: a human-confirmed mapping outranks any automatic
+  // commit. Without this, a later high-confidence pipeline run (e.g. a forced
+  // re-scan that resolves a different supplier) would silently replace what a
+  // user explicitly verified.
+  if (params.source === "auto_high_confidence") {
+    const existing = await prisma.verifiedProductMap
+      .findUnique({ where: { originalUrl: normalizedUrl }, select: { source: true } })
+      .catch(() => null);
+    if (existing?.source === "user_feedback") return true; // stronger mapping stands
+  }
+
   // Store the supplier snapshot verbatim. parseAliExpressData reads it back
   // defensively on the hot path, so a plain JSON object is sufficient.
   const dataJson = params.aliexpressData as unknown as Prisma.InputJsonObject;

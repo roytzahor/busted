@@ -67,7 +67,6 @@ model VerifiedProductMap {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  @@index([originalUrl])
   @@index([verifiedAt])
 }
 
