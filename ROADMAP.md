@@ -118,8 +118,16 @@ end-to-end against local pipeline, first shareable card.
    being watched as it grows). Remaining: catalog crawler at scale (a
    separate, larger initiative — building out the supplier catalog data
    itself, not part of the wiring above).
-2. ☐ Canonical product clustering across AliExpress/eBay/Temu (builds on the
-   embedding table above — cluster by distance + image AI confirmation).
+2. ◐ Canonical product clustering LIVE as an offline job: `CanonicalProduct`
+   table + `npm run index:cluster` (`scripts/index/cluster-products.ts`).
+   Matched retail↔supplier pairs seed clusters; greedy single-linkage merges
+   by cosine distance (≤ 0.22 auto, (0.22, 0.45] only with positive image-AI
+   confirmation — thresholds calibrated via `--calibrate` on the live corpus,
+   re-calibrate as it grows). Precision-first: uncertain rows stay
+   unclustered, singletons never persisted, `--dry-run` is $0. 18 clusters
+   live on Neon. Remaining: nothing reads clusters yet (candidate-arm /
+   analytics use is future work), and cross-network breadth (eBay/Temu
+   members) depends on the catalog crawler from item 1.
 3. ✅ Landed-cost engine (`lib/pricing/landed-cost.ts`): import VAT per market
    (US/IL/EU/UK) keyed by display currency; duty never invented (note only);
    "≈ $X landed" line on the supplier card.
