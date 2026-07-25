@@ -1105,12 +1105,20 @@ export async function POST(request: NextRequest): Promise<NextResponse | Respons
 
   let normalizedUrl = "";
 
+  // Parsed outside the pipeline try below: a malformed body is a client error,
+  // and that catch reports everything as a 500 pipeline failure.
+  let body: { url?: string; debug?: boolean; forceRefresh?: boolean };
   try {
-    const body = (await request.json()) as {
+    body = (await request.json()) as {
       url?: string;
       debug?: boolean;
       forceRefresh?: boolean;
     };
+  } catch {
+    return errorResponse("", "Request body must be valid JSON.", "INVALID_BODY", 400);
+  }
+
+  try {
     const includeDebug = shouldIncludeDebug(body.debug);
 
     if (!body.url || typeof body.url !== "string") {
