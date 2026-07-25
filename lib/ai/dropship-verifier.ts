@@ -317,6 +317,19 @@ export function countAttributeSignals(
   return count;
 }
 
+/**
+ * Ceiling applied to dropship/legit confidence when the scrape yielded fewer
+ * than 3 attribute signals (humility rule 7).
+ *
+ * MUST stay strictly below `AMBER_MIN_CONFIDENCE` in
+ * `lib/analyze/presence-tier.ts`. Both values were 0.5, and because the clamp
+ * is `<=` while the amber floor is `>=`, a page too sparse to judge landed
+ * exactly on the threshold that makes the badge speak — the clamp expressing
+ * doubt produced an alarm instead of silence. `__tests__/presence-tier.test.ts`
+ * locks the invariant.
+ */
+export const SPARSE_EVIDENCE_CONFIDENCE_CEILING = 0.49;
+
 function isValidVerdict(value: unknown): value is DropshipVerdict {
   return (
     value === "dropship" ||
@@ -344,7 +357,7 @@ function applyClamps(
 
   // Sparse scrape → cannot output high-confidence dropship/legit (rule 7)
   if (attributeCount < 3 && (verdict === "dropship" || verdict === "legit")) {
-    confidence = Math.min(confidence, 0.5);
+    confidence = Math.min(confidence, SPARSE_EVIDENCE_CONFIDENCE_CEILING);
   }
 
   // insufficient_evidence must be in 0.2..0.5 (rule 3)
