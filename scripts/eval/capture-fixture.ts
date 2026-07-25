@@ -13,7 +13,7 @@
 
 import { scrapeProductUrl } from "@/lib/scraping/router";
 import {
-  extractPriceFromMarkdown,
+  detectPriceInMarkdown,
   extractStoreNameFromUrl,
 } from "@/lib/scraping/extract-price";
 import { verifyDropshipLikelihood } from "@/lib/ai/dropship-verifier";
@@ -63,17 +63,26 @@ async function main(): Promise<void> {
   let scrapeFixture: FixtureScrape;
   try {
     const scrapeResult = await scrapeProductUrl(url);
-    const storePriceUsd = extractPriceFromMarkdown(scrapeResult.raw.markdown);
+    const detectedPrice = detectPriceInMarkdown(scrapeResult.raw.markdown);
+    const storePriceUsd = detectedPrice?.amountUsd ?? null;
     const storeName = extractStoreNameFromUrl(url);
     scrapeFixture = {
       raw: scrapeResult.raw,
       attributes: scrapeResult.attributes,
       detectedStorePriceUsd: storePriceUsd,
+      detectedStorePriceNative: detectedPrice?.amount ?? null,
+      detectedStorePriceCurrency: detectedPrice?.currency ?? null,
       storeName,
     };
     console.log(`[capture]   ✓ scraped via ${scrapeResult.raw.provider}`);
     console.log(`[capture]   ✓ title: ${scrapeResult.attributes.title.slice(0, 80)}`);
-    console.log(`[capture]   ✓ detected price: $${storePriceUsd ?? "?"}`);
+    console.log(
+      `[capture]   ✓ detected price: ${
+        detectedPrice
+          ? `${detectedPrice.amount} ${detectedPrice.currency} → $${detectedPrice.amountUsd.toFixed(2)}`
+          : "?"
+      }`,
+    );
   } catch (err) {
     console.error(`[capture]   ✗ scrape failed: ${(err as Error).message}`);
     process.exit(2);

@@ -16,6 +16,8 @@
     "sourceUrl": "https://tech-deals.co.il/collections/smart-home",
     "provider": "crawlbase"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "tech-deals.co.il"
+  "detectedStorePriceUsd": 945.68,
+  "storeName": "tech-deals.co.il",
+  "detectedStorePriceNative": 3499,
+  "detectedStorePriceCurrency": "ILS"
 }

@@ -18,6 +18,8 @@
     "provider": "crawlbase",
     "translatedTitle": "Encrypted"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "Remoraisrael"
+  "detectedStorePriceUsd": 53.78,
+  "storeName": "Remoraisrael",
+  "detectedStorePriceNative": 199,
+  "detectedStorePriceCurrency": "ILS"
 }

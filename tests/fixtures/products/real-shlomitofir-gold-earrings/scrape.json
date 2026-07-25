@@ -17,6 +17,8 @@
     "sourceUrl": "https://shlomitofir.co.il/collections/14k-gold-earrings",
     "provider": "crawlbase"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "Shlomitofir"
+  "detectedStorePriceUsd": 155.41,
+  "storeName": "Shlomitofir",
+  "detectedStorePriceNative": 575,
+  "detectedStorePriceCurrency": "ILS"
 }

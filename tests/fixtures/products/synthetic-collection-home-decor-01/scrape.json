@@ -16,6 +16,8 @@
     "sourceUrl": "https://casa-living.co.il/collections/living-room",
     "provider": "crawlbase"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "casa-living.co.il"
+  "detectedStorePriceUsd": 240.54,
+  "storeName": "casa-living.co.il",
+  "detectedStorePriceNative": 890,
+  "detectedStorePriceCurrency": "ILS"
 }

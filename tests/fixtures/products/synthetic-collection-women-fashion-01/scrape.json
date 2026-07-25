@@ -16,6 +16,8 @@
     "sourceUrl": "https://stylehaus.myshopify.com/collections/women-all",
     "provider": "crawlbase"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "stylehaus.myshopify.com"
+  "detectedStorePriceUsd": 80.81,
+  "storeName": "stylehaus.myshopify.com",
+  "detectedStorePriceNative": 299,
+  "detectedStorePriceCurrency": "ILS"
 }

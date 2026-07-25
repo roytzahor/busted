@@ -17,6 +17,8 @@
     "sourceUrl": "https://www.davincified.com/il/collections/paint-by-numbers-kits",
     "provider": "crawlbase"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "Davincified"
+  "detectedStorePriceUsd": 32.97,
+  "storeName": "Davincified",
+  "detectedStorePriceNative": 122,
+  "detectedStorePriceCurrency": "ILS"
 }

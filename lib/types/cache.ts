@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { isCurrencyCode, type CurrencyCode } from "@/lib/currency";
 import type {
   DropshipPrediction,
   DropshipVerdict,
@@ -39,6 +40,10 @@ export interface CachedScrapeData {
   provider: string;
   attributes: ScrapedProductAttributes;
   detectedStorePriceUsd: number | null;
+  /** Native price + currency as printed on the page. Optional: rows cached
+   *  before currency-aware extraction have only the USD value. */
+  detectedStorePriceNative?: number | null;
+  detectedStorePriceCurrency?: CurrencyCode | null;
   storeName: string;
   markdownLength: number;
   markdownPreview: string;
@@ -100,6 +105,12 @@ export function parseCachedScrapeData(
       typeof record.detectedStorePriceUsd === "number"
         ? record.detectedStorePriceUsd
         : null,
+    ...(typeof record.detectedStorePriceNative === "number"
+      ? { detectedStorePriceNative: record.detectedStorePriceNative }
+      : {}),
+    ...(isCurrencyCode(record.detectedStorePriceCurrency)
+      ? { detectedStorePriceCurrency: record.detectedStorePriceCurrency }
+      : {}),
     storeName: typeof record.storeName === "string" ? record.storeName : "Store",
     markdownLength:
       typeof record.markdownLength === "number" ? record.markdownLength : 0,

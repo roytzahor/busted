@@ -146,6 +146,27 @@ export function convertUsd(usdAmount: number, currency: CurrencyCode): number {
   return usdAmount * meta.fxFromUsd;
 }
 
+/**
+ * Convert a native amount back into USD — the inverse of `convertUsd()`.
+ *
+ * Needed at the SCRAPE boundary, which is the one place a non-USD number
+ * legitimately enters the system: an Israeli storefront prints "238 ₪", and
+ * everything downstream (markup ratio, match confidence, embeddings, cache
+ * rows) is USD-locked per the module header. Without this the shekel amount
+ * would be read as dollars and inflate the store price ~3.7×.
+ *
+ * Returns 0 for non-finite input so callers never propagate NaN into a price.
+ */
+export function convertToUsd(
+  nativeAmount: number,
+  currency: CurrencyCode,
+): number {
+  if (!Number.isFinite(nativeAmount)) return 0;
+  const meta = CURRENCIES[currency];
+  if (!(meta.fxFromUsd > 0)) return 0;
+  return nativeAmount / meta.fxFromUsd;
+}
+
 interface FormatMoneyOpts {
   /** When true, round to whole units (drop cents/agorot). Default: false. */
   whole?: boolean;

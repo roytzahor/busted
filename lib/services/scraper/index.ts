@@ -9,9 +9,10 @@
 import { err, ok, type Result } from "@/lib/services/types";
 import { runService } from "@/lib/services/run";
 import {
-  extractPriceFromMarkdown,
+  detectPriceInMarkdown,
   extractStoreNameFromUrl,
 } from "@/lib/scraping/extract-price";
+import type { CurrencyCode } from "@/lib/currency";
 import { scrapeProductUrl } from "@/lib/scraping/router";
 import { ScraperError, type ScrapedProductAttributes, type ScrapeProvider } from "@/lib/scraping/types";
 
@@ -27,6 +28,12 @@ export interface ScraperOutput {
    *  markdown strips). Absent for Playwright scrapes. */
   html?: string;
   detectedStorePriceUsd: number | null;
+  /** Price as literally printed on the page, before FX. Absent when no price
+   *  was found. Kept alongside the USD value so the UI can echo "238 ₪" back
+   *  instead of a lossy USD round-trip, and so a wrong FX rate stays
+   *  diagnosable after the fact. */
+  detectedStorePriceNative?: number | null;
+  detectedStorePriceCurrency?: CurrencyCode | null;
   storeName: string;
   provider: ScrapeProvider;
 }
@@ -37,7 +44,8 @@ export async function scrape(input: ScraperInput): Promise<Result<ScraperOutput>
 
     try {
       const result = await scrapeProductUrl(input.url);
-      const detectedStorePriceUsd = extractPriceFromMarkdown(result.raw.markdown);
+      const detectedPrice = detectPriceInMarkdown(result.raw.markdown);
+      const detectedStorePriceUsd = detectedPrice?.amountUsd ?? null;
       const storeName = extractStoreNameFromUrl(input.url);
 
       emit("scrape:done", `${result.raw.provider} returned ${result.raw.markdown.length.toLocaleString()} chars`, {
@@ -45,6 +53,8 @@ export async function scrape(input: ScraperInput): Promise<Result<ScraperOutput>
         markdownLength: result.raw.markdown.length,
         title: result.attributes.title,
         detectedStorePriceUsd,
+        detectedStorePriceNative: detectedPrice?.amount ?? null,
+        detectedStorePriceCurrency: detectedPrice?.currency ?? null,
         hasImage: result.attributes.mainImageUrl !== null,
       });
 
@@ -53,6 +63,8 @@ export async function scrape(input: ScraperInput): Promise<Result<ScraperOutput>
         markdown: result.raw.markdown,
         html: result.raw.html,
         detectedStorePriceUsd,
+        detectedStorePriceNative: detectedPrice?.amount ?? null,
+        detectedStorePriceCurrency: detectedPrice?.currency ?? null,
         storeName,
         provider: result.raw.provider,
       });

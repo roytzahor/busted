@@ -18,6 +18,8 @@
     "provider": "crawlbase",
     "translatedTitle": "tot"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "Smartjewelry"
+  "detectedStorePriceUsd": 145.68,
+  "storeName": "Smartjewelry",
+  "detectedStorePriceNative": 539,
+  "detectedStorePriceCurrency": "ILS"
 }

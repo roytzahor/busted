@@ -183,6 +183,8 @@ function buildDebugScrape(
     },
     attributes: scrape.attributes,
     detectedStorePriceUsd: scrape.detectedStorePriceUsd,
+    detectedStorePriceNative: scrape.detectedStorePriceNative ?? null,
+    detectedStorePriceCurrency: scrape.detectedStorePriceCurrency ?? null,
     storeName: scrape.storeName,
     markdownPreview: scrape.markdownPreview,
     markdownLength: scrape.markdownLength,
@@ -610,6 +612,12 @@ async function runAnalysisPipeline(
     provider: scrapeOut.provider,
     attributes: scrapeOut.attributes,
     detectedStorePriceUsd: storePriceUsd,
+    ...(typeof scrapeOut.detectedStorePriceNative === "number"
+      ? { detectedStorePriceNative: scrapeOut.detectedStorePriceNative }
+      : {}),
+    ...(scrapeOut.detectedStorePriceCurrency
+      ? { detectedStorePriceCurrency: scrapeOut.detectedStorePriceCurrency }
+      : {}),
     storeName,
     markdownLength: scrapeOut.markdown.length,
     markdownPreview: scrapeOut.markdown.slice(0, MARKDOWN_PREVIEW_CHARS),

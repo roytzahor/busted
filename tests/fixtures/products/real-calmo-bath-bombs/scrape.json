@@ -17,6 +17,8 @@
     "sourceUrl": "https://calmo.co.il/products/calmo",
     "provider": "crawlbase"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "Calmo"
+  "detectedStorePriceUsd": 44.59,
+  "storeName": "Calmo",
+  "detectedStorePriceNative": 165,
+  "detectedStorePriceCurrency": "ILS"
 }
