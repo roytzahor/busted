@@ -34,11 +34,22 @@ import type {
 
 const FIXTURES_ROOT = path.resolve(__dirname, "../../tests/fixtures/products");
 
-function parseArgs(): { ids: string[]; doAi: boolean; doAli: boolean } {
+function parseArgs(): {
+  ids: string[];
+  doAi: boolean;
+  doAli: boolean;
+  doTranslate: boolean;
+} {
   const args = process.argv.slice(2);
   let doAi = args.includes("--ai");
   let doAli = args.includes("--aliexpress");
-  if (!doAi && !doAli) {
+  // Deliberately not part of the "no flag = do everything" default: it is the
+  // only mode that rewrites scrape.json, and it exists precisely so a
+  // translation fix can be replayed WITHOUT re-running the AliExpress search
+  // (which would overwrite every captured candidate pool — and can't be
+  // reproduced at all without API credentials).
+  const doTranslate = args.includes("--translations");
+  if (!doAi && !doAli && !doTranslate) {
     // default: both
     doAi = true;
     doAli = true;
@@ -58,9 +69,10 @@ function parseArgs(): { ids: string[]; doAi: boolean; doAli: boolean } {
       "Usage: npx tsx scripts/eval/refresh-fixture.ts <fixture-id...> [--ai] [--aliexpress]",
     );
     console.error("   or: npx tsx scripts/eval/refresh-fixture.ts --all-real [--ai] [--aliexpress]");
+    console.error("   or: npx tsx scripts/eval/refresh-fixture.ts --all-real --translations");
     process.exit(1);
   }
-  return { ids, doAi, doAli };
+  return { ids, doAi, doAli, doTranslate };
 }
 
 function writeJson(filepath: string, data: unknown): void {
@@ -90,6 +102,44 @@ async function refreshAi(id: string): Promise<{ ok: boolean; note: string }> {
   } catch (err) {
     return { ok: false, note: `AI threw: ${(err as Error).message}` };
   }
+}
+
+/**
+ * Re-run ONLY the title translation pre-pass and write the result into
+ * scrape.json, leaving ai-response.json and aliexpress.json untouched.
+ *
+ * Unlike the inline backfill inside refreshAli(), this overwrites an EXISTING
+ * translatedTitle. That is the point: the pre-pass used to truncate every
+ * answer (a 40-token budget that thinking tokens ate), so cached values like
+ * "tot" for "totwoo Smart jewelry" are artifacts of the bug and have to be
+ * replaced, not preserved.
+ */
+async function refreshTranslation(
+  id: string,
+): Promise<{ ok: boolean; note: string }> {
+  const fixture = loadFixture(id);
+  if (!fixture) return { ok: false, note: "fixture not found" };
+
+  const rawTitle = fixture.scrape.attributes.title;
+  if (!isNonLatinTitle(rawTitle)) {
+    return { ok: true, note: "Latin title — no translation needed" };
+  }
+
+  const before = fixture.scrape.attributes.translatedTitle ?? null;
+  const fresh = await translateTitle(rawTitle);
+  if (!fresh) {
+    return { ok: false, note: `translation returned null (kept ${JSON.stringify(before)})` };
+  }
+  if (fresh === before) return { ok: true, note: `unchanged: ${JSON.stringify(fresh)}` };
+
+  const scrapePath = path.join(FIXTURES_ROOT, id, "scrape.json");
+  const scrape = JSON.parse(fs.readFileSync(scrapePath, "utf-8")) as {
+    attributes: { translatedTitle?: string | null };
+  };
+  scrape.attributes.translatedTitle = fresh;
+  writeJson(scrapePath, scrape);
+
+  return { ok: true, note: `${JSON.stringify(before)} → ${JSON.stringify(fresh)}` };
 }
 
 async function refreshAli(id: string): Promise<{ ok: boolean; note: string }> {
@@ -130,11 +180,19 @@ async function refreshAli(id: string): Promise<{ ok: boolean; note: string }> {
 }
 
 async function main(): Promise<void> {
-  const { ids, doAi, doAli } = parseArgs();
-  console.log(`[refresh] ${ids.length} fixture(s)  ai=${doAi}  aliexpress=${doAli}\n`);
+  const { ids, doAi, doAli, doTranslate } = parseArgs();
+  console.log(
+    `[refresh] ${ids.length} fixture(s)  ai=${doAi}  aliexpress=${doAli}  translations=${doTranslate}\n`,
+  );
 
   for (const id of ids) {
     process.stdout.write(`  • ${id}\n`);
+    // Before the AI/AliExpress stages: both read translatedTitle, so a refresh
+    // of either should see the new value in the same run.
+    if (doTranslate) {
+      const r = await refreshTranslation(id);
+      console.log(`      translate  ${r.ok ? "✓" : "✗"}  ${r.note}`);
+    }
     if (doAi) {
       const r = await refreshAi(id);
       console.log(`      AI         ${r.ok ? "✓" : "✗"}  ${r.note}`);
