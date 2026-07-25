@@ -177,19 +177,26 @@ Rules:
 
 ## Design Language
 
-**Style**: Cinematic dark + glassmorphism + bento grid (ui-ux-pro-max: "Modern Dark / Cinema Mobile")
+**Style**: migrating to **"The Teardown"** — dark textured room + opaque paper evidence. Full spec and rationale in **`DESIGN.md`**; read it before any UI work. Phase 1 (tokens, grain, blob removal) has landed; the glass/bento surfaces below still exist and are being replaced phase by phase.
 
 **Dark mode is default** — `<html>` always has the `dark` class. Never remove it or add a light mode toggle without explicit user instruction.
 
 ### Color Tokens (dark mode)
+Authoritative values live in `app/globals.css` — this table mirrors it, so update both together.
+
 | Role | Value | Usage |
 |------|-------|-------|
-| Background | `oklch(0.09 0.02 45)` | Deep warm dark base |
-| Card/glass | `oklch(0.13 0.025 45)` | Slightly elevated surfaces |
-| Primary/fire | `oklch(0.72 0.17 50)` | Amber-orange — brand accent |
-| Success/relief | `oklch(0.68 0.14 155)` | Green — AliExpress / savings CTA |
-| Destructive | `oklch(0.65 0.2 25)` | Red — dropship markup detected |
-| Border | `oklch(1 0 0 / 12%)` | Hairline white borders |
+| Background | `oklch(0.11 0.014 48)` | The room — deep, near-neutral warm dark |
+| Paper | `oklch(0.94 0.012 85)` | Opaque bone evidence surface (`.paper`) |
+| Paper ink | `oklch(0.20 0.02 60)` | Text on paper |
+| Primary/fire | `oklch(0.74 0.18 52)` | Amber-orange — brand, `flame` tier |
+| Amber tier | `oklch(0.80 0.13 78)` | `amber` tier — must stay distinct from fire |
+| Stamp | `oklch(0.55 0.24 27)` | **BUSTED stamp only** — never for errors |
+| Success/relief | `oklch(0.70 0.15 155)` | Green — the user's win (savings, real link) |
+| Destructive | `oklch(0.65 0.2 25)` | Red — errors and destructive actions |
+| Border | `oklch(1 0.02 55 / 10%)` | Hairline white borders |
+
+**Design intensity is derived from `presenceTier`, never chosen**: `flame` → full teardown; `amber` → paper dossier, no stamp; `silent` → one muted line, no card. Decorating the `silent` state defeats the purpose of having tiers.
 
 ### Glass Effect Pattern
 Use these Tailwind classes together for glassmorphism cards:
@@ -201,11 +208,8 @@ For more opaque surfaces (inside cards): `bg-white/[0.07] backdrop-blur-sm`
 Custom `.glass` and `.glass-md` utility classes are defined in `globals.css`.
 
 ### Ambient Background
-- Fixed-position radial blur blobs behind content (in `app/page.tsx`)
-- Primary blob: top-right, `bg-primary/10 blur-[140px]`
-- Success blob: bottom-left, `bg-success/7 blur-[120px]`
-- Center blob: middle, `bg-primary/5 blur-[100px]`
-- Dot-grid texture on body: `radial-gradient(oklch(1 0 0 / 0.035) 1px, transparent 1px)` at 28px grid
+- **Film grain on `body::after`** (`app/globals.css`) — one tiled inline SVG turbulence, no network request, `z-index: 100` so it sits over every app layer (highest in use is the recent-scans drawer at `z-[70]`), `pointer-events: none`.
+- **Never animate the grain**, and never reintroduce the ambient blur blobs or the dot grid: the blobs were the strongest "generic AI SaaS" tell and among the most expensive things on the page to paint. Removed from `app/page.tsx`, `app/scan/[id]/page.tsx`, `app/store/[domain]/page.tsx`.
 
 ### Typography
 - Font: Geist Sans (variable, loaded in `layout.tsx`)

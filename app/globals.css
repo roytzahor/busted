@@ -27,6 +27,12 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+  --color-paper-muted: var(--paper-muted);
+  --color-paper-rule: var(--paper-rule);
+  --color-stamp: var(--stamp);
+  --color-amber-tier: var(--amber-tier);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-accent-foreground: var(--accent-foreground);
@@ -89,8 +95,31 @@
 }
 
 .dark {
-  --background: oklch(0.15 0.03 52);
+  /* ── The room ──────────────────────────────────────────────────────────
+     Deeper and less saturated than before (was 0.15 0.03 52). The evidence
+     surfaces below are opaque paper, and paper only reads as paper against a
+     ground dark enough to be a room rather than a card. See DESIGN.md §4. */
+  --background: oklch(0.11 0.014 48);
   --foreground: oklch(0.97 0.01 55);
+
+  /* ── Paper ─────────────────────────────────────────────────────────────
+     Opaque bone stock for anything that states a fact: price teardown,
+     evidence list, supplier card, scan receipt. Never translucent — the hard
+     edge is the whole point, and "is it on paper?" is the site's hierarchy.
+     Consumed via the .paper utility, not applied directly. */
+  --paper: oklch(0.94 0.012 85);
+  --paper-ink: oklch(0.20 0.02 60);
+  --paper-muted: oklch(0.48 0.02 60);
+  --paper-rule: oklch(0.20 0.02 60 / 0.16);
+
+  /* Reserved for the BUSTED stamp and nothing else. A colour used once is a
+     signature; used twice it is just part of the palette. Errors and
+     destructive actions keep --destructive. */
+  --stamp: oklch(0.55 0.24 27);
+
+  /* presenceTier "amber". Must stay visibly distinct from --primary (fire,
+     the flame tier) or the tier system is decorative rather than legible. */
+  --amber-tier: oklch(0.80 0.13 78);
   --card: oklch(0.20 0.03 50);
   --card-foreground: oklch(0.97 0.01 55);
   --popover: oklch(0.20 0.03 50);
@@ -131,6 +160,10 @@
   body {
     @apply bg-background text-foreground;
     overflow-x: hidden;
+    /* Prices, confidence percentages and the live pipeline all update in
+       place. Proportional digits shift the layout on every tick, which reads
+       as instability in a product whose entire pitch is certainty. */
+    font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* Kill the gray tap-flash on mobile — we provide our own active states. */
@@ -188,6 +221,38 @@
 }
 
 @layer utilities {
+  /* ── Paper: the evidence surface ──────────────────────────────────────
+     Opaque, hard-edged, with a real drop shadow — something you could pick
+     up. Used for any factual claim; everything else stays in the dark room.
+     Square-ish corners on purpose: rounded reads as "app", square reads as
+     "document". Nest with concentric radii (outer = inner + padding).
+
+     Note this sets its own foreground, so paper contents must not inherit
+     --foreground. Pair with text-paper-muted for secondary text. */
+  .paper {
+    background-color: var(--paper);
+    /* Paper fibre — sub-perceptual, but it keeps the stock from reading as
+       flat #fff when it sits next to the grain layer. */
+    background-image: repeating-linear-gradient(
+      0deg,
+      oklch(0.2 0.02 60 / 0.022) 0px,
+      transparent 1px,
+      transparent 3px
+    );
+    color: var(--paper-ink);
+    border-radius: 2px;
+    box-shadow:
+      0 1px 1px oklch(0 0 0 / 0.28),
+      0 8px 18px -6px oklch(0 0 0 / 0.42),
+      0 24px 48px -18px oklch(0 0 0 / 0.5);
+  }
+
+  /* Hairline divider inside paper — never a full border. */
+  .paper-rule {
+    border: 0;
+    border-top: 1px solid var(--paper-rule);
+  }
+
   /* Glassmorphism card */
   .glass {
     background: oklch(1 0 0 / 0.04);
@@ -214,10 +279,33 @@
   }
 }
 
-/* Dot grid texture on dark backgrounds */
-.dark body {
-  background-image: radial-gradient(oklch(1 0 0 / 0.045) 1px, transparent 1px);
-  background-size: 28px 28px;
+/* ── Film grain ─────────────────────────────────────────────────────────
+   Replaces the dot-grid texture AND the four fixed blur(120-160px) ambient
+   blobs that used to live in app/page.tsx. A regular dot lattice reads as
+   "digital product"; grain reads as a physical surface, which is what the
+   paper stock needs to sit on.
+
+   One tiled inline SVG turbulence — no network request, ~1.2KB, and far
+   cheaper to paint than the blur layers it replaces.
+
+   z-index 100 puts it over every app layer (highest in use is the
+   recent-scans drawer at z-[70]), so the texture unifies modals and drawers
+   too. pointer-events:none keeps it non-interactive.
+
+   Deliberately NOT animated: moving noise costs battery and repaints for an
+   effect nobody consciously registers, and it reads as a broken codec. */
+.dark body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media print {
+  .dark body::after { display: none; }
 }
 
 /* Live indicator dot */
