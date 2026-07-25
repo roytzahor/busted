@@ -19,7 +19,12 @@
  *     retail page — the next scan re-runs supplier search only (escalated).
  *   - "similar" → left as-is.
  *
- * Returns 204 No Content on success. Never throws to the client.
+ * Abuse surface: scanIds are publicly discoverable and there is no auth, so the
+ * endpoint is rate-limited per IP and the Gold Path commit ("right") requires a
+ * sessionId — see applyVerificationFeedback for why "wrong" stays open.
+ *
+ * Returns 204 No Content on success, 429 when rate-limited. Never throws to
+ * the client.
  */
 
 import { NextResponse, type NextRequest } from "next/server";
@@ -29,6 +34,8 @@ import {
   invalidateVerifiedMatch,
   recordVerifiedMatch,
 } from "@/lib/cache/verified-map";
+import { checkRateLimit, resolveClientIp } from "@/lib/api/rate-limit";
+import { isAttributedSession } from "@/lib/api/session-attribution";
 import { parseAliExpressData } from "@/lib/types/analyze";
 
 export const runtime = "nodejs";
@@ -38,10 +45,22 @@ export const dynamic = "force-dynamic";
  * Apply the verification side-effect of a feedback verdict. Fire-and-forget —
  * never blocks the 204 and never throws. Loads the scan to recover the
  * retail URL + winning supplier snapshot (neither is in the feedback payload).
+ *
+ * The two verdicts are deliberately asymmetric about attribution:
+ *   - "right" ADDS a permanent claim that bypasses the whole pipeline for the
+ *     TTL window and outranks auto-commits, so it requires an attributed
+ *     session. An unattributed 👍 still lands in MatchFeedback (learning signal
+ *     preserved) but must not write the Gold Path. Attribution is recoverable
+ *     later via VerifiedProductMap.scanId → MatchFeedback.sessionId.
+ *   - "wrong" REMOVES a claim. Under precision-first that direction is
+ *     fail-safe (the system gets quieter, never more confident), so it stays
+ *     open to anonymous callers — rate limiting alone covers the cost
+ *     amplification of forcing re-searches.
  */
 async function applyVerificationFeedback(
   scanId: string,
   verdict: string,
+  sessionId: string | null,
 ): Promise<void> {
   const scan = await prisma.scannedProduct
     .findUnique({
@@ -52,6 +71,7 @@ async function applyVerificationFeedback(
   if (!scan) return;
 
   if (verdict === "right") {
+    if (!isAttributedSession(sessionId)) return;
     const aliexpressData = parseAliExpressData(scan.aliexpressData);
     if (scan.aliexpressUrl && aliexpressData) {
       await recordVerifiedMatch({
@@ -81,6 +101,13 @@ async function applyVerificationFeedback(
 const ALLOWED_VERDICTS = new Set(["right", "similar", "wrong"]);
 const MAX_NOTE_CHARS = 280;
 
+/**
+ * Per-IP feedback submissions allowed per minute. Generous for a human tapping
+ * 👍/👎 on a few scans, restrictive for a loop walking scanIds — which are
+ * publicly discoverable via /api/stats/trending and /api/examples/featured.
+ */
+const FEEDBACK_RATE_LIMIT_PER_MIN = 20;
+
 interface IncomingFeedback {
   scanId?: unknown;
   verdict?: unknown;
@@ -93,6 +120,24 @@ function badRequest(reason: string): NextResponse {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const rateLimit = checkRateLimit(
+    `feedback:${resolveClientIp(request)}`,
+    FEEDBACK_RATE_LIMIT_PER_MIN,
+  );
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      { error: "rate_limited" },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(
+            Math.max(1, Math.ceil((rateLimit.resetAt - Date.now()) / 1000)),
+          ),
+        },
+      },
+    );
+  }
+
   let body: IncomingFeedback;
   try {
     body = (await request.json()) as IncomingFeedback;
@@ -112,7 +157,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       ? body.note.trim().slice(0, MAX_NOTE_CHARS)
       : null;
   const sessionId =
-    typeof body.sessionId === "string" && body.sessionId.length <= 64
+    typeof body.sessionId === "string" &&
+    body.sessionId.length > 0 &&
+    body.sessionId.length <= 64
       ? body.sessionId
       : null;
 
@@ -149,9 +196,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   // Gold Path side-effect — fire-and-forget so it never blocks the response.
-  void applyVerificationFeedback(body.scanId, body.verdict).catch((err) => {
-    console.error("[feedback] verification side-effect failed", err);
-  });
+  void applyVerificationFeedback(body.scanId, body.verdict, sessionId).catch(
+    (err) => {
+      console.error("[feedback] verification side-effect failed", err);
+    },
+  );
 
   return new NextResponse(null, { status: 204 });
 }
