@@ -47,6 +47,20 @@ function readJson(path: string): unknown | null {
   }
 }
 
+/**
+ * Verdicts that stop a scan before the supplier matcher in production
+ * (lib/services/supplier-match:69, app/api/analyze/route.ts:417 —
+ * collection_page goes to browse mode instead). Scores for these fixtures are
+ * reported but never counted as false positives: production never asks the
+ * matcher about them. `legit` is deliberately absent — it DOES reach the
+ * matcher.
+ */
+const VERDICTS_BLOCKING_SUPPLIER = new Set([
+  "not_a_product",
+  "insufficient_evidence",
+  "collection_page",
+]);
+
 interface Row {
   id: string;
   isReal: boolean;
@@ -57,6 +71,10 @@ interface Row {
   margin: number;
   titleShare: number;
   passes: boolean;
+  /** Cached AI verdict, or null when there is no prediction. */
+  verdict: string | null;
+  /** True when that verdict stops the scan before the matcher runs. */
+  blockedByVerdict: boolean;
 }
 
 function collect(): Row[] {
@@ -101,6 +119,8 @@ function collect(): Row[] {
     }
     if (!best) continue;
 
+    const verdict: string | null = prediction?.verdict ?? null;
+
     rows.push({
       id,
       isReal: id.startsWith("real-"),
@@ -112,6 +132,8 @@ function collect(): Row[] {
       titleShare:
         best.score > 0 ? (best.titleOverlap * TITLE_WEIGHT) / best.score : 0,
       passes: best.score >= MATCH_CONFIDENCE_MIN,
+      verdict,
+      blockedByVerdict: verdict !== null && VERDICTS_BLOCKING_SUPPLIER.has(verdict),
     });
   }
 
@@ -182,11 +204,32 @@ function main(): void {
     `no store price detected:         ${shouldMatch.filter((r) => r.priceVerdict === "unknown").length}  (price arm inert)`,
   );
 
-  const falsePositives = shouldNot.filter((r) => r.passes);
+  // Only fixtures the matcher actually sees in production can be false
+  // positives. A collection_page/not_a_product/insufficient_evidence fixture
+  // may score high here and still be perfectly safe, because the verdict gate
+  // stops it upstream.
+  const reachable = shouldNot.filter((r) => !r.blockedByVerdict);
+  const falsePositives = reachable.filter((r) => r.passes);
   if (falsePositives.length > 0) {
     console.log(
-      `\n⚠ ${falsePositives.length} expect-NO-match fixture(s) clear the bar: ${falsePositives.map((r) => r.id).join(", ")}`,
+      `\n⚠ ${falsePositives.length} expect-NO-match fixture(s) reach the matcher AND clear the bar:`,
     );
+    for (const r of falsePositives) {
+      console.log(`    ${r.id}  score=${r.score.toFixed(3)}  verdict=${r.verdict ?? "none"}`);
+    }
+  } else {
+    console.log(`\nNo supplier false positives among the ${reachable.length} expect-NO-match fixture(s) that reach the matcher.`);
+  }
+
+  const shielded = shouldNot.filter((r) => r.blockedByVerdict && r.passes);
+  if (shielded.length > 0) {
+    console.log(
+      `\nLatent (scores above the bar but the verdict gate blocks it upstream —\n` +
+        `would become a false positive if that verdict ever changed):`,
+    );
+    for (const r of shielded) {
+      console.log(`    ${r.id}  score=${r.score.toFixed(3)}  verdict=${r.verdict ?? "none"}`);
+    }
   }
 
   if (real.length > 0 && synth.length > 0) {

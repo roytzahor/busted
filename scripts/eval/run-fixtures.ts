@@ -184,15 +184,23 @@ async function evaluateFixture(
   let supplierMatch = false;
   let supplierWinnerPriceUsd: number | null = null;
 
-  // Mirror production gating: supplier search only runs when verdict is dropship.
-  // legit / collection_page / not_a_product / insufficient_evidence all suppress
-  // the supplier search in the real pipeline, so we must do the same here to
-  // avoid false-positive supplier matches on legit/collection pages.
+  // Mirror production gating exactly. Production blocks supplier search on
+  // not_a_product + insufficient_evidence (lib/services/supplier-match:69 and
+  // app/api/analyze/route.ts:417) and routes collection_page to browse mode
+  // instead — but it does NOT block `legit`, so a legit verdict really does
+  // reach the matcher in production.
+  //
+  // This previously gated on `=== "dropship"`, which was stricter than the
+  // pipeline it claims to model: legit fixtures never reached the scorer, so a
+  // supplier false positive on a legit brand was structurally invisible to the
+  // eval. Keep this predicate in sync with the two call sites above.
   const supplierSearchVerdict = prediction?.verdict ?? predictedVerdict;
+  const verdictBlocksSupplier =
+    supplierSearchVerdict === "not_a_product" ||
+    supplierSearchVerdict === "insufficient_evidence" ||
+    supplierSearchVerdict === "collection_page";
   const supplierSearchEnabled =
-    !opts.skipSupplier &&
-    fixture.aliexpress !== undefined &&
-    supplierSearchVerdict === "dropship";
+    !opts.skipSupplier && fixture.aliexpress !== undefined && !verdictBlocksSupplier;
 
   if (supplierSearchEnabled && fixture.aliexpress) {
     const ranked = rankAliExpressCandidates(fixture.aliexpress.candidates);
@@ -236,9 +244,9 @@ async function evaluateFixture(
       supplierMatch = !supplierFound;
     }
   } else {
-    // Supplier search was skipped (no aliexpress.json, skipSupplier flag, or
-    // non-dropship verdict). For legit/collection/not_a_product verdicts the
-    // production system would never have run the search, so "no match found"
+    // Supplier search was skipped (no aliexpress.json, skipSupplier flag, or a
+    // blocking verdict). For collection_page/not_a_product/insufficient_evidence
+    // the production system would never have run the search, so "no match found"
     // is the correct production outcome — count it correct iff shouldFindMatch=false.
     if (fixture.truth.expectedSupplier.shouldFindMatch) {
       if (!fixture.aliexpress) {
