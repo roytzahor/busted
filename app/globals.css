@@ -221,36 +221,19 @@
 }
 
 @layer utilities {
-  /* ── Paper: the evidence surface ──────────────────────────────────────
-     Opaque, hard-edged, with a real drop shadow — something you could pick
-     up. Used for any factual claim; everything else stays in the dark room.
-     Square-ish corners on purpose: rounded reads as "app", square reads as
-     "document". Nest with concentric radii (outer = inner + padding).
-
-     Note this sets its own foreground, so paper contents must not inherit
-     --foreground. Pair with text-paper-muted for secondary text. */
-  .paper {
-    background-color: var(--paper);
-    /* Paper fibre — sub-perceptual, but it keeps the stock from reading as
-       flat #fff when it sits next to the grain layer. */
+  /* Paper fibre — sub-perceptual, but it stops the stock reading as flat
+     #fff next to the film grain. Texture ONLY: colour, radius and shadow
+     live in <Paper> (components/ui/paper.tsx) as Tailwind classes, so
+     tailwind-merge can dedupe a caller's `rounded-*`/`shadow-*` override.
+     A composite `.paper` utility could not be overridden predictably —
+     tailwind-merge doesn't know it, so CSS source order would decide. */
+  .paper-fibre {
     background-image: repeating-linear-gradient(
       0deg,
       oklch(0.2 0.02 60 / 0.022) 0px,
       transparent 1px,
       transparent 3px
     );
-    color: var(--paper-ink);
-    border-radius: 2px;
-    box-shadow:
-      0 1px 1px oklch(0 0 0 / 0.28),
-      0 8px 18px -6px oklch(0 0 0 / 0.42),
-      0 24px 48px -18px oklch(0 0 0 / 0.5);
-  }
-
-  /* Hairline divider inside paper — never a full border. */
-  .paper-rule {
-    border: 0;
-    border-top: 1px solid var(--paper-rule);
   }
 
   /* Glassmorphism card */
