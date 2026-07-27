@@ -174,11 +174,15 @@ are the paper surfaces and the stamp red.
   --foreground:        oklch(0.97 0.01 55);
   --muted-foreground:  oklch(0.70 0.03 55);
 
-  /* ── Paper (evidence documents) ────────────────────────────────────── */
-  --paper:             oklch(0.94 0.012 85);
-  --paper-ink:         oklch(0.20 0.02 60);
-  --paper-muted:       oklch(0.48 0.02 60);
-  --paper-rule:        oklch(0.20 0.02 60 / 0.14);  /* hairlines on paper */
+  /* ── Paper (evidence documents) ──────────────────────────────────────
+     Manila, not bone. The first build used oklch(0.94 0.012 85) and it read
+     as a flashbang against the room — and as light mode leaking into a
+     dark-only product. */
+  --paper:             oklch(0.855 0.032 82);
+  --paper-ink:         oklch(0.24 0.03 55);
+  --paper-muted:       oklch(0.44 0.03 60);
+  --paper-rule:        oklch(0.24 0.03 55 / 0.2);   /* hairlines on paper */
+  --paper-money:       oklch(0.42 0.16 155);        /* savings green ON paper */
 
   /* ── Signals ───────────────────────────────────────────────────────── */
   --primary:           oklch(0.74 0.18 52);   /* fire — brand, flame tier */
@@ -198,9 +202,25 @@ Rules:
   different or the tier system is decorative. Verify by desaturating the page.
 - Green is only ever the *user's win* (savings, the real supplier link). Never
   used for generic success toasts.
-- Contrast: `--paper-ink` on `--paper` ≈ 13:1. `--foreground` on `--background`
-  ≈ 16:1. `--muted-foreground` on `--background` ≈ 6.5:1. All pass AA
-  comfortably; re-verify with a checker after any token edit.
+- **Room colours are not paper colours.** `--success` is tuned for the dark
+  ground and measures **1.6:1** on manila — invisible. Anything rendered on
+  paper needs a paper-specific ink, which is what `--paper-money` is. Assume
+  every other room token fails on paper until measured.
+- Measured contrast (computed, not eyeballed — convert oklch to *linear* RGB
+  and feed the WCAG luminance formula directly; applying the sRGB transfer
+  function to values that are already linear double-converts and invents
+  failures):
+
+  | Pair | Ratio | Needs |
+  | --- | --- | --- |
+  | `--paper-ink` on paper | 10.6:1 | 4.5 |
+  | `--paper-muted` on paper | 5.0:1 | 4.5 |
+  | `--paper-money` on paper | 4.8:1 | 4.5 |
+  | `--foreground` on room | 18.7:1 | 4.5 |
+  | `--muted-foreground` on room | 8.2:1 | 4.5 |
+  | `--stamp` on room / paper | 3.9:1 / 3.4:1 | 3.0 (decorative, `aria-hidden`) |
+
+  Re-measure after any token edit.
 
 ### 4.3 Texture
 
@@ -266,6 +286,15 @@ Anti-grid, per the research. Concretely:
 
 - **Sharp corners on evidence.** Paper documents use `rounded-[2px]` — nearly
   square. Rounded corners read as "app"; square reads as "document."
+- **Torn bottom edge on teardown sheets** (`<Paper torn>`). A perfect rectangle
+  reads as a *form*, which is what made the first build feel bureaucratic; a
+  torn sheet reads as something someone ripped up, and it makes the product's
+  central metaphor physical in the surface rather than only in the phase-4
+  animation. Points are irregular on purpose — evenly spaced ones read as a
+  decorative zigzag, which is worse than a clean edge. `clip-path` clips
+  `box-shadow` away, so torn sheets take their depth from `filter:
+  drop-shadow` instead; that is the pricier of the two, so keep the tear for
+  sheets that carry the teardown rather than every surface.
 - Interactive chrome (buttons, inputs) keeps a modest `rounded-lg`, so tap targets
   still feel like controls.
 - **Concentric radii enforced** wherever nesting occurs: `outer = inner + padding`

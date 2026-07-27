@@ -31,6 +31,7 @@
   --color-paper-ink: var(--paper-ink);
   --color-paper-muted: var(--paper-muted);
   --color-paper-rule: var(--paper-rule);
+  --color-paper-money: var(--paper-money);
   --color-stamp: var(--stamp);
   --color-amber-tier: var(--amber-tier);
   --color-success: var(--success);
@@ -103,14 +104,24 @@
   --foreground: oklch(0.97 0.01 55);
 
   /* ── Paper ─────────────────────────────────────────────────────────────
-     Opaque bone stock for anything that states a fact: price teardown,
-     evidence list, supplier card, scan receipt. Never translucent — the hard
-     edge is the whole point, and "is it on paper?" is the site's hierarchy.
-     Consumed via the .paper utility, not applied directly. */
-  --paper: oklch(0.94 0.012 85);
-  --paper-ink: oklch(0.20 0.02 60);
-  --paper-muted: oklch(0.48 0.02 60);
-  --paper-rule: oklch(0.20 0.02 60 / 0.16);
+     Opaque stock for anything that states a fact: price teardown, evidence
+     list, supplier card, scan receipt. Never translucent — the hard edge is
+     the whole point, and "is it on paper?" is the site's hierarchy.
+     Consumed via <Paper> (components/ui/paper.tsx), not applied directly.
+
+     Manila, not bright bone. The first pass used oklch(0.94 0.012 85) and it
+     read as a flashbang against the room — and as light mode leaking into a
+     dark-only product. Lower luminance + a warmer cast reads as aged case-file
+     stock instead of a lit screen. */
+  --paper: oklch(0.855 0.032 82);
+  --paper-ink: oklch(0.24 0.03 55);
+  --paper-muted: oklch(0.44 0.03 60);
+  --paper-rule: oklch(0.24 0.03 55 / 0.2);
+
+  /* Savings green ON PAPER. --success is tuned for the dark room and scores
+     1.6:1 against manila — effectively invisible. Anything on paper needs a
+     paper-specific ink; this one measures 4.8:1. Verified, not eyeballed. */
+  --paper-money: oklch(0.42 0.16 155);
 
   /* Reserved for the BUSTED stamp and nothing else. A colour used once is a
      signature; used twice it is just part of the palette. Errors and
@@ -228,12 +239,52 @@
      A composite `.paper` utility could not be overridden predictably —
      tailwind-merge doesn't know it, so CSS source order would decide. */
   .paper-fibre {
-    background-image: repeating-linear-gradient(
-      0deg,
-      oklch(0.2 0.02 60 / 0.022) 0px,
-      transparent 1px,
-      transparent 3px
+    background-image:
+      /* Slight lift at the head of the sheet — stops manila reading flat. */
+      radial-gradient(120% 80% at 50% 0%, oklch(1 0 0 / 0.1), transparent 60%),
+      repeating-linear-gradient(
+        0deg,
+        oklch(0.24 0.03 55 / 0.028) 0px,
+        transparent 1px,
+        transparent 3px
+      );
+  }
+
+  /* ── Torn bottom edge ─────────────────────────────────────────────────
+     The fix for "it looks bureaucratic". A perfect rectangle reads as a form;
+     a torn sheet reads as something someone ripped up. It also makes the
+     product's core metaphor physical in the surface itself, not just in the
+     phase-4 animation.
+
+     Irregular on purpose — evenly spaced points read as a zigzag border, which
+     is worse than a clean edge.
+
+     clip-path clips box-shadow away, so torn sheets get their depth from
+     filter: drop-shadow instead, which follows the clip. That is the more
+     expensive of the two, so keep this for the few sheets that carry the
+     teardown — not every surface on the page. */
+  .paper-torn {
+    padding-bottom: 2rem;
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - 9px),
+      92% calc(100% - 4px),
+      85% calc(100% - 12px),
+      77% calc(100% - 5px),
+      68% calc(100% - 13px),
+      60% calc(100% - 6px),
+      51% calc(100% - 14px),
+      43% calc(100% - 5px),
+      34% calc(100% - 12px),
+      26% calc(100% - 4px),
+      17% calc(100% - 13px),
+      9% calc(100% - 6px),
+      0 calc(100% - 11px)
     );
+    box-shadow: none;
+    filter: drop-shadow(0 2px 2px oklch(0 0 0 / 0.35))
+      drop-shadow(0 14px 26px oklch(0 0 0 / 0.45));
   }
 
   /* Glassmorphism card */

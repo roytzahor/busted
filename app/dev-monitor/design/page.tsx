@@ -38,19 +38,18 @@ export default function DesignPrimitivesPage() {
 
       <section className="space-y-3">
         <h2 className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
-          Paper · retail listing
+          Paper · torn (what the store charges)
         </h2>
-        <Paper className="max-w-sm">
+        {/* Copy is deliberately accusatory rather than clerical. "Retail
+            listing / scraped" is invoice language and was half of why the
+            surface read as bureaucratic — the tear fixed the shape, this
+            fixes the voice. */}
+        <Paper torn className="max-w-sm">
           <PaperLabel>
-            <span>Retail listing</span>
-            <span>scraped</span>
+            <span>what they charge</span>
+            <span>imri-jewelry.co.il</span>
           </PaperLabel>
-          <div className="flex items-baseline justify-between gap-4">
-            <span className="font-mono text-xs text-paper-muted">
-              imri-jewelry.co.il
-            </span>
-            <PaperFigure>₪238.00</PaperFigure>
-          </div>
+          <PaperFigure>₪238.00</PaperFigure>
         </Paper>
       </section>
 
@@ -63,14 +62,14 @@ export default function DesignPrimitivesPage() {
         <div className="relative max-w-sm">
           <Paper>
             <PaperLabel>
-              <span>Source · AliExpress</span>
+              <span>what it actually costs</span>
               <span>image-verified</span>
             </PaperLabel>
             <div className="flex items-baseline justify-between gap-4">
               <span className="font-mono text-xs text-paper-muted">
                 Custom Photo Necklace
               </span>
-              <PaperFigure className="text-success">₪27.40</PaperFigure>
+              <PaperFigure className="text-paper-money">₪27.40</PaperFigure>
             </div>
             <p className="font-mono text-[11px] text-paper-muted">
               4.8 ★ · 2,431 orders · 12–18d

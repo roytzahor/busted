@@ -20,16 +20,28 @@ import { cn } from "@/lib/utils"
 const PAPER_SHADOW =
   "shadow-[0_1px_1px_oklch(0_0_0/0.28),0_8px_18px_-6px_oklch(0_0_0/0.42),0_24px_48px_-18px_oklch(0_0_0/0.5)]"
 
-function Paper({ className, ...props }: React.ComponentProps<"div">) {
+function Paper({
+  className,
+  torn = false,
+  ...props
+}: React.ComponentProps<"div"> & {
+  /**
+   * Rip the bottom edge off. Reserve it for sheets that carry the teardown —
+   * a page where everything is torn is just a texture, and the effect costs a
+   * `filter: drop-shadow` (see `.paper-torn`). Overrides the box shadow.
+   */
+  torn?: boolean
+}) {
   return (
     <div
       data-slot="paper"
+      data-torn={torn || undefined}
       className={cn(
         // 2px, not a card radius: rounded reads as "app", square reads as
         // "document". Nested elements stay effectively square — concentric
         // radius (outer = inner + padding) bottoms out here.
         "paper-fibre flex flex-col gap-3 rounded-[2px] bg-paper p-5 text-paper-ink",
-        PAPER_SHADOW,
+        torn ? "paper-torn" : PAPER_SHADOW,
         className,
       )}
       {...props}
