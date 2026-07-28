@@ -5,12 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useMoney } from "@/components/currency-provider";
 import { ProductImage } from "@/components/product-image";
+import { VerdictSheet } from "@/components/verdict-sheet";
 import type { DropshipAnalysisResult } from "@/lib/analyze/map-response";
-import { cn } from "@/lib/utils";
 import {
   AlertTriangle,
   Bot,
-  HelpCircle,
   Package,
   ShieldAlert,
   Store,
@@ -20,77 +19,57 @@ interface DropshipAnalysisResultsProps {
   result: DropshipAnalysisResult;
 }
 
-const VERDICT_COPY: Record<
-  string,
-  { label: string; tone: string; tagline: string }
-> = {
-  dropship: {
-    label: "They’re busted — markup detected",
-    tone: "bg-primary/15 text-primary",
-    tagline: "Scrape and AI verification complete. Check the Pipeline tab for timing details.",
-  },
-  legit: {
-    label: "Looks legit — no markup signals",
-    tone: "bg-success/15 text-success",
-    tagline: "This appears to be an established brand selling its own product. No AliExpress alternative needed.",
-  },
-  insufficient_evidence: {
-    label: "Not enough info to judge",
-    tone: "bg-muted text-muted-foreground",
-    tagline: "We couldn’t tell from this page alone. Try a direct product link instead of a homepage or listing.",
-  },
-  not_a_product: {
-    label: "Not a product page",
-    tone: "bg-muted text-muted-foreground",
-    tagline: "This looks like a blog post, category page, or other non-product URL. Paste a specific product URL to scan it.",
-  },
-};
-
 export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps) {
   const formatMoney = useMoney();
-  const { storeProduct, dropshipPrediction, cache, supplierSkipReason, sourceType } =
-    result;
+  const {
+    storeProduct,
+    dropshipPrediction,
+    cache,
+    supplierSkipReason,
+    sourceType,
+    presenceTier,
+  } = result;
   const prediction = dropshipPrediction;
   const isSupplierListing = sourceType === "supplier_marketplace";
-  const verdict = prediction.verdict ?? (prediction.isLikelyDropship ? "dropship" : "legit");
-  const verdictCopy = VERDICT_COPY[verdict] ?? VERDICT_COPY.legit;
-  const isWeakVerdict = verdict === "insufficient_evidence" || verdict === "not_a_product";
+  const confidencePct = Math.round(prediction.confidence * 100);
 
   return (
     <section
       aria-labelledby="dropship-heading"
       className="animate-in fade-in slide-in-from-bottom-6 w-full space-y-6 duration-700"
     >
-      <div className="space-y-3 text-center md:text-left">
-        <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
-          {isSupplierListing ? (
+      {/* A supplier listing isn't a scan target at all, so it keeps the old
+          badge treatment — there is no verdict to present in a register. */}
+      {isSupplierListing ? (
+        <div className="space-y-3 text-center md:text-left">
+          <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
             <Badge className="bg-success/15 text-success">
               Already at supplier — you&apos;re good
             </Badge>
-          ) : (
-            <Badge className={cn(verdictCopy.tone)}>{verdictCopy.label}</Badge>
-          )}
-          <Badge variant="outline">
-            {Math.round(prediction.confidence * 100)}% confidence
-          </Badge>
-          <Badge variant="secondary">
-            {cache === "HIT" ? "Cached scrape + AI" : "Fresh analysis"}
-          </Badge>
+            <Badge variant="secondary">
+              {cache === "HIT" ? "Cached scrape + AI" : "Fresh analysis"}
+            </Badge>
+          </div>
+          <h2 id="dropship-heading" className="text-xl font-bold tracking-tight sm:text-2xl">
+            Supplier listing — not a dropship scan target
+          </h2>
+          <p className="text-muted-foreground text-sm sm:text-base">
+            {prediction.reasoning}
+          </p>
         </div>
-
-        <h2 id="dropship-heading" className="text-xl font-bold tracking-tight sm:text-2xl">
-          {isSupplierListing
-            ? "Supplier listing — not a dropship scan target"
-            : verdict === "not_a_product"
-              ? "This page isn’t a product"
-              : verdict === "insufficient_evidence"
-                ? "Not enough info on this page"
-                : `Analysis — ${storeProduct.title}`}
-        </h2>
-        <p className="text-muted-foreground text-sm sm:text-base">
-          {isSupplierListing ? prediction.reasoning : verdictCopy.tagline}
-        </p>
-      </div>
+      ) : (
+        <div className="space-y-3">
+          <VerdictSheet
+            prediction={prediction}
+            tier={presenceTier}
+            storeName={storeProduct.storeName}
+          />
+          <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+            {confidencePct}% confidence ·{" "}
+            {cache === "HIT" ? "cached scrape + AI" : "fresh analysis"}
+          </p>
+        </div>
+      )}
 
       {isSupplierListing ? (
         <Card>
@@ -196,43 +175,9 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
                   ) : null}
                 </dl>
 
-                <Separator />
-
-                <p className="text-sm leading-relaxed">{prediction.reasoning}</p>
-
-                {prediction.reasoningSignals && prediction.reasoningSignals.length > 0 ? (
-                  <div className="space-y-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      Evidence used
-                    </p>
-                    <ul className="space-y-1 text-xs leading-relaxed">
-                      {prediction.reasoningSignals.map((signal) => (
-                        <li key={signal} className="flex items-start gap-1.5">
-                          <span className="mt-1 size-1 shrink-0 rounded-full bg-muted-foreground/60" aria-hidden="true" />
-                          {signal}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-
-                {prediction.missingSignals && prediction.missingSignals.length > 0 ? (
-                  <div className="space-y-2">
-                    <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      <HelpCircle className="size-3.5" aria-hidden="true" />
-                      What we couldn’t find
-                    </p>
-                    <ul className="flex flex-wrap gap-1.5">
-                      {prediction.missingSignals.map((signal) => (
-                        <li key={signal}>
-                          <Badge variant="outline" className="text-xs text-muted-foreground">
-                            {signal}
-                          </Badge>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
+                {/* Reasoning, evidence and missing signals moved to
+                    <VerdictSheet> — this card is now stats + red flags only. */}
+                {prediction.redFlags.length > 0 ? <Separator /> : null}
 
                 {prediction.redFlags.length > 0 ? (
                   <div className="space-y-2">

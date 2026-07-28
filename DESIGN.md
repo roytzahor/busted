@@ -69,11 +69,20 @@ motion, the page architecture — is downstream of that image.
 
 Three registers, mapped to the three presence tiers:
 
-| Tier | Meaning | Register |
+**Tier drives intensity; verdict drives message.** These are two different
+axes, and an earlier draft of this document wrongly collapsed them.
+`computePresenceTier()` returns `silent` for *every* non-dropship verdict, so a
+genuinely `legit` brand lands in the same tier as "we couldn't tell". That is
+correct for the extension badge — never alarm on a legit store — but on the web
+page those two must not say the same thing. Read the tier for how loud to be,
+and the verdict for what to actually say.
+
+| Tier | Verdict | Register |
 | --- | --- | --- |
-| `flame` | High confidence dropship | **The Teardown.** Full theatre: tear, reveal, stamp, count-up. |
-| `amber` | Suspected, not proven | **The Dossier.** Paper document, evidence listed, no stamp, no tear. |
-| `silent` | Not enough evidence | **The Note.** One line of muted text. No card, no colour, no drama. |
+| `flame` | `dropship`, conf ≥ 0.7 | **The Teardown.** Full theatre: tear, reveal, stamp, count-up. |
+| `amber` | `dropship`, conf 0.5–0.7 | **The Dossier.** Paper, evidence listed, no stamp, no tear. |
+| `silent` | `legit` | **The All-Clear.** A plain positive statement. Not an apology. |
+| `silent` | `insufficient_evidence` / `not_a_product` / low-conf `dropship` | **The Note.** One line of muted text. No card, no colour, no drama. |
 
 This mapping is not decoration — it is the design's central discipline. A tool
 that performs certainty it does not have is exactly as untrustworthy as the
@@ -387,12 +396,18 @@ morphing, no library. A single reusable class.
 
 Same paper, no theatre. No tear, no stamp, no count-up. Headline is a question,
 not a verdict: *"נראה כמו דרופשיפינג, אבל אין לנו הוכחה"*. Evidence list is
-rendered as an itemised form (`reasoningSignals`), and — critically — the
-`missingSignals` are shown too, under a heading like *"מה היה משכנע אותנו"*.
+rendered as an itemised form (`reasoningSignals`), alongside `missingSignals`
+under a heading like *"מה היה משכנע אותנו"*.
 
-Showing what we *don't* know is the most trust-building surface on the site, and
-it currently has no visual home at all. This is the highest-value new component
-in the whole redesign.
+**Correction to an earlier draft:** this document claimed `missingSignals` "has
+no visual home at all" and was "the highest-value new component in the whole
+redesign". That was simply false — `dropship-analysis-results.tsx` already
+renders them as "What we couldn't find". So this is a re-skin and a
+re-prioritisation, not net-new surface, and the value is narrower than claimed:
+today the material sits last inside a card and is framed as an apology for
+missing data. Reframed as *what would have convinced us*, the same array reads
+as rigour instead of failure. Worth doing — but it is a copy and hierarchy
+change, and should not be sold as a new feature.
 
 ### 5.4 The Note — `silent` tier
 

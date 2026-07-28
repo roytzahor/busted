@@ -1,6 +1,38 @@
 import { Paper, PaperFigure, PaperLabel, PaperRule } from "@/components/ui/paper";
 import { Stamp } from "@/components/ui/stamp";
+import { VerdictSheet } from "@/components/verdict-sheet";
+import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
+import type { DropshipVerdict } from "@/lib/ai/dropship-verifier";
 import { notFound } from "next/navigation";
+
+function fakePrediction(
+  verdict: DropshipVerdict,
+  confidence: number,
+  over: Partial<DropshipPrediction> = {},
+): DropshipPrediction {
+  return {
+    verdict,
+    isLikelyDropship: verdict === "dropship",
+    confidence,
+    productCategory: "jewelry",
+    reasoning:
+      "Generic supplier imagery, no brand history, and a price band typical of a reseller markup.",
+    reasoningSignals: [
+      "Product photos appear on multiple unrelated stores",
+      "No manufacturer or brand registration found",
+      "Shipping window of 12–18 days quoted",
+    ],
+    missingSignals: ["No supplier invoice", "No customs or import record"],
+    redFlags: [],
+    aliexpressKeywords: [],
+    styleTokens: [],
+    materialPriors: [],
+    estimatedStorePriceUsd: 64.32,
+    estimatedSupplierPriceUsd: 7.4,
+    estimatedMarkupPercent: 770,
+    ...over,
+  };
+}
 
 export const metadata = {
   title: "Design Primitives — Busted Internal",
@@ -105,6 +137,63 @@ export default function DesignPrimitivesPage() {
           <Stamp className="absolute -bottom-4 end-[-12px]">
             BUSTED ×8.7
           </Stamp>
+        </div>
+      </section>
+
+      {/* The four registers side by side. The point of seeing them together is
+          the DROP in intensity: if silent doesn't look deliberately quiet next
+          to flame, the tier system is decorative and the restraint that makes
+          the loud state credible isn't actually being bought. */}
+      <section className="space-y-8">
+        <h2 className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
+          VerdictSheet · all four registers
+        </h2>
+
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] text-muted-foreground">
+            flame — dropship, 0.88
+          </p>
+          <VerdictSheet
+            prediction={fakePrediction("dropship", 0.88)}
+            tier="flame"
+            storeName="imri-jewelry.co.il"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] text-muted-foreground">
+            amber — dropship, 0.58
+          </p>
+          <VerdictSheet
+            prediction={fakePrediction("dropship", 0.58)}
+            tier="amber"
+            storeName="remora.co.il"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] text-muted-foreground">
+            silent + legit — must read as an all-clear, NOT an apology
+          </p>
+          <VerdictSheet
+            prediction={fakePrediction("legit", 0.82, {
+              reasoning: "Established brand selling its own product.",
+              missingSignals: [],
+            })}
+            tier="silent"
+            storeName="Vivify"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <p className="font-mono text-[10px] text-muted-foreground">
+            silent + insufficient_evidence — same tier, different sentence
+          </p>
+          <VerdictSheet
+            prediction={fakePrediction("insufficient_evidence", 0.35)}
+            tier="silent"
+            storeName="mxm02.co.il"
+          />
         </div>
       </section>
 
