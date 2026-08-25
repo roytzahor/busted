@@ -119,7 +119,7 @@ export function RecentScans() {
                 <div
                   role="presentation"
                   onClick={() => setOpen(false)}
-                  className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+                  className="fixed inset-0 z-[60] bg-black/40 backdrop-blur-sm animate-in fade-in ease-out duration-200"
                 />
               ) : null}
 

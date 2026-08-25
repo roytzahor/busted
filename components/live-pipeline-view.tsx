@@ -216,7 +216,7 @@ export function LivePipelineView({ stageMap, className }: LivePipelineViewProps)
                   <p
                     className={cn(
                       "mt-0.5 text-xs leading-relaxed",
-                      isActive && "text-primary/80 animate-pulse",
+                      isActive && "text-primary/80",
                       !isActive && "text-muted-foreground/70",
                       isError && "text-destructive/80",
                     )}
@@ -224,7 +224,7 @@ export function LivePipelineView({ stageMap, className }: LivePipelineViewProps)
                     {update.message}
                   </p>
                 ) : isActive ? (
-                  <p className="mt-0.5 animate-pulse text-xs text-primary/60">
+                  <p className="mt-0.5 text-xs text-primary/60">
                     Working…
                   </p>
                 ) : null}

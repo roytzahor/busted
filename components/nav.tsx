@@ -173,7 +173,7 @@ export function Nav() {
       {mobileOpen ? (
         <nav
           id="mobile-nav"
-          className="animate-in slide-in-from-top-2 border-t px-4 py-3 duration-200 md:hidden"
+          className="animate-in slide-in-from-top-2 ease-out border-t px-4 py-3 duration-200 md:hidden"
           aria-label="Mobile navigation"
         >
           <ul className="space-y-1">

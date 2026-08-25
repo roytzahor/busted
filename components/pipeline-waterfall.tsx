@@ -109,7 +109,7 @@ export function PipelineWaterfall({
           {visible.map((entry, index) => (
             <div
               key={`${entry.stage}-${entry.atMs}-${index}`}
-              className="animate-in fade-in slide-in-from-left-1 flex gap-3 py-1 duration-300"
+              className="animate-in fade-in slide-in-from-left-1 ease-out flex gap-3 py-1 duration-300"
             >
               <span className="text-zinc-500 w-16 shrink-0 tabular-nums">
                 [{entry.atMs}ms]
@@ -133,7 +133,7 @@ export function PipelineWaterfall({
           {animate && visibleCount < entries.length ? (
             <div className="mt-1 flex gap-3 py-1 text-zinc-500">
               <span className="w-16 shrink-0">[…]</span>
-              <span className="animate-pulse">Running next stage…</span>
+              <span>Running next stage…</span>
             </div>
           ) : null}
         </div>

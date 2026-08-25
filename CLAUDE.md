@@ -232,10 +232,24 @@ transition-colors hover:border-white/12 hover:bg-white/[0.05]
 - `.glow-primary` and `.glow-success` utility classes in `globals.css`
 
 ### Animation
-- Entry: `animate-in fade-in slide-in-from-bottom-6 duration-700`
-- Fast entry: `animate-in fade-in slide-in-from-bottom-4 duration-500`
-- Transitions: `transition-all duration-200` (150–300ms, ease-out)
-- Respect `prefers-reduced-motion` (shadcn/ui handles this via `tw-animate-css`)
+Full motion system in `DESIGN.md` §7. The load-bearing details:
+- **One house curve**, `cubic-bezier(0.2, 0, 0, 1)`, set in `app/globals.css` by
+  overriding the *stock* Tailwind tokens `--ease-out` and
+  `--default-transition-timing-function`. Both stock curves ramp in before they
+  move; overriding the standard names means `ease-out` and every bare
+  `transition-*` inherit the house curve with no call-site change.
+- Entry: `animate-in fade-in slide-in-from-bottom-2 ease-out duration-300`
+  (fade + 8px rise). **`ease-out` is not optional** — `tw-animate-css` defines
+  `--animate-in` with a `var(--tw-ease, ease)` fallback, so an `animate-in`
+  with no `ease-*` class silently animates on plain `ease`, which ramps in.
+- Transitions: name the properties (`transition-[color,box-shadow]`), 150–300ms.
+  Never `transition-all`.
+- Press: `active:scale-[0.96]` — never below `0.95`.
+- `prefers-reduced-motion` (`globals.css`): entry *animations* jump to their
+  final state, but *transitions* are narrowed to opacity/colour rather than
+  killed. Zeroing every transition makes meaningful state changes teleport,
+  which is the jarring result the transition existed to prevent.
+- `animate-pulse` is for skeletons only — never on status text being read.
 
 ### Accessibility
 - Contrast ≥4.5:1 on all text (`muted-foreground` on dark meets AA)

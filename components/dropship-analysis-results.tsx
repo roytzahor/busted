@@ -36,7 +36,7 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
   return (
     <section
       aria-labelledby="dropship-heading"
-      className="animate-in fade-in slide-in-from-bottom-6 w-full space-y-6 duration-700"
+      className="animate-in fade-in slide-in-from-bottom-2 ease-out w-full space-y-6 duration-300"
     >
       {/* A supplier listing isn't a scan target at all, so it keeps the old
           badge treatment — there is no verdict to present in a register. */}

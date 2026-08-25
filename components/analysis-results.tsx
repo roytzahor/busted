@@ -81,7 +81,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
   return (
     <section
       aria-labelledby="comparison-heading"
-      className="animate-in fade-in slide-in-from-bottom-6 w-full space-y-4 duration-700"
+      className="animate-in fade-in slide-in-from-bottom-2 ease-out w-full space-y-4 duration-300"
     >
       {/* ── Savings hero banner ──────────────────────────────────── */}
       <div className={cn(

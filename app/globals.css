@@ -57,6 +57,22 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ── Motion tokens ──────────────────────────────────────────────────────────
+   One house curve, from DESIGN.md §7. Both Tailwind stock curves it replaces
+   ramp IN before they move — `--ease-out` is cubic-bezier(0, 0, 0.2, 1) and the
+   default transition curve is cubic-bezier(0.4, 0, 0.2, 1) — and the start is
+   the exact moment the user is watching, so a slow ramp reads as lag no matter
+   how short the duration is.
+
+   Overriding the stock token names rather than adding a parallel `--ease-house`
+   is deliberate: every bare `transition-*` and every `ease-out` already written
+   in this codebase picks the curve up with no call-site change, and code written
+   later gets it by default instead of by remembering. */
+@theme {
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+
 /* Fire palette (busted) + green relief (we got you) */
 :root {
   --background: oklch(0.99 0.012 55);
@@ -206,10 +222,44 @@
     *,
     *::before,
     *::after {
+      /* Entry animations jump to their final state — DESIGN.md §8. The
+         information is identical either way, which is the test of whether the
+         motion was decoration or content. */
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
+      /* Without this, a staggered group still SEQUENCES under reduced motion —
+         each item waits out its delay and then pops. "Jump to the final state"
+         has to include the delay or it isn't a jump. */
+      animation-delay: 0ms !important;
       scroll-behavior: auto !important;
+
+      /* Transitions are narrowed, not killed. A blanket
+         `transition-duration: 0.01ms` also removes the colour and opacity
+         changes that CARRY meaning here — a pipeline stage going queued →
+         running, a verdict arriving, a button acknowledging a press — so every
+         state change teleports, which is the jarring result the transition
+         existed to prevent. Reduced motion means no vestibular movement, not no
+         feedback: keep the fades, drop transform/size/position. */
+      transition-property:
+        opacity, color, background-color, border-color, text-decoration-color,
+        box-shadow, fill, stroke !important;
+      transition-duration: 200ms !important;
+    }
+
+    /* The spinner is the one exemption. The blanket reset above resolves
+       `spin 1s linear infinite` to a single 360° turn in 0.01ms, leaving a
+       MOTIONLESS spinner on screen for the 8-20s of a live scan — it reads as a
+       hung app, which inverts the indicator's meaning and is a worse outcome
+       than the motion it removed. A spinner is the rare case where the motion
+       IS the information. Small fixed-centre rotation is not the large-area
+       translation this media query exists to suppress; slow it, don't stop it.
+
+       `animate-pulse` and `animate-live` need NO exemption: both keyframe sets
+       end on `opacity: 1`, so the blanket rule settles them at a solid block and
+       a solid dot — correct static readings of "loading" and "live". */
+    .animate-spin {
+      animation-duration: 1.4s !important;
+      animation-iteration-count: infinite !important;
     }
   }
   /* Hebrew (RTL) — switch the font stack to Heebo so Hebrew glyphs render
@@ -343,9 +393,12 @@
 }
 
 /* Live indicator dot */
+/* A 1 → 0.2 swing is a blink, not a pulse: at the trough the dot has all but
+   left the page, so peripheral vision keeps getting dragged back to it. 0.45
+   still reads as alive without competing with the content beside it. */
 @keyframes live-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
+  50% { opacity: 0.45; }
 }
 
 @layer utilities {
