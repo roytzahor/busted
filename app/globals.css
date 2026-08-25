@@ -135,14 +135,24 @@
   --paper-rule: oklch(0.24 0.03 55 / 0.2);
 
   /* Savings green ON PAPER. --success is tuned for the dark room and scores
-     1.6:1 against manila — effectively invisible. Anything on paper needs a
-     paper-specific ink; this one measures 4.8:1. Verified, not eyeballed. */
-  --paper-money: oklch(0.42 0.16 155);
+     1.7:1 against manila — effectively invisible. Anything on paper needs a
+     paper-specific ink; this one measures 5.2:1. Verified, not eyeballed.
+
+     Chroma pinned 0.16 -> 0.10 because 0.16 is OUTSIDE sRGB at this L and hue
+     (it needs R_linear = -0.037). Browsers were already clamping it, so the
+     rendered colour was never the specified one and a P3 display would not
+     clamp identically. Pinning makes the token honest; it also measures BETTER
+     than the clamped value did (4.8:1). */
+  --paper-money: oklch(0.42 0.10 155);
 
   /* Reserved for the BUSTED stamp and nothing else. A colour used once is a
      signature; used twice it is just part of the palette. Errors and
-     destructive actions keep --destructive. */
-  --stamp: oklch(0.55 0.24 27);
+     destructive actions keep --destructive.
+
+     Chroma pinned 0.24 -> 0.22: 0.24 is outside sRGB here (needs G_linear =
+     -0.014) and was being clamped. Still clears its decorative 3.0 bar at
+     3.8:1 on the room and 3.5:1 on paper. */
+  --stamp: oklch(0.55 0.22 27);
 
   /* presenceTier "amber". Must stay visibly distinct from --primary (fire,
      the flame tier) or the tier system is decorative rather than legible. */

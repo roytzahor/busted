@@ -187,16 +187,24 @@ Authoritative values live in `app/globals.css` — this table mirrors it, so upd
 | Role | Value | Usage |
 |------|-------|-------|
 | Background | `oklch(0.11 0.014 48)` | The room — deep, near-neutral warm dark |
-| Paper | `oklch(0.94 0.012 85)` | Opaque bone evidence surface (`.paper`) |
-| Paper ink | `oklch(0.20 0.02 60)` | Text on paper |
-| Primary/fire | `oklch(0.74 0.18 52)` | Amber-orange — brand, `flame` tier |
+| Paper | `oklch(0.855 0.032 82)` | Opaque **manila** evidence stock. Consumed via `<Paper>`, never applied directly. NOT bone — `oklch(0.94 0.012 85)` was tried and read as a flashbang against the room, and as light mode leaking into a dark-only product |
+| Paper ink | `oklch(0.24 0.03 55)` | Text on paper — 10.6:1 |
+| Paper muted | `oklch(0.44 0.03 60)` | Secondary text on paper — 5.0:1. Use this, never `text-muted-foreground`, inside `<Paper>` |
+| Paper rule | `oklch(0.24 0.03 55 / 0.2)` | Hairlines on paper |
+| Paper money | `oklch(0.42 0.16 155)` | Savings green **on paper** — 4.8:1. `--success` scores 1.6:1 on manila and is invisible there |
+| Primary/fire | `oklch(0.72 0.17 50)` | Amber-orange — brand, `flame` tier |
 | Amber tier | `oklch(0.80 0.13 78)` | `amber` tier — must stay distinct from fire |
 | Stamp | `oklch(0.55 0.24 27)` | **BUSTED stamp only** — never for errors |
-| Success/relief | `oklch(0.70 0.15 155)` | Green — the user's win (savings, real link) |
+| Success/relief | `oklch(0.68 0.14 155)` | Green — the user's win (savings, real link). Room only; on paper use Paper money |
 | Destructive | `oklch(0.65 0.2 25)` | Red — errors and destructive actions |
 | Border | `oklch(1 0.02 55 / 10%)` | Hairline white borders |
 
-**Design intensity is derived from `presenceTier`, never chosen**: `flame` → full teardown; `amber` → paper dossier, no stamp; `silent` → one muted line, no card. Decorating the `silent` state defeats the purpose of having tiers.
+**Room tokens are not paper tokens.** Assume every room colour fails on paper
+until measured, and measure by converting oklch to *linear* RGB and feeding the
+WCAG luminance formula directly — running the sRGB transfer function over
+already-linear values double-converts and fabricates failures.
+
+**Design intensity is derived from `presenceTier`, never chosen**: `flame` → solid markup bar, count-up, stamp; `amber` → same sheet, ghosted bar, no stamp and no count-up; `silent` → one muted line, no card. Decorating the `silent` state defeats the purpose of having tiers. The tier must never be carried by hue alone — `--primary` and `--amber-tier` measure 1.38:1 (`DESIGN.md` §2.3).
 
 ### Glass Effect Pattern
 Use these Tailwind classes together for glassmorphism cards:
