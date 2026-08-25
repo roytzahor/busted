@@ -177,9 +177,32 @@ Rules:
 
 ## Design Language
 
-**Style**: migrating to **"The Teardown"** — dark textured room + opaque paper evidence. Full spec and rationale in **`DESIGN.md`**; read it before any UI work. Phase 1 (tokens, grain, blob removal) has landed; the glass/bento surfaces below still exist and are being replaced phase by phase.
+**Style**: migrating to **"The Ledger"** — dark textured room + opaque manila paper evidence, with a to-scale **markup bar** as the signature element. Full spec and rationale in **`DESIGN.md`**; read it before any UI work. Phases 1–3 (tokens, grain, blobs removed; `Paper`/`Stamp` primitives; tier-driven `VerdictSheet`) plus the motion pass have landed; the glass/bento surfaces below still exist and are being replaced phase by phase. The earlier "The Teardown" direction and its tear-to-reveal animation were **cancelled before being built** — see `DESIGN.md` §0.2.
 
 **Dark mode is default** — `<html>` always has the `dark` class. Never remove it or add a light mode toggle without explicit user instruction.
+
+### Color Tokens (dark mode)
+Authoritative values live in `app/globals.css` — this table mirrors it, so update both together.
+
+| Role | Value | Usage |
+|------|-------|-------|
+| Background | `oklch(0.11 0.014 48)` | The room — deep, near-neutral warm dark |
+| Paper | `oklch(0.855 0.032 82)` | Opaque **manila** evidence stock. Consumed via `<Paper>`, never applied directly. NOT bone — `oklch(0.94 0.012 85)` was tried and read as a flashbang against the room, and as light mode leaking into a dark-only product |
+| Paper ink | `oklch(0.24 0.03 55)` | Text on paper — 10.6:1 |
+| Paper muted | `oklch(0.44 0.03 60)` | Secondary text on paper — 5.0:1. Use this, never `text-muted-foreground`, inside `<Paper>` |
+| Paper rule | `oklch(0.24 0.03 55 / 0.2)` | Hairlines on paper |
+| Paper money | `oklch(0.42 0.16 155)` | Savings green **on paper** — 4.8:1. `--success` scores 1.6:1 on manila and is invisible there |
+| Primary/fire | `oklch(0.72 0.17 50)` | Amber-orange — brand, `flame` tier |
+| Amber tier | `oklch(0.80 0.13 78)` | `amber` tier — must stay distinct from fire |
+| Stamp | `oklch(0.55 0.24 27)` | **BUSTED stamp only** — never for errors |
+| Success/relief | `oklch(0.68 0.14 155)` | Green — the user's win (savings, real link). Room only; on paper use Paper money |
+| Destructive | `oklch(0.65 0.2 25)` | Red — errors and destructive actions |
+| Border | `oklch(1 0.02 55 / 10%)` | Hairline white borders |
+
+**Room tokens are not paper tokens.** Assume every room colour fails on paper
+until measured, and measure by converting oklch to *linear* RGB and feeding the
+WCAG luminance formula directly — running the sRGB transfer function over
+already-linear values double-converts and fabricates failures.
 
 ### Color Tokens (dark mode)
 Authoritative values live in `app/globals.css` — this table mirrors it, so update both together.
