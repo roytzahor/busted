@@ -17,14 +17,18 @@ import "./globals.css";
 const siteUrl = getSiteUrl();
 const defaultOgImage = `${siteUrl}/api/og/scan?title=${encodeURIComponent(`${BRAND_NAME} — ${BRAND_TAGLINE}`)}`;
 
+// `fallback` matters: without it a font fetch failure degrades to the
+// browser's default serif, not to a system sans.
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  fallback: ["system-ui", "-apple-system", "Segoe UI", "Arial", "sans-serif"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  fallback: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
 });
 
 // Heebo — used for Hebrew (RTL) rendering. Latin fallback covered by Geist
@@ -33,6 +37,7 @@ const geistMono = Geist_Mono({
 const heebo = Heebo({
   variable: "--font-heebo",
   subsets: ["hebrew", "latin"],
+  fallback: ["system-ui", "-apple-system", "Arial", "sans-serif"],
 });
 
 export const metadata: Metadata = {
@@ -90,15 +95,17 @@ export default async function RootLayout({
 }>) {
   const locale = await detectServerLocale();
 
+  // Font variables must sit on <html>, not <body>: globals.css sets
+  // `font-family` on the html element itself, and custom properties only
+  // inherit downward — defined on body they are out of scope where they are
+  // used, and the declaration falls back to the browser's default serif.
   return (
     <html
       lang={locale.languageMeta.htmlLang}
       dir={locale.languageMeta.dir}
-      className="dark"
+      className={`dark ${geistSans.variable} ${geistMono.variable} ${heebo.variable}`}
     >
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${heebo.variable} min-h-dvh antialiased`}
-      >
+      <body className="min-h-dvh antialiased">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
