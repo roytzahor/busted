@@ -1,0 +1,10 @@
+# Agent OS Standards Index
+ai:
+  cache-backcompat:
+    description: Defensive parsing rules for cached AI predictions; adding a DropshipPrediction field requires a matching branch
+  derived-fields:
+    description: isLikelyDropship is always recomputed from verdict, never read from the model or cache
+  verdict-clamps:
+    description: applyClamps() enforces the humility rules in code; prompt rules and clamps must move together
+  verdict-field-zeroing:
+    description: Which fields each terminal verdict must clear, and why browse-mode tokens must not leak into the product path
