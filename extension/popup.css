@@ -268,8 +268,11 @@ body {
   color: #D99A2B;
 }
 
-.result-header.silent h2 {
-  color: var(--success);
+/* Never --success: green reads as a verified all-clear, and silence only
+   means we found nothing worth saying. Body colour is the honest register. */
+.result-header.silent h2,
+.result-header.unavailable h2 {
+  color: var(--text-body);
 }
 
 .result-content {
@@ -371,7 +374,8 @@ body {
 }
 
 .silent-subtext {
-  margin: 0 0 0 20px;
+  /* margin-left + symmetric padding pushed centred text 20px off-centre. */
+  margin: 0;
   padding: 0 20px;
   font-size: 12px;
   color: var(--text-body);

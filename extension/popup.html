@@ -95,12 +95,22 @@
     </div>
   </section>
 
-  <!-- Silent result state: calm all-clear -->
+  <!-- Silent result state: we looked and had nothing to say. No checkmark —
+       a tick is a claim of safety, and silence is only the absence of a
+       finding. Plain body colour, never --success. -->
   <section id="state-silent" class="state hidden">
     <div class="result-header silent">
-      <h2>✓ Nothing to report on this page.</h2>
+      <h2>Nothing to report on this page.</h2>
     </div>
     <p class="silent-subtext">When we speak, we're sure.</p>
+  </section>
+
+  <!-- Unavailable: the check did NOT complete. Distinct from silent, because
+       "we couldn't look" must never render as "we looked and it's fine". -->
+  <section id="state-unavailable" class="state hidden">
+    <div class="result-header unavailable">
+      <h2>Couldn't check this page right now.</h2>
+    </div>
   </section>
 
   <!-- Savings ledger — cumulative markup dodged, shown in every state -->

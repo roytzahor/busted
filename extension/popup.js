@@ -47,6 +47,7 @@ function formatPrice(price) {
  */
 function renderFlame(result) {
   showState('flame');
+  showLedger();
 
   const { dropshipPrediction, storeProduct, aliexpressUrl, supplierMatchQuality } = result;
 
@@ -116,10 +117,28 @@ function renderSilent() {
 }
 
 /**
+ * The check did not complete. Says so plainly and claims nothing about the
+ * page. Deliberately quieter than silent — no icon, no colour.
+ */
+function renderUnavailable() {
+  showState('unavailable');
+}
+
+/**
  * Render result based on presenceTier.
  * @param {object} result - API response
  */
 function renderResult(result) {
+  // A failed check is not an all-clear. background.js returns
+  // { presenceTier: 'silent', error: true } on network failure, non-200 and
+  // any exception — falling through to renderSilent() there would claim the
+  // page is clean on zero information, which is the one thing a smoke alarm
+  // must never do.
+  if (!result || result.error || !result.presenceTier) {
+    renderUnavailable();
+    return;
+  }
+
   const { presenceTier } = result;
 
   if (presenceTier === 'flame') {
@@ -220,16 +239,18 @@ document.getElementById('scan-button').addEventListener('click', async () => {
   chrome.runtime.sendMessage(
     { type: 'SCAN_ACTIVE_TAB', tabId: tab.id, url: tab.url },
     (result) => {
-      if (result && result.presenceTier) {
-        renderResult(result);
-      } else {
-        renderSilent();
-      }
+      // renderResult owns the error/missing-tier branch — a scan that never
+      // came back is "unavailable", not "nothing to report".
+      renderResult(result);
     }
   );
 });
 
 // Savings ledger — loss-aversion framing: "almost paid", not "saved"
+// The text is prepared on open, but revealed only by renderFlame(). On a
+// silent or unavailable page a savings figure would be the loudest thing on
+// screen — money shouting over an all-clear is the inversion the tier system
+// exists to prevent.
 chrome.storage.local.get(['savingsLedger'], (data) => {
   const ledger = data.savingsLedger;
   if (!ledger || !ledger.bustCount) return;
@@ -237,8 +258,16 @@ chrome.storage.local.get(['savingsLedger'], (data) => {
   if (!el) return;
   const busts = ledger.bustCount === 1 ? 'bust' : 'busts';
   el.textContent = `You've dodged $${ledger.totalDodgedUsd.toFixed(2)} in markup across ${ledger.bustCount} ${busts}.`;
-  el.classList.remove('hidden');
+  el.dataset.ready = 'true';
 });
+
+/** Reveal the cumulative ledger. Flame only. */
+function showLedger() {
+  const el = document.getElementById('ledger-line');
+  if (el && el.dataset.ready === 'true') {
+    el.classList.remove('hidden');
+  }
+}
 
 // Initialize on popup open
 initializePopup();
