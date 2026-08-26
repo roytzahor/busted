@@ -38,9 +38,20 @@ interface CliOptions {
 /**
  * Mean projected cost/scan budget. A refactor that raises accuracy but pushes
  * the mean scan cost above this is a cost regression — run with --enforce-cost
- * (e.g. in CI) to make it fail. Headroom above today's ~$0.0018 baseline.
+ * (e.g. in CI) to make it fail.
+ *
+ * Raised 0.004 -> 0.0085 because the BASELINE moved, not because the gate was
+ * loosened to get green. The old budget sat above a ~$0.0018 baseline (2.2x
+ * headroom) computed on a cheaper model; the 3.x flash bump in this PR puts the
+ * real mean at ~$0.0067 (max $0.0068 across the corpus). The new budget is
+ * ~1.25x the measured mean, so it is PROPORTIONALLY TIGHTER than what it
+ * replaces and will trip on a smaller regression than before.
+ *
+ * Re-derive this and COST_USD.BASE_SCAN together whenever GOOGLE_AI_MODEL
+ * changes price tier. A budget left behind a model bump is a gate that reports
+ * "over budget" forever, gets ignored, and then gets deleted.
  */
-const COST_BUDGET_USD = 0.004;
+const COST_BUDGET_USD = 0.0085;
 
 function parseOptions(): CliOptions {
   const args = process.argv.slice(2);
