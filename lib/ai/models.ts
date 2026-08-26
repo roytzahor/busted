@@ -55,18 +55,25 @@ export function embeddingModel(): string {
 }
 
 /**
- * Ordered fallback chain for the Google provider. Aliases first so the chain
- * cannot rot the way the previous one did. Override with a comma-separated
- * `GOOGLE_AI_MODEL_FALLBACK_CHAIN`.
+ * Ordered fallback chain for the Google provider.
  *
- * The configured primary model is prepended automatically and de-duplicated, so
- * the chain only needs to list the fallbacks.
+ * ORDER IS LOAD-BEARING: exhaust the full models before the lite one. With
+ * GOOGLE_AI_MODEL="gemini-flash-latest" the primary is deduped against the head
+ * of this list, so listing lite second collapsed the full-model slot and a
+ * SINGLE 429/404/503 or MAX_TOKENS truncation served a production verdict from
+ * a lite model — which `liteModel()` above explicitly forbids ("never use this
+ * for a verdict, a match decision, or anything whose output gates the
+ * pipeline"). Lite stays last as an availability floor, not a second choice.
+ *
+ * Override with a comma-separated `GOOGLE_AI_MODEL_FALLBACK_CHAIN`. The
+ * configured primary is prepended and de-duplicated, so this need only list
+ * the fallbacks.
  */
 export function googleModelFallbackChain(): string[] {
   const raw = process.env.GOOGLE_AI_MODEL_FALLBACK_CHAIN;
   const configured = raw
     ? raw.split(",").map((m) => m.trim()).filter(Boolean)
-    : ["gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash"];
+    : ["gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest"];
   return Array.from(new Set([flashModel(), ...configured]));
 }
 

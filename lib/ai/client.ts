@@ -71,8 +71,8 @@ const DEFAULT_MODELS: Record<AIProvider, string> = {
  */
 export const GOOGLE_MODEL_FALLBACK_CHAIN = [
   "gemini-flash-latest",
-  "gemini-flash-lite-latest",
   "gemini-2.5-flash",
+  "gemini-flash-lite-latest",
 ] as const;
 
 function resolveProvider(config: AIClientConfig): AIProvider {
