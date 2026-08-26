@@ -5,8 +5,20 @@
  * Smoke-alarm discipline applies at store level too: a store is only
  * "flagged" when ≥60% of decisive verdicts are dropship AND there are at
  * least MIN_DECISIVE_SCANS of them. One bad scan never brands a store.
+ *
+ * The tier gate is what makes that true rather than aspirational. A `dropship`
+ * verdict at 0.35 confidence is `silent` per computePresenceTier() — we would
+ * not say a word about that product to the user who scanned it. Counting it
+ * toward a public accusation against a named business, on an indexed page,
+ * would say something louder on weaker evidence. So a dropship verdict counts
+ * here only if it would have spoken on its own.
+ *
+ * The gate is deliberately asymmetric: it applies to `dropship` (an
+ * accusation) and not to `legit` (an exoneration, and silent by definition —
+ * gating it would empty the denominator and flag every store).
  */
 
+import { computePresenceTier } from "@/lib/analyze/presence-tier";
 import { domainFromUrl } from "@/lib/learning/priors";
 import { prisma } from "@/lib/prisma";
 import { parseAliExpressData } from "@/lib/types/analyze";
@@ -38,10 +50,25 @@ export interface StoreReport {
   lastScannedAt: string;
 }
 
-const MIN_DECISIVE_SCANS = 2;
+/**
+ * Two scans is not a pattern — it is an anecdote, and this page is indexed
+ * and names a real business. Raised 2 → 4 alongside the tier gate.
+ */
+export const MIN_DECISIVE_SCANS = 4;
 const FLAGGED_SHARE = 0.6;
 const CLEAN_SHARE = 0.2;
 const SCAN_LIST_CAP = 25;
+
+/**
+ * Whether a cached prediction is allowed to count as a dropship data point
+ * for a *public* store verdict. Mirrors the user-facing contract exactly: if
+ * presenceTier would be silent, we never said it, so it cannot be evidence.
+ */
+function countsAsDropship(prediction: Parameters<typeof computePresenceTier>[0]): boolean {
+  return (
+    prediction?.verdict === "dropship" && computePresenceTier(prediction) !== "silent"
+  );
+}
 
 function tierFromCounts(dropshipCount: number, legitCount: number): StoreTier {
   const decisive = dropshipCount + legitCount;
@@ -103,7 +130,10 @@ export async function loadStoreReport(domain: string): Promise<StoreReport | nul
     const ali = parseAliExpressData(row.aliexpressData);
     const verdict = ai?.prediction?.verdict ?? null;
 
-    if (verdict === "dropship") dropshipCount += 1;
+    // A dropship verdict the tier system would have kept quiet about is not
+    // counted at all — neither as dropship nor as legit. It is an absence of
+    // evidence, not evidence of absence.
+    if (countsAsDropship(ai?.prediction)) dropshipCount += 1;
     else if (verdict === "legit" || verdict === "collection_page") legitCount += 1;
 
     const storePrice =
@@ -168,8 +198,9 @@ export async function computeDomainTier(
     if (host !== domain && host?.endsWith(`.${domain}`) !== true) continue;
     matched = true;
 
-    const verdict = parseCachedAiPrediction(row.aiPrediction)?.prediction?.verdict ?? null;
-    if (verdict === "dropship") dropshipCount += 1;
+    const prediction = parseCachedAiPrediction(row.aiPrediction)?.prediction;
+    const verdict = prediction?.verdict ?? null;
+    if (countsAsDropship(prediction)) dropshipCount += 1;
     else if (verdict === "legit" || verdict === "collection_page") legitCount += 1;
   }
 
