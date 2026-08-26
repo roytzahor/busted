@@ -1,4 +1,10 @@
 # Agent OS Standards Index
+# Rebuild with /agent-os:index-standards after adding or removing files.
+root:
+  change-discipline:
+    description: How a change is made here — smallest correct diff, kill switches, comments, concurrency
+  code-navigation:
+    description: Query codebase-memory before grepping; which graph answers which question shape
 ai:
   cache-backcompat:
     description: Defensive parsing rules for cached AI predictions; adding a DropshipPrediction field requires a matching branch
@@ -8,3 +14,27 @@ ai:
     description: applyClamps() enforces the humility rules in code; prompt rules and clamps must move together
   verdict-field-zeroing:
     description: Which fields each terminal verdict must clear, and why browse-mode tokens must not leak into the product path
+design:
+  motion:
+    description: The single house easing curve, the animate-in ease-out trap, and reduced-motion rules
+  tokens:
+    description: Room vs paper tokens, how to measure contrast correctly, font token wiring, and what never returns
+eval:
+  gates:
+    description: Which commands to run before claiming something works, and the three things the eval does not prove
+extension:
+  render-verbatim:
+    description: The extension renders the server tier verbatim and fails closed — a failed check is never an all-clear
+scraping:
+  provider-chain:
+    description: Dynamic scraper ordering, never leaking provider names to users, and errors staying silent
+supplier:
+  match-thresholds:
+    description: MATCH_CONFIDENCE_MIN and IMAGE_MATCH_MIN are precision gates; image AI never gates the basic flow
+trust:
+  affiliate-neutrality:
+    description: Nothing anyone pays for may change what a user sees — disclosure, ranking neutrality, Chrome policy
+  presence-tier-contract:
+    description: presenceTier is the only UI confidence contract; use SilentBoundary so silence is structural
+  public-accusation:
+    description: Gating, thresholds and presentation rules for naming a real business on an indexed page
