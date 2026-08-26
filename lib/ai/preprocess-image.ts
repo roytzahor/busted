@@ -30,15 +30,14 @@ import {
   savePreprocessedAsync,
 } from "@/lib/ai/preprocess-cache";
 
+import { imageModel as imageModelId, visionModel as visionModelId } from "./models";
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 
 // gemini-3-flash-image was the original default but returns 404 on v1beta.
 // gemini-2.5-flash-image is the current stable image-generation model.
-const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image";
 /** Fast vision model used for cleanup scoring (text output, not image output). */
 // gemini-2.0-flash was retired by Google and 404s on v1beta — this default was
 // silently failing every vision call. Use the alias so it tracks forward.
-const DEFAULT_VISION_MODEL = "gemini-flash-latest";
 
 /**
  * Sprint 12 cost gate — Sprint 12 Stage 31.
@@ -639,7 +638,7 @@ async function scoreCleanup(
 
   try {
     const model = client.getGenerativeModel({
-      model: process.env.GOOGLE_AI_VISION_MODEL ?? DEFAULT_VISION_MODEL,
+      model: visionModelId(),
     });
 
     const response = await model.generateContent({
@@ -737,7 +736,7 @@ export async function preprocessForSmartMatch(
 
   const client = new GoogleGenerativeAI(apiKey);
   const imageModel = client.getGenerativeModel({
-    model: process.env.GOOGLE_AI_IMAGE_MODEL ?? DEFAULT_IMAGE_MODEL,
+    model: imageModelId(),
   });
 
   // 4. Full preprocess round-trip — image cleanup + structured analysis in one call.
