@@ -41,6 +41,10 @@ export interface DropshipVerificationResult {
   prediction: DropshipPrediction | null;
   provider: string;
   model: string;
+  /** Model the provider actually served — differs from `model` when a
+   *  `-latest` alias is configured. Benchmarks must attribute results to this. */
+  resolvedModel?: string;
+  usage?: { inputTokens: number; outputTokens: number; thoughtTokens: number };
   rawResponse: string;
   error: string | null;
 }
@@ -536,6 +540,8 @@ export async function verifyDropshipLikelihood(params: {
       prediction,
       provider: completion.provider,
       model: completion.model,
+      resolvedModel: completion.resolvedModel,
+      usage: completion.usage,
       rawResponse: completion.content,
       error: prediction ? null : "AI response could not be parsed as structured JSON.",
     };

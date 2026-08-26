@@ -30,9 +30,22 @@ export interface AICompletionResult {
   content: string;
   provider: AIProvider;
   model: string;
+  /**
+   * The model the provider actually served. For a `-latest` alias this differs
+   * from `model` (the requested id) — `gemini-flash-latest` resolves to a
+   * concrete version that moves without warning, so benchmarks must record
+   * this, not the alias. Undefined when the provider doesn't report it.
+   */
+  resolvedModel?: string;
   usage?: {
     inputTokens: number;
     outputTokens: number;
+    /**
+     * Reasoning tokens. Billed at the output rate but NOT included in
+     * candidatesTokenCount, so cost computed from outputTokens alone
+     * understates spend on a thinking model (often by >10x on short answers).
+     */
+    thoughtTokens: number;
   };
 }
 
@@ -50,11 +63,16 @@ const DEFAULT_MODELS: Record<AIProvider, string> = {
   openai: "gpt-4o-mini",
 };
 
-/** Ordered fallback chain — gemini-2.0-flash was retired; 2.5-flash is current stable. */
+/**
+ * Ordered fallback chain. Aliases first so the chain cannot rot the way the
+ * previous one did: gemini-2.0-flash was retired out from under us mid-run and
+ * every hardcoded reference 404'd. The concrete pin at the end is the floor —
+ * keep it on a version that is verified live, not the newest one you recall.
+ */
 export const GOOGLE_MODEL_FALLBACK_CHAIN = [
-  "gemini-2.5-flash",
   "gemini-flash-latest",
-  "gemini-2.5-flash-lite",
+  "gemini-flash-lite-latest",
+  "gemini-2.5-flash",
 ] as const;
 
 function resolveProvider(config: AIClientConfig): AIProvider {
@@ -240,15 +258,23 @@ async function callGoogleOnce(
       }
 
       const usage = response.usageMetadata;
+      const usageWithThoughts = usage as
+        | (typeof usage & { thoughtsTokenCount?: number })
+        | undefined;
+      const resolvedModel = (
+        response as typeof response & { modelVersion?: string }
+      ).modelVersion;
 
       return {
         content: text,
         provider: "google",
         model: modelName,
+        resolvedModel,
         usage: usage
           ? {
               inputTokens: usage.promptTokenCount ?? 0,
               outputTokens: usage.candidatesTokenCount ?? 0,
+              thoughtTokens: usageWithThoughts?.thoughtsTokenCount ?? 0,
             }
           : undefined,
       };
@@ -350,6 +376,7 @@ async function callAnthropic(
       ? {
           inputTokens: data.usage.input_tokens,
           outputTokens: data.usage.output_tokens,
+          thoughtTokens: 0,
         }
       : undefined,
   };
@@ -392,6 +419,7 @@ async function callOpenAI(
       ? {
           inputTokens: data.usage.prompt_tokens,
           outputTokens: data.usage.completion_tokens,
+          thoughtTokens: 0,
         }
       : undefined,
   };

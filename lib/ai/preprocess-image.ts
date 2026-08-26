@@ -36,7 +36,9 @@ import {
 // gemini-2.5-flash-image is the current stable image-generation model.
 const DEFAULT_IMAGE_MODEL = "gemini-2.5-flash-image";
 /** Fast vision model used for cleanup scoring (text output, not image output). */
-const DEFAULT_VISION_MODEL = "gemini-2.0-flash";
+// gemini-2.0-flash was retired by Google and 404s on v1beta — this default was
+// silently failing every vision call. Use the alias so it tracks forward.
+const DEFAULT_VISION_MODEL = "gemini-flash-latest";
 
 /**
  * Sprint 12 cost gate — Sprint 12 Stage 31.

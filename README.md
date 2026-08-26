@@ -247,9 +247,9 @@ Set `AFFILIATE_PROVIDER=admitad` to force Admitad, or leave as `auto` to prefer 
 
 | Variable | Default | Description |
 |---|---|---|
-| `GOOGLE_AI_MODEL` | `gemini-2.0-flash` | Gemini model for verdict + analysis |
-| `GOOGLE_AI_IMAGE_MODEL` | `gemini-3-flash-image` | Gemini model for image preprocessing |
-| `GOOGLE_AI_VISION_MODEL` | `gemini-2.0-flash` | Gemini model for cleanup scoring + translation |
+| `GOOGLE_AI_MODEL` | `gemini-flash-latest` | Gemini model for verdict + analysis. Global override — read before every module's in-code default. Alias resolves to `gemini-3.7-flash` (verify with `npm run eval:model`). |
+| `GOOGLE_AI_IMAGE_MODEL` | `gemini-2.5-flash-image` | Gemini model for image preprocessing (`gemini-3-flash-image` is retired) |
+| `GOOGLE_AI_VISION_MODEL` | `gemini-flash-latest` | Gemini model for cleanup scoring + translation (`gemini-2.0-flash` is retired) |
 
 ### Other
 

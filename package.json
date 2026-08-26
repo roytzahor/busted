@@ -26,7 +26,8 @@
     "eval:retrieval": "tsx --env-file=.env scripts/eval/retrieval-eval.ts",
     "eval:match-headroom": "tsx scripts/eval/match-headroom.ts",
     "index:ingest": "tsx --env-file=.env scripts/index/ingest-embeddings.ts",
-    "index:cluster": "tsx --env-file=.env scripts/index/cluster-products.ts"
+    "index:cluster": "tsx --env-file=.env scripts/index/cluster-products.ts",
+    "eval:model": "tsx --env-file=.env scripts/eval/model-benchmark.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
