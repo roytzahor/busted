@@ -20,9 +20,16 @@ Brand name in code: "Busted" (SVG aria-label). Repo name is "BuyPass".
 npm run dev          # development server
 npm run dev:turbo    # dev with Turbo
 npm run dev:clean    # clean dev
-npm run build        # production build
+npm run build        # production build — the only full type-check (see below)
 npm run start:prod   # production start
 npm run lint         # ESLint
+npm test             # vitest run (unit tests)
+npm run test:watch   # vitest watch
+
+# `npx tsc --noEmit` is INCREMENTAL via tsconfig.tsbuildinfo and will pass on a
+# broken tree by skipping unchanged files. Delete that file first, or trust only
+# `npm run build`. Never run a build while `next dev` is running — both write
+# .next and the build fails with a misleading ENOENT on pages-manifest.json.
 
 npm run db:generate  # prisma generate
 npm run db:migrate   # prisma migrate dev
@@ -34,7 +41,43 @@ npm run eval -- --skip-ai          # use cached ai-response.json (no API spend)
 npm run eval -- --filter <slug>    # only fixtures whose id matches <slug>
 npm run eval:capture -- <id> <url> <category>   # capture a live fixture
 npm run eval:list                  # show fixtures grouped by category
+npm run eval:retrieval             # ANN recall — live embedding calls, NOT CI-gated
+npm run eval:match-headroom        # score every candidate with the real scorer
+npm run eval:harvest               # 👍/👎 feedback → draft fixture candidates
+npm run eval:model                 # benchmark models against the corpus
+
+# Code graphs (see agent-os/standards/code-navigation.md)
+npm run graph:cbm          # re-index codebase-memory (rarely needed — daemon watches)
+npm run graph:graft        # structural graft cache ($0, no key)
+npm run graph:graft:deep   # + LLM "meaning" tier
+npm run graph:all          # all graphs
 ```
+
+## Engineering Standards (`agent-os/`)
+
+Load-bearing invariants live as small, diffable files in `agent-os/standards/`
+rather than only as prose here. Pull them into context on demand:
+
+```
+/agent-os:inject-standards trust        # everything in trust/
+/agent-os:inject-standards trust/presence-tier-contract
+/agent-os:index-standards               # rebuild index.yml after adding files
+```
+
+| Touching | Read first |
+|---|---|
+| `lib/ai/` prompts or clamps | `ai/verdict-clamps`, `ai/derived-fields`, `eval/gates` |
+| anything a user sees | `trust/presence-tier-contract`, `design/tokens` |
+| `/store/[domain]` or anything public | `trust/public-accusation` |
+| supplier matching or thresholds | `supplier/match-thresholds` |
+| affiliate links or CTAs | `trust/affiliate-neutrality` |
+| `extension/` | `extension/render-verbatim` |
+| scrapers or error paths | `scraping/provider-chain` |
+| committing on a shared tree | `git/branching-and-commits` |
+| any nontrivial change | `change-discipline`, `code-navigation` |
+
+`agent-os/product/context.md` holds the thesis and the open strategic
+questions; `agent-os/tools/catalog.md` is the tooling and skills catalog.
 
 ## Architecture
 

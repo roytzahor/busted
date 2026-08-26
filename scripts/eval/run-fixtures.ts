@@ -108,7 +108,16 @@ interface FixtureOutcome {
  * ≈ $0.039, cold text scan ≈ $0.0015).
  */
 const COST_USD = {
-  BASE_SCAN: 0.0015, // scrape + text verdict (always incurred)
+  // Re-derived 2026-08-26 against gemini-3.7-flash ($0.75/M in, $3.75/M out —
+  // see PRICING in scripts/eval/model-benchmark.ts). The old 0.0015 was
+  // calibrated on a cheaper model and understated real spend ~4x, which made
+  // this CI gate blind to the very cost increase the model bump introduced.
+  //   in : (19_722-char prompt + 2_600 chars of capped page content) / 4
+  //        = ~5_580 tok -> $0.0042
+  //   out: ~600 tok of structured JSON                              -> $0.0023
+  // Re-derive whenever GOOGLE_AI_MODEL changes tier; a stale figure here is a
+  // gate that passes while spend climbs.
+  BASE_SCAN: 0.0064, // scrape + text verdict (always incurred)
   VISION_IDENTIFIER: 0.0002, // Gemini Vision canonical-identity call
   IMAGE_RERANK: 0.0001, // batch image rerank (one multimodal call)
   IMAGE_MATCH: 0.0001, // deep per-candidate image verification

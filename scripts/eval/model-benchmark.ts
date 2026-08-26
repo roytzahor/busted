@@ -57,9 +57,16 @@ interface Row {
   error: string | null;
 }
 
+/**
+ * The `after2027` column existed but was never read, so on 2027-01-01 this
+ * would have reported half the real cost — the exact failure the PRICING
+ * comment warns about, in the tool used to gate model changes.
+ */
 function costUsd(model: string, inTok: number, outTok: number, thoughtTok: number) {
-  const p = PRICING[model];
-  if (!p) return null;
+  const entry = PRICING[model];
+  if (!entry) return null;
+  const promoOver = Date.now() >= Date.UTC(2027, 0, 1);
+  const p = promoOver && entry.after2027 ? entry.after2027 : entry;
   return (inTok * p.in + (outTok + thoughtTok) * p.out) / 1_000_000;
 }
 
@@ -71,7 +78,15 @@ function arg(flag: string): string | null {
 async function main() {
   const override = arg("--model");
   if (override) process.env.GOOGLE_AI_MODEL = override;
-  const repeat = Number(arg("--repeat") ?? 1);
+  // Unvalidated, `--repeat` with a missing or non-numeric value yields NaN and
+  // the run reports `NaN%` accuracy, `undefinedms` latency and `$NaN` cost
+  // rather than failing — silently useless output from the model-change gate.
+  const repeatRaw = arg("--repeat") ?? "1";
+  const repeat = Number(repeatRaw);
+  if (!Number.isInteger(repeat) || repeat < 1) {
+    console.error(`--repeat must be a positive integer, got: ${repeatRaw}`);
+    process.exit(1);
+  }
   const requested = process.env.GOOGLE_AI_MODEL ?? "(module default)";
 
   const all = await loadAllFixtures();

@@ -27,6 +27,14 @@ import { parseCachedAiPrediction, parseCachedScrapeData } from "@/lib/types/cach
 export interface StoreScanSummary {
   scanId: string;
   title: string;
+  /**
+   * The verdict as this PUBLIC page is allowed to state it, which is not
+   * always the raw one. A `dropship` whose presenceTier is silent is reported
+   * as `insufficient_evidence`, because that is exactly what it is from here:
+   * the aggregate refuses to count it, so a per-scan row must not print
+   * "Dropship signals" next to a "Not enough data yet" banner and re-make the
+   * accusation the gate just declined to make.
+   */
   verdict: string | null;
   confidence: number | null;
   storePriceUsd: number | null;
@@ -42,6 +50,12 @@ export interface StoreReport {
   totalScans: number;
   dropshipCount: number;
   legitCount: number;
+  /**
+   * Scans that cleared the tier gate and counted toward the verdict. Always
+   * <= totalScans. Copy about sufficiency must cite THIS, not totalScans:
+   * "only 9 scans on record" beside a 4-scan minimum reads as a bug.
+   */
+  decisiveCount: number;
   /** Mean savings across scans that had a confident supplier match. */
   avgSavingsPercent: number | null;
   tier: StoreTier;
@@ -145,11 +159,18 @@ export async function loadStoreReport(domain: string): Promise<StoreReport | nul
       savings.push(savingsPercent);
     }
 
+    // Silent dropship -> report it as what the gate treats it as. Derived here
+    // rather than in the page so the row and the aggregate cannot drift apart.
+    const publicVerdict =
+      verdict === "dropship" && !countsAsDropship(ai?.prediction)
+        ? "insufficient_evidence"
+        : verdict;
+
     if (scans.length < SCAN_LIST_CAP) {
       scans.push({
         scanId: row.id,
         title: scrape?.attributes.title ?? row.originalUrl,
-        verdict,
+        verdict: publicVerdict,
         confidence: ai?.prediction?.confidence ?? null,
         storePriceUsd: storePrice,
         supplierPriceUsd: supplierPrice,
@@ -163,6 +184,7 @@ export async function loadStoreReport(domain: string): Promise<StoreReport | nul
     domain,
     totalScans: matching.length,
     dropshipCount,
+    decisiveCount: dropshipCount + legitCount,
     legitCount,
     avgSavingsPercent:
       savings.length > 0

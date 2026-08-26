@@ -259,10 +259,19 @@ chrome.storage.local.get(['savingsLedger'], (data) => {
   const busts = ledger.bustCount === 1 ? 'bust' : 'busts';
   el.textContent = `You've dodged $${ledger.totalDodgedUsd.toFixed(2)} in markup across ${ledger.bustCount} ${busts}.`;
   el.dataset.ready = 'true';
+  // chrome.storage.local.get is async, and on a cached flame result
+  // renderFlame() can win this race — so the reveal has to be able to happen
+  // from whichever side finishes last. Without this the ledger silently never
+  // appears on exactly the fastest (and most common) path.
+  if (ledgerRequested) el.classList.remove('hidden');
 });
+
+/** Set once renderFlame() has asked for the ledger. See the race note above. */
+let ledgerRequested = false;
 
 /** Reveal the cumulative ledger. Flame only. */
 function showLedger() {
+  ledgerRequested = true;
   const el = document.getElementById('ledger-line');
   if (el && el.dataset.ready === 'true') {
     el.classList.remove('hidden');

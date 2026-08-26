@@ -46,7 +46,10 @@ import {
   savePreprocessedAsync,
 } from "@/lib/ai/preprocess-cache";
 
-import { imageModel as imageModelId, visionModel as visionModelId } from "./models";
+import {
+  imageModel as imageModelId,
+  visionModel as visionModelId,
+} from "./models";
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 
@@ -194,6 +197,15 @@ interface CleanupReview {
   score: number;
   issues: string[];
   analysis: VisionAnalysis;
+  /**
+   * The review call did not complete, so `score` is an optimistic default and
+   * `analysis` is empty for lack of an answer — not because the image has
+   * nothing on it. Callers MUST NOT persist an empty analysis under this flag:
+   * the preprocess cache is keyed on (imageUrl, category) with no expiry, so
+   * one transient vision outage would pin that pair to an empty
+   * ocrTraces/materialTokens/technicalSpecs forever.
+   */
+  reviewerUnavailable?: boolean;
 }
 
 const EMPTY_ANALYSIS: VisionAnalysis = {
@@ -238,7 +250,10 @@ async function fetchSourceImage(imageUrl: string): Promise<SourceImage> {
   } catch (err) {
     if (err instanceof PreprocessError) throw err;
     if (err instanceof DOMException && err.name === "AbortError") {
-      throw new PreprocessError("SOURCE_TIMEOUT", "Source image fetch timed out");
+      throw new PreprocessError(
+        "SOURCE_TIMEOUT",
+        "Source image fetch timed out",
+      );
     }
     throw new PreprocessError(
       "SOURCE_FETCH_ERROR",
@@ -461,7 +476,10 @@ function readDimensions(
     if (format === "jpg") {
       let i = 2;
       while (i < buf.length - 8) {
-        if (buf[i] !== 0xff) { i += 1; continue; }
+        if (buf[i] !== 0xff) {
+          i += 1;
+          continue;
+        }
         const marker = buf[i + 1];
         if (
           marker === 0xd8 ||
@@ -552,7 +570,9 @@ async function runImageGeneration(
 
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value)
-    ? value.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    ? value.filter(
+        (x): x is string => typeof x === "string" && x.trim().length > 0,
+      )
     : [];
 }
 
@@ -585,6 +605,7 @@ async function reviewCleanup(
     score: 7,
     issues: ["reviewer unavailable — optimistic default"],
     analysis: EMPTY_ANALYSIS,
+    reviewerUnavailable: true,
   };
 
   try {
@@ -601,20 +622,24 @@ async function reviewCleanup(
             { text: "IMAGE 1 (source):" },
             { inlineData: { mimeType: source.mimeType, data: source.base64 } },
             { text: "IMAGE 2 (cleaned):" },
-            { inlineData: { mimeType: cleaned.mimeType, data: cleaned.base64 } },
+            {
+              inlineData: { mimeType: cleaned.mimeType, data: cleaned.base64 },
+            },
           ],
         },
       ],
     });
 
-    const textPart = response.response?.candidates?.[0]?.content?.parts
-      ?.find((p) => "text" in p && typeof (p as { text?: string }).text === "string") as
-      | { text: string }
-      | undefined;
+    const textPart = response.response?.candidates?.[0]?.content?.parts?.find(
+      (p) => "text" in p && typeof (p as { text?: string }).text === "string",
+    ) as { text: string } | undefined;
     const text = textPart?.text ?? "";
 
     // Strip possible markdown code fences before JSON.parse
-    const jsonText = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+    const jsonText = text
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/, "")
+      .trim();
     const parsed = JSON.parse(jsonText) as unknown;
 
     if (
@@ -698,19 +723,19 @@ export async function preprocessForSmartMatch(
   );
 
   // 5. Review call — score + structured analysis of the SOURCE image.
-  const { score: fullScore, issues: fullIssues, analysis } = await reviewCleanup(
-    source,
-    cleaned,
-    productCategory,
-    client,
-  );
+  const {
+    score: fullScore,
+    issues: fullIssues,
+    analysis,
+    reviewerUnavailable,
+  } = await reviewCleanup(source, cleaned, productCategory, client);
 
   if (analysis.ocrTraces.length > 0 || analysis.materialTokens.length > 0) {
     console.info(
       `[preprocess] analysis for ${imageUrl}: ` +
-      `ocr=[${analysis.ocrTraces.join(",")}] ` +
-      `materials=[${analysis.materialTokens.join(",")}] ` +
-      `specs=[${analysis.technicalSpecs.join(",")}]`,
+        `ocr=[${analysis.ocrTraces.join(",")}] ` +
+        `materials=[${analysis.materialTokens.join(",")}] ` +
+        `specs=[${analysis.technicalSpecs.join(",")}]`,
     );
   }
 
@@ -724,15 +749,20 @@ export async function preprocessForSmartMatch(
 
     const format = mimeTypeToFormat(cleaned.mimeType);
     const { width, height } = readDimensions(cleaned.base64, format);
-    savePreprocessedAsync(imageUrl, productCategory, {
-      base64: cleaned.base64,
-      format,
-      width,
-      height,
-      ocrTraces: analysis.ocrTraces,
-      materialTokens: analysis.materialTokens,
-      technicalSpecs: analysis.technicalSpecs,
-    });
+    // Skip the cache entirely when the reviewer never answered. Re-generating
+    // the image on the next scan costs one call; caching an empty analysis
+    // costs it permanently, because the entry never expires.
+    if (!reviewerUnavailable) {
+      savePreprocessedAsync(imageUrl, productCategory, {
+        base64: cleaned.base64,
+        format,
+        width,
+        height,
+        ocrTraces: analysis.ocrTraces,
+        materialTokens: analysis.materialTokens,
+        technicalSpecs: analysis.technicalSpecs,
+      });
+    }
 
     return {
       base64: cleaned.base64,
@@ -753,7 +783,7 @@ export async function preprocessForSmartMatch(
   // The analysis from the full pass is still valid (it describes the original image).
   console.warn(
     `[preprocess] full prompt scored ${fullScore}/10 for ${imageUrl} — retrying with light prompt. ` +
-    `Issues: ${fullIssues.join("; ")}`,
+      `Issues: ${fullIssues.join("; ")}`,
   );
 
   const cleanedLight = await runImageGeneration(
@@ -775,8 +805,8 @@ export async function preprocessForSmartMatch(
     throw new PreprocessError(
       "LOW_QUALITY",
       `Both full (score ${fullScore}) and light (score ${lightScore}) preprocess passes scored ` +
-      `below threshold ${SCORE_WARN_THRESHOLD} for ${imageUrl}. ` +
-      `Light issues: ${lightIssues.join("; ")}. Falling back to raw source URL.`,
+        `below threshold ${SCORE_WARN_THRESHOLD} for ${imageUrl}. ` +
+        `Light issues: ${lightIssues.join("; ")}. Falling back to raw source URL.`,
     );
   }
 
@@ -787,18 +817,24 @@ export async function preprocessForSmartMatch(
   }
 
   const lightFormat = mimeTypeToFormat(cleanedLight.mimeType);
-  const { width: lightW, height: lightH } = readDimensions(cleanedLight.base64, lightFormat);
-  savePreprocessedAsync(imageUrl, productCategory, {
-    base64: cleanedLight.base64,
-    format: lightFormat,
-    width: lightW,
-    height: lightH,
-    // Analysis comes from the full prompt pass, which always ran before the
-    // light retry — its values remain valid and must be persisted here.
-    ocrTraces: analysis.ocrTraces,
-    materialTokens: analysis.materialTokens,
-    technicalSpecs: analysis.technicalSpecs,
-  });
+  const { width: lightW, height: lightH } = readDimensions(
+    cleanedLight.base64,
+    lightFormat,
+  );
+  // Same guard as Path A — see above.
+  if (!reviewerUnavailable) {
+    savePreprocessedAsync(imageUrl, productCategory, {
+      base64: cleanedLight.base64,
+      format: lightFormat,
+      width: lightW,
+      height: lightH,
+      // Analysis comes from the full prompt pass, which always ran before the
+      // light retry — its values remain valid and must be persisted here.
+      ocrTraces: analysis.ocrTraces,
+      materialTokens: analysis.materialTokens,
+      technicalSpecs: analysis.technicalSpecs,
+    });
+  }
 
   return {
     base64: cleanedLight.base64,

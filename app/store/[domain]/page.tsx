@@ -47,7 +47,7 @@ const TIER_COPY: Record<
   insufficient: {
     label: "Not enough data yet",
     blurb: (r) =>
-      `Only ${r.totalScans} scan${r.totalScans === 1 ? "" : "s"} on record — too few for a store-level verdict. Scan a product below to add evidence.`,
+      `Only ${r.decisiveCount} decisive scan${r.decisiveCount === 1 ? "" : "s"} on record — too few for a store-level verdict. Scan a product below to add evidence.`,
   },
 };
 
