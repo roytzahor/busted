@@ -5,11 +5,12 @@
  * returns a cleaned, brand-stripped, white-background JPEG ready to dispatch
  * to `aliexpress.affiliate.product.smartmatch`.
  *
- * Pipeline (stage 9 — with quality scoring):
- *   1. Cache lookup — short-circuits on hit (no Gemini call, no scoring).
+ * Pipeline:
+ *   1. Cache lookup — short-circuits on hit (no Gemini call, no review).
  *   2. Fetch source bytes with browser-UA spoof.
- *   3. Run full preprocess (crop + BG normalise + brand removal + artifact removal).
- *   4. Score the result: send source + cleaned to a vision model, get 0–10.
+ *   3. Generate the cleaned image on `imageModel()` — IMAGE-ONLY response.
+ *   4. Review pass on `visionModel()` — one text-out call over (source, cleaned)
+ *      that returns BOTH the 0–10 quality score AND the structured analysis.
  *      • score ≥ 7  → use as-is.
  *      • score 4–6  → use with a warn log (minor issues, still better than raw).
  *      • score < 4  → retry with a lighter prompt (crop + brand-only, no BG change).
@@ -18,6 +19,21 @@
  *                            back to the raw source URL.
  *   5. Fire-and-forget cache write (only on PASS / WARN paths).
  *   6. Return base64 + dimensions + cacheHit + qualityScore + lightPromptUsed.
+ *
+ * WHY GENERATION AND ANALYSIS ARE SEPARATE CALLS
+ * A single call asking for `responseModalities: ["TEXT", "IMAGE"]` plus a
+ * two-task prompt is legally satisfied by answering only the TEXT half, and
+ * that is what the models did: measured on this prompt with a real fixture,
+ * gemini-2.5-flash-image returned an image part in 3/11 attempts and
+ * gemini-3.1-flash-image in 12/15, each miss surfacing as
+ * GEMINI_NO_IMAGE_OUTPUT and silently dropping the caller back to the raw
+ * source URL. The same prompts split into one IMAGE-only call and one
+ * TEXT-only call returned an image on every attempt. Never merge them back.
+ *
+ * The analysis rides on the REVIEW call rather than a third round-trip because
+ * the reviewer is already holding the source image, and the analysis must read
+ * the SOURCE: brand removal and artifact removal deliberately destroy the
+ * hangtags, packaging and stickers that `ocrTraces` reads model numbers off.
  *
  * Failures: every internal error is wrapped in PreprocessError. Caller should
  * treat any throw as "fall back to the raw source URL" — never a hard failure.
@@ -33,12 +49,6 @@ import {
 import { imageModel as imageModelId, visionModel as visionModelId } from "./models";
 
 /* ─── Constants ──────────────────────────────────────────────────────────── */
-
-// gemini-3-flash-image was the original default but returns 404 on v1beta.
-// gemini-2.5-flash-image is the current stable image-generation model.
-/** Fast vision model used for cleanup scoring (text output, not image output). */
-// gemini-2.0-flash was retired by Google and 404s on v1beta — this default was
-// silently failing every vision call. Use the alias so it tracks forward.
 
 /**
  * Sprint 12 cost gate — Sprint 12 Stage 31.
@@ -56,6 +66,27 @@ export function isPreprocessEnabled(): boolean {
 
 const FETCH_TIMEOUT_MS = 8_000;
 const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Output geometry for the generation call.
+ *
+ * `generationConfig.imageConfig` is the ONLY thing that controls it — the
+ * prompt's textual "1:1, approximately 800×800 px" was measured to be ignored
+ * by every image model tried. `{1:1, "1K"}` reliably yields 1024×1024.
+ *
+ * Do NOT drop `imageSize` below "1K" without gating on the resolved model:
+ * `imageSize: "512"` is a 400 on gemini-2.5-flash-image and only accepted by
+ * the 3.x family, and `imageModel()` is env-overridable.
+ */
+const FULL_IMAGE_CONFIG = { aspectRatio: "1:1", imageSize: "1K" } as const;
+
+/**
+ * The light retry deliberately omits `aspectRatio`: its entire reason to exist
+ * is changing as little as possible, and forcing a square would make the model
+ * invent background to pad a non-square product — the opposite of the fidelity
+ * the retry is protecting.
+ */
+const LIGHT_IMAGE_CONFIG = { imageSize: "1K" } as const;
 
 /**
  * Score at or above this → use the cleaned image without warning.
@@ -159,13 +190,9 @@ interface GeneratedImage {
   mimeType: string;
 }
 
-interface CleanupScore {
+interface CleanupReview {
   score: number;
   issues: string[];
-}
-
-interface AnalysisResult {
-  image: GeneratedImage;
   analysis: VisionAnalysis;
 }
 
@@ -225,24 +252,20 @@ async function fetchSourceImage(imageUrl: string): Promise<SourceImage> {
 /* ─── Prompt construction ────────────────────────────────────────────────── */
 
 /**
- * Full preprocess prompt — dual-task: image cleanup + structured analysis.
+ * Full preprocess prompt — image cleanup ONLY.
  *
- * Requests responseModalities ["TEXT", "IMAGE"] so Gemini returns:
- *   • Image part  — the cleaned JPEG (used for AliExpress visual search)
- *   • Text part   — compact JSON with ocrTraces / materialTokens / technicalSpecs
+ * Single-task by design: the structured analysis lives on the review call
+ * (see the module header). Nothing here may ask for text output — a prompt
+ * that gives the model a text task to do is a prompt it can satisfy without
+ * ever emitting the image part.
  *
- * `inpaintedImageBase64` is intentionally NOT included in the JSON: Gemini
- * already returns the cleaned image as a native inline-data part, so encoding
- * it again as base64-in-JSON would double the payload with no benefit.
+ * Output geometry is set by IMAGE_CONFIG, not by this text.
  */
 function buildFullPrompt(productCategory: string): string {
   const category = productCategory.trim() || "consumer product";
-  return `You are a product image processor and analyst for a dropship-detection pipeline.
-You have TWO independent tasks for the SAME input image. Complete both in a single response.
+  return `You are a product image processor for a dropship-detection pipeline.
 
 INPUT IMAGE: A consumer-facing product image of a "${category}".
-
-━━━ TASK 1 — IMAGE PROCESSING ━━━
 
 Apply ALL of the following transformations in order:
 
@@ -275,7 +298,6 @@ PRESERVE EXACTLY:
   decorative patterns that are part of the product design)
 
 IMAGE OUTPUT REQUIREMENTS:
-- Format: JPEG, aspect ratio 1:1 (square), approximately 800×800 px
 - Single product centered on pure white background
 - No added shadows, vignettes, glows, or decorative effects
 
@@ -286,36 +308,7 @@ EDGE CASES:
 - If the source image does not appear to show a "${category}" at all,
   return your best clean crop of the dominant subject — do not refuse.
 
-━━━ TASK 2 — PRODUCT ANALYSIS (on the ORIGINAL, unprocessed input image) ━━━
-
-Inspect the original input image carefully and extract:
-
-ocrTraces
-  Scan every visible surface, tag, label, barcode, and packaging. Extract
-  alphanumeric model numbers, manufacturing codes, batch serials, or factory
-  branding identifiers (e.g. "XZ-9900", "SKU: AB1234", "TC-500"). Include only
-  precise codes, NOT generic descriptive phrases.
-
-materialTokens
-  Identify industrial material designations visible on labels or inferable from
-  the product's appearance (e.g. "TPU", "ABS", "EVA", "CNC Aluminum",
-  "Sterling Silver S925", "304 Stainless"). Use standard industrial shorthand.
-
-technicalSpecs
-  Extract measurable specifications or functional capability terms visible on
-  product or packaging (e.g. "450ml", "10000mAh", "Type-C", "shockproof",
-  "magnetic closure", "IP67", "BPA-free"). Be precise — omit marketing copy.
-
-━━━ OUTPUT FORMAT ━━━
-
-Return EXACTLY two things, nothing else:
-
-1. The processed JPEG image (as the image part of your response).
-2. A single-line JSON text (as the text part of your response) — no markdown,
-   no code fences, no explanation:
-   {"ocrTraces":[],"materialTokens":[],"technicalSpecs":[]}
-
-Use empty arrays where nothing was found. Do not include commentary.`;
+Return the processed image. Do not include any text response.`;
 }
 
 /**
@@ -353,22 +346,26 @@ PRESERVE EXACTLY:
 - All product shape, proportions, texture, and colour
 - Non-brand decorative patterns and manufacturing details
 
-OUTPUT REQUIREMENTS:
-- Format: JPEG
-- Keep the original aspect ratio (do NOT force square)
-- Approximately 800px on the longer side
-
 Return only the processed image. Do not include any text response.`;
 }
 
-/** Prompt that asks the vision model to rate a source → cleaned pair. */
-function buildScoringPrompt(productCategory: string): string {
+/**
+ * Review prompt — rates a source → cleaned pair AND extracts the structured
+ * analysis from the SOURCE image in the same text-out round-trip.
+ *
+ * Both jobs are text, so unlike the old TEXT+IMAGE prompt there is no modality
+ * for the model to trade away; and the reviewer already has the source in
+ * context, so the analysis costs one extra JSON object rather than a call.
+ */
+function buildReviewPrompt(productCategory: string): string {
   const category = productCategory.trim() || "consumer product";
-  return `You are a quality-control assessor for a product image preprocessing pipeline.
+  return `You are a quality-control assessor and product analyst for a product image preprocessing pipeline.
 
 You will be shown TWO images:
   IMAGE 1: The original source image (consumer photo of a "${category}")
   IMAGE 2: The preprocessed/cleaned version intended for factory catalog matching
+
+━━━ PART A — RATE THE CLEANUP (IMAGE 1 vs IMAGE 2) ━━━
 
 Rate the cleanup quality on a scale from 0 to 10 using these criteria:
 
@@ -389,10 +386,37 @@ Score guide:
   4–6  Minor issues — usable but imperfect
   7–10 Good to excellent — clean, brand-free, product intact
 
-Respond with ONLY a JSON object, no other text:
+━━━ PART B — ANALYSE IMAGE 1 (the ORIGINAL, unprocessed image) ━━━
+
+Read IMAGE 1 only. IMAGE 2 has had tags, packaging and brand marks deliberately
+removed, so it is useless for this part.
+
+ocrTraces
+  Scan every visible surface, tag, label, barcode, and packaging. Extract
+  alphanumeric model numbers, manufacturing codes, batch serials, or factory
+  branding identifiers (e.g. "XZ-9900", "SKU: AB1234", "TC-500"). Include only
+  precise codes, NOT generic descriptive phrases.
+
+materialTokens
+  Identify industrial material designations visible on labels or inferable from
+  the product's appearance (e.g. "TPU", "ABS", "EVA", "CNC Aluminum",
+  "Sterling Silver S925", "304 Stainless"). Use standard industrial shorthand.
+
+technicalSpecs
+  Extract measurable specifications or functional capability terms visible on
+  product or packaging (e.g. "450ml", "10000mAh", "Type-C", "shockproof",
+  "magnetic closure", "IP67", "BPA-free"). Be precise — omit marketing copy.
+
+━━━ OUTPUT FORMAT ━━━
+
+Respond with ONLY a JSON object, no other text, no markdown, no code fences.
+Use empty arrays where nothing was found:
 {
   "score": <integer 0–10>,
-  "issues": [<short description of each problem found, or empty array if none>]
+  "issues": [<short description of each problem found, or empty array if none>],
+  "ocrTraces": [],
+  "materialTokens": [],
+  "technicalSpecs": []
 }`;
 }
 
@@ -477,11 +501,15 @@ type GoogleGenerativeAIGenerationConfig = NonNullable<
 /**
  * Single image-generation Gemini round-trip. Extracted so we can call it
  * twice (full prompt + light prompt retry) without duplicating the parsing.
+ *
+ * `responseModalities: ["IMAGE"]` is not a preference — it removes the model's
+ * option to answer in text instead, which is the whole fix (module header).
  */
 async function runImageGeneration(
   model: GenerativeModel,
   source: SourceImage,
   prompt: string,
+  imageConfig: typeof FULL_IMAGE_CONFIG | typeof LIGHT_IMAGE_CONFIG,
 ): Promise<GeneratedImage> {
   let response;
   try {
@@ -497,6 +525,7 @@ async function runImageGeneration(
       ],
       generationConfig: {
         responseModalities: ["IMAGE"],
+        imageConfig,
       } as GoogleGenerativeAIGenerationConfig,
     });
   } catch (err) {
@@ -521,121 +550,42 @@ async function runImageGeneration(
   };
 }
 
-/**
- * Parse the JSON text part from a dual-task Gemini response.
- *
- * Best-effort: returns EMPTY_ANALYSIS on any malformed or missing JSON so
- * the preprocess pipeline never fails because of a missing analysis payload.
- */
-function parseVisionAnalysis(rawText: string): VisionAnalysis {
-  try {
-    const cleaned = rawText
-      .replace(/^```(?:json)?\s*/im, "")
-      .replace(/\s*```\s*$/m, "")
-      .trim();
-    const parsed = JSON.parse(cleaned) as unknown;
-    if (typeof parsed !== "object" || parsed === null) return EMPTY_ANALYSIS;
-    const p = parsed as Record<string, unknown>;
-    const toStrArr = (v: unknown): string[] =>
-      Array.isArray(v)
-        ? (v as unknown[]).filter(
-            (x): x is string => typeof x === "string" && x.trim().length > 0,
-          )
-        : [];
-    return {
-      ocrTraces: toStrArr(p.ocrTraces),
-      materialTokens: toStrArr(p.materialTokens),
-      technicalSpecs: toStrArr(p.technicalSpecs),
-    };
-  } catch {
-    return EMPTY_ANALYSIS;
-  }
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((x): x is string => typeof x === "string" && x.trim().length > 0)
+    : [];
 }
 
-/**
- * Full-preprocess round-trip: requests both image and structured analysis
- * from Gemini in a single call (responseModalities: ["TEXT", "IMAGE"]).
- *
- * The image comes back as a native inline-data part; the analysis arrives as
- * a text part containing compact JSON. Throws PreprocessError when no image
- * part is returned (analysis absence is tolerated — returns EMPTY_ANALYSIS).
- */
-async function runImageAndAnalysis(
-  model: GenerativeModel,
-  source: SourceImage,
-  prompt: string,
-): Promise<AnalysisResult> {
-  let response;
-  try {
-    response = await model.generateContent({
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: prompt },
-            { inlineData: { mimeType: source.mimeType, data: source.base64 } },
-          ],
-        },
-      ],
-      generationConfig: {
-        responseModalities: ["TEXT", "IMAGE"],
-      } as GoogleGenerativeAIGenerationConfig,
-    });
-  } catch (err) {
-    throw new PreprocessError(
-      "GEMINI_CALL_FAILED",
-      err instanceof Error ? err.message : "Gemini call threw an unknown error",
-    );
-  }
-
-  const parts = response.response?.candidates?.[0]?.content?.parts ?? [];
-
-  const imagePart = parts.find(isInlineImagePart);
-  if (!imagePart) {
-    throw new PreprocessError(
-      "GEMINI_NO_IMAGE_OUTPUT",
-      "Gemini response contained no image part — model may have refused or returned text only",
-    );
-  }
-
-  // Text part carries the analysis JSON. Position relative to image varies.
-  const textPart = parts.find(
-    (p): p is { text: string } =>
-      "text" in p && typeof (p as { text?: string }).text === "string",
-  );
-  const analysis = textPart
-    ? parseVisionAnalysis(textPart.text)
-    : EMPTY_ANALYSIS;
-
-  if (textPart && analysis === EMPTY_ANALYSIS) {
-    console.warn(
-      "[preprocess] vision analysis JSON unparseable — analysis fields will be empty",
-    );
-  }
-
+/** Pull the analysis arms out of an already-parsed review payload. */
+function parseVisionAnalysis(payload: Record<string, unknown>): VisionAnalysis {
   return {
-    image: {
-      base64: imagePart.inlineData.data,
-      mimeType: imagePart.inlineData.mimeType,
-    },
-    analysis,
+    ocrTraces: toStringArray(payload.ocrTraces),
+    materialTokens: toStringArray(payload.materialTokens),
+    technicalSpecs: toStringArray(payload.technicalSpecs),
   };
 }
 
 /**
- * Ask the vision model to rate a source → cleaned pair.
+ * Ask the vision model to rate a source → cleaned pair and, in the same
+ * text-out call, extract the structured analysis from the source image.
  *
- * Best-effort: any failure (API error, parse error, malformed JSON) returns
- * an optimistic score of 7 so the cleaned image is used. We never want a
- * scorer outage to silently downgrade every analysis to the raw URL path.
+ * Best-effort: any failure (API error, parse error, malformed JSON) returns an
+ * optimistic score of 7 with an empty analysis so the cleaned image is still
+ * used. We never want a reviewer outage to silently downgrade every scan to
+ * the raw URL path — the analysis arms simply go quiet, as they already do
+ * when the model finds nothing.
  */
-async function scoreCleanup(
+async function reviewCleanup(
   source: SourceImage,
   cleaned: GeneratedImage,
   productCategory: string,
   client: GoogleGenerativeAI,
-): Promise<CleanupScore> {
-  const OPTIMISTIC: CleanupScore = { score: 7, issues: ["scorer unavailable — optimistic default"] };
+): Promise<CleanupReview> {
+  const OPTIMISTIC: CleanupReview = {
+    score: 7,
+    issues: ["reviewer unavailable — optimistic default"],
+    analysis: EMPTY_ANALYSIS,
+  };
 
   try {
     const model = client.getGenerativeModel({
@@ -647,7 +597,7 @@ async function scoreCleanup(
         {
           role: "user",
           parts: [
-            { text: buildScoringPrompt(productCategory) },
+            { text: buildReviewPrompt(productCategory) },
             { text: "IMAGE 1 (source):" },
             { inlineData: { mimeType: source.mimeType, data: source.base64 } },
             { text: "IMAGE 2 (cleaned):" },
@@ -676,9 +626,8 @@ async function scoreCleanup(
       const p = parsed as Record<string, unknown>;
       return {
         score: Math.min(10, Math.max(0, Math.round(Number(p.score)))),
-        issues: Array.isArray(p.issues)
-          ? (p.issues as unknown[]).filter((i): i is string => typeof i === "string")
-          : [],
+        issues: toStringArray(p.issues),
+        analysis: parseVisionAnalysis(p),
       };
     }
 
@@ -740,11 +689,20 @@ export async function preprocessForSmartMatch(
     model: imageModelId(),
   });
 
-  // 4. Full preprocess round-trip — image cleanup + structured analysis in one call.
-  const { image: cleaned, analysis } = await runImageAndAnalysis(
+  // 4. Generation call — IMAGE-only, so the model cannot answer in text instead.
+  const cleaned = await runImageGeneration(
     imageModel,
     source,
     buildFullPrompt(productCategory),
+    FULL_IMAGE_CONFIG,
+  );
+
+  // 5. Review call — score + structured analysis of the SOURCE image.
+  const { score: fullScore, issues: fullIssues, analysis } = await reviewCleanup(
+    source,
+    cleaned,
+    productCategory,
+    client,
   );
 
   if (analysis.ocrTraces.length > 0 || analysis.materialTokens.length > 0) {
@@ -755,14 +713,6 @@ export async function preprocessForSmartMatch(
       `specs=[${analysis.technicalSpecs.join(",")}]`,
     );
   }
-
-  // 5. Score the result.
-  const { score: fullScore, issues: fullIssues } = await scoreCleanup(
-    source,
-    cleaned,
-    productCategory,
-    client,
-  );
 
   if (fullScore >= SCORE_WARN_THRESHOLD) {
     // Path A: use the full-preprocess result (score 4–10).
@@ -806,8 +756,15 @@ export async function preprocessForSmartMatch(
     `Issues: ${fullIssues.join("; ")}`,
   );
 
-  const cleanedLight = await runImageGeneration(imageModel, source, buildLightPrompt(productCategory));
-  const { score: lightScore, issues: lightIssues } = await scoreCleanup(
+  const cleanedLight = await runImageGeneration(
+    imageModel,
+    source,
+    buildLightPrompt(productCategory),
+    LIGHT_IMAGE_CONFIG,
+  );
+  // The retry review re-reads the same source image, so its analysis is a
+  // duplicate of `analysis` above — deliberately discarded, not forgotten.
+  const { score: lightScore, issues: lightIssues } = await reviewCleanup(
     source,
     cleanedLight,
     productCategory,
