@@ -7,9 +7,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  /* Must resolve to the next/font variable from layout.tsx, not to itself —
+     a self-referential var is invalid and silently falls back to serif. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -243,17 +245,23 @@
       animation-delay: 0ms !important;
       scroll-behavior: auto !important;
 
-      /* Transitions are narrowed, not killed. A blanket
-         `transition-duration: 0.01ms` also removes the colour and opacity
-         changes that CARRY meaning here — a pipeline stage going queued →
-         running, a verdict arriving, a button acknowledging a press — so every
-         state change teleports, which is the jarring result the transition
-         existed to prevent. Reduced motion means no vestibular movement, not no
-         feedback: keep the fades, drop transform/size/position. */
-      transition-property:
-        opacity, color, background-color, border-color, text-decoration-color,
-        box-shadow, fill, stroke !important;
-      transition-duration: 200ms !important;
+      /* Kept as a near-zero blanket, deliberately.
+
+         An earlier version of this rule narrowed `transition-property` to a
+         colour/opacity list at 200ms, to preserve the fades that carry meaning.
+         That was wrong twice over. `transition-property` initially computes to
+         `all`, so naming a list here GIVES a 200ms transition to every element
+         that never declared one — and because this rule lives in `@layer base`,
+         its `!important` outranks any utility-layer `!important`, so nothing
+         downstream can opt out. The practical cost lands exactly where reduced
+         motion can least afford it: a press whose colour feedback was instant
+         starts lagging 200ms.
+
+         The premise was also overstated. A colour changing instantly is not
+         "jarring" — it is immediate, which is the correct reduced-motion
+         reading. Preserving a specific fade is a per-component opt-in, not
+         something a global rule can infer. See DESIGN.md §7.12. */
+      transition-duration: 0.01ms !important;
     }
 
     /* The spinner is the one exemption. The blanket reset above resolves

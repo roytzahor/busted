@@ -1441,10 +1441,15 @@ Shipped policy in `globals.css`, and it is right:
 
 - **Entry animations** jump to their final state
   (`animation-duration: 0.01ms !important; animation-iteration-count: 1`).
-- **Transitions are narrowed, not zeroed** — `transition-property` is restricted
-  to `opacity, color, background-color, border-color, text-decoration-color,
-  box-shadow, fill, stroke` at `200ms`. Transform, size and position are dropped;
-  fades and colour changes survive.
+- **Transitions collapse to `0.01ms`.** A narrowed-`transition-property`
+  variant was tried and reverted: `transition-property` initially computes to
+  `all`, so naming a list in a `*` rule GIVES a transition to every element that
+  never declared one, and a `@layer base` `!important` outranks utility-layer
+  `!important` so nothing can opt out — a press whose colour feedback was
+  instant would start lagging 200ms. **Preserving a specific meaning-carrying
+  fade is a per-component opt-in**, not something a global rule can infer.
+  Open follow-up: add a `data-motion-keep` hook for the handful that earn it
+  (pipeline stage transitions, verdict arrival).
 - `scroll-behavior: auto`.
 
 **Two defects found while writing this section are now fixed** (`globals.css`):
@@ -1718,7 +1723,7 @@ the spec and the code agree as of this document.
 | --- | --- | --- |
 | House curve set by overriding stock `--ease-out` + `--default-transition-timing-function` | `app/globals.css` | Both stock curves ramp *in*; overriding the stock names means every existing bare `transition-*` inherits with no call-site edit |
 | All 15 `animate-in` sites given `ease-out`; results normalised to `slide-in-from-bottom-2 duration-300` | 12 components | `tw-animate-css` falls back to plain `ease`; results were entering at `duration-700` + 24px, more than double the UI budget |
-| `prefers-reduced-motion` narrowed rather than zeroed | `app/globals.css` | A blanket `transition-duration: 0.01ms` teleports every meaningful state change |
+| `prefers-reduced-motion` transitions kept at `0.01ms` | `app/globals.css` | Narrowing `transition-property` in a `*` rule invents transitions on elements that never had one, and `@layer base !important` makes it un-opt-out-able. Per-component opt-in instead (§7.12) |
 | `animation-delay: 0ms` added under reduced motion | `app/globals.css` | Staggered groups were still sequencing — "jump to final state" was not happening |
 | `.animate-spin` re-exempted at 1.4s under reduced motion | `app/globals.css` | It was freezing at 360°, reading as a hung app for the 8–20s of a scan |
 | `animate-pulse` removed from live status text | `live-pipeline-view.tsx`, `pipeline-waterfall.tsx` | Oscillating copy the user is reading, next to a spinner already saying "running" |
