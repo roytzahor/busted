@@ -223,7 +223,7 @@ function BrowseCard({ candidate, scanId }: BrowseCardProps) {
           <a
             href={candidate.affiliateUrl}
             target="_blank"
-            rel="noopener noreferrer"
+            rel="noopener noreferrer sponsored"
             onClick={handleClick}
             onAuxClick={handleClick}
             aria-label={`${t("browse.cta")} — ${candidate.title}`}

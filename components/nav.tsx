@@ -3,33 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { BRAND_NAME } from "@/lib/brand";
 import { CurrencyPicker } from "@/components/currency-picker";
 import { LanguagePicker } from "@/components/language-picker";
 import { useT } from "@/components/locale-provider";
 import { RecentScans } from "@/components/recent-scans";
 import { cn } from "@/lib/utils";
-import {
-  Activity,
-  BarChart3,
-  Flame,
-  History,
-  LogOut,
-  Menu,
-  Search,
-  User,
-  X,
-} from "lucide-react";
+import { Activity, Flame, Menu, Search, X } from "lucide-react";
 
 type NavLink = {
   href: string;
@@ -45,7 +26,6 @@ const NAV_LINKS: ReadonlyArray<NavLink> = [
 export function Nav() {
   const pathname = usePathname();
   const t = useT();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
@@ -93,65 +73,6 @@ export function Nav() {
           <LanguagePicker />
           <CurrencyPicker />
           <RecentScans />
-          {isAuthenticated ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full"
-                  aria-label="Open user menu"
-                >
-                  <Avatar className="size-8">
-                    <AvatarFallback className="bg-primary/15 text-primary">
-                      JD
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-medium">Jane Doe</span>
-                    <span className="text-muted-foreground text-xs font-normal">
-                      jane@example.com
-                    </span>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard">
-                    <History aria-hidden="true" />
-                    Scan History
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard">
-                    <BarChart3 aria-hidden="true" />
-                    Savings Analytics
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setIsAuthenticated(false)}
-                  variant="destructive"
-                >
-                  <LogOut aria-hidden="true" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button
-              size="sm"
-              className="hidden sm:inline-flex"
-              onClick={() => setIsAuthenticated(true)}
-            >
-              <User aria-hidden="true" />
-              {t("nav.login")}
-            </Button>
-          )}
-
           <Button
             variant="ghost"
             size="icon"

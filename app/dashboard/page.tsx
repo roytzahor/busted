@@ -14,6 +14,8 @@ import {
   MOCK_DASHBOARD_ANALYTICS,
   MOCK_SCAN_HISTORY,
 } from "@/lib/mock-data";
+import { isDevMonitorAllowed } from "@/lib/dev-monitor/service-probes";
+import { notFound } from "next/navigation";
 import {
   Bell,
   DollarSign,
@@ -26,6 +28,8 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Dashboard — Busted",
   description: "Track your scan history, price alerts, and cumulative savings.",
+  // Every figure on this page is MOCK_* data. Never let it be indexed.
+  robots: { index: false, follow: false },
 };
 
 function formatUsd(value: number): string {
@@ -44,6 +48,13 @@ function formatDate(iso: string): string {
 }
 
 export default function DashboardPage() {
+  // Savings, alerts and scan history here are all MOCK_* fixtures. Shipping
+  // invented personal records is exactly the behaviour Busted accuses stores
+  // of — keep the route dev-only until it reads from /api/stats/*.
+  if (!isDevMonitorAllowed()) {
+    notFound();
+  }
+
   const analytics = MOCK_DASHBOARD_ANALYTICS;
 
   return (
