@@ -1,10 +1,6 @@
 # Agent OS Standards Index
-# Rebuild with /agent-os:index-standards after adding or removing files.
-root:
-  change-discipline:
-    description: How a change is made here — smallest correct diff, kill switches, comments, concurrency
-  code-navigation:
-    description: Query codebase-memory before grepping; which graph answers which question shape
+# Alphabetized by folder, then filename. `root` = .md files directly in
+# standards/. Rebuild with /agent-os:index-standards after adding or removing.
 ai:
   cache-backcompat:
     description: Defensive parsing rules for cached AI predictions; adding a DropshipPrediction field requires a matching branch
@@ -25,6 +21,14 @@ eval:
 extension:
   render-verbatim:
     description: The extension renders the server tier verbatim and fails closed — a failed check is never an all-clear
+git:
+  branching-and-commits:
+    description: Branch naming, subject-grouped commits, and the rules for a tree shared by several agent sessions
+root:
+  change-discipline:
+    description: How a change is made here — smallest correct diff, kill switches, comments, concurrency
+  code-navigation:
+    description: Query codebase-memory before grepping; which graph answers which question shape
 scraping:
   provider-chain:
     description: Dynamic scraper ordering, never leaking provider names to users, and errors staying silent
