@@ -17,6 +17,8 @@
     "sourceUrl": "https://imri-jewelry.co.il/products/my-baby-necklace",
     "provider": "crawlbase"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "Imri-jewelry"
+  "detectedStorePriceUsd": 64.32,
+  "storeName": "Imri-jewelry",
+  "detectedStorePriceNative": 238,
+  "detectedStorePriceCurrency": "ILS"
 }

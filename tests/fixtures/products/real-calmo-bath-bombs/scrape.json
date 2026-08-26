@@ -15,8 +15,11 @@
     "description": "טבליות הארומה של Calmo הופכות כל מקלחת לספא: שמנים אתריים טבעיים, רוגע מיידי ותחושת ניקיון מפנקת — בלי אמבטיה ובלי בלאגן.",
     "mainImageUrl": "http://calmo.co.il/cdn/shop/files/2_cad7341f-ff1f-45f5-a69a-9500cde9da06.png?v=1773934618",
     "sourceUrl": "https://calmo.co.il/products/calmo",
-    "provider": "crawlbase"
+    "provider": "crawlbase",
+    "translatedTitle": "Calmo Spa Shower Tablets"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "Calmo"
+  "detectedStorePriceUsd": 44.59,
+  "storeName": "Calmo",
+  "detectedStorePriceNative": 165,
+  "detectedStorePriceCurrency": "ILS"
 }

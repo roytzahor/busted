@@ -119,14 +119,7 @@ export default async function StoreReportPage({ params }: PageProps) {
 
   return (
     <div className="relative">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-      >
-        <div className="absolute -top-60 -right-60 h-[900px] w-[900px] rounded-full bg-primary/10 blur-[160px]" />
-        <div className="absolute -bottom-80 -left-80 h-[750px] w-[750px] rounded-full bg-success/6 blur-[130px]" />
-      </div>
-
+      {/* Ambient blobs removed — see DESIGN.md; film grain on body::after. */}
       <div className="mx-auto w-full max-w-4xl px-4 pt-8 pb-16 sm:pt-12">
         <Button
           asChild

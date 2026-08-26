@@ -15,8 +15,11 @@
     "description": "קנו ערכות צביעה לפי מספרים איכותיות ב-ישראל. כולל קנבס, צבעים ומכחולים לכל רמות המיומנות. התחילו את יצירת המופת שלכם עוד היום החל מ-‏88.90 ‏₪!",
     "mainImageUrl": "https://cdn.shopify.com/s/files/1/0787/2646/3810/files/Custom_Paint_by_Numbers_Kit_11b822a4-fd45-4323-b957-09c4a37675d2.jpg?v=1762458156",
     "sourceUrl": "https://www.davincified.com/il/collections/paint-by-numbers-kits",
-    "provider": "crawlbase"
+    "provider": "crawlbase",
+    "translatedTitle": "Best Paint By Numbers Kits For Adults Israel Davincified"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "Davincified"
+  "detectedStorePriceUsd": 32.97,
+  "storeName": "Davincified",
+  "detectedStorePriceNative": 122,
+  "detectedStorePriceCurrency": "ILS"
 }

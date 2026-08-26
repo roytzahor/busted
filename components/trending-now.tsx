@@ -78,7 +78,7 @@ export function TrendingNow({ className }: TrendingNowProps) {
   return (
     <section
       aria-labelledby="trending-heading"
-      className={cn("animate-in fade-in w-full duration-500", className)}
+      className={cn("animate-in fade-in ease-out w-full duration-300", className)}
     >
       <div className="mb-4 flex items-end justify-between gap-3 px-1">
         <div>

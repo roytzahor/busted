@@ -51,7 +51,7 @@ export function BrowseAnalysisResults({ result }: BrowseAnalysisResultsProps) {
   return (
     <section
       aria-labelledby="browse-heading"
-      className="animate-in fade-in slide-in-from-bottom-6 w-full space-y-5 duration-700"
+      className="animate-in fade-in slide-in-from-bottom-2 ease-out w-full space-y-5 duration-300"
     >
       {/* ── Browse-mode hero banner (blue/gray palette) ─────────────── */}
       <div className="relative overflow-hidden rounded-2xl border border-sky-400/20 bg-gradient-to-br from-sky-500/10 via-slate-500/[0.04] to-slate-600/[0.06] p-6 backdrop-blur-sm">

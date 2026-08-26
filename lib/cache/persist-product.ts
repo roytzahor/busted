@@ -31,6 +31,12 @@ function toScrapeJson(data: CachedScrapeData): Prisma.InputJsonObject {
       provider: data.attributes.provider,
     },
     detectedStorePriceUsd: data.detectedStorePriceUsd,
+    ...(typeof data.detectedStorePriceNative === "number"
+      ? { detectedStorePriceNative: data.detectedStorePriceNative }
+      : {}),
+    ...(data.detectedStorePriceCurrency
+      ? { detectedStorePriceCurrency: data.detectedStorePriceCurrency }
+      : {}),
     storeName: data.storeName,
     markdownLength: data.markdownLength,
     markdownPreview: data.markdownPreview,

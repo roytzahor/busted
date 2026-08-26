@@ -1,3 +1,4 @@
+import type { CurrencyCode } from "@/lib/currency";
 import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
 import type { ScrapeMetadata, ScrapedProductAttributes } from "@/lib/scraping/types";
 
@@ -7,6 +8,10 @@ export interface AnalyzeDebugScrape {
   metadata: ScrapeMetadata;
   attributes: ScrapedProductAttributes;
   detectedStorePriceUsd: number | null;
+  /** Native price + currency as printed on the page — shown in the debug panel
+   *  so a suspicious USD figure can be traced to either extraction or FX. */
+  detectedStorePriceNative?: number | null;
+  detectedStorePriceCurrency?: CurrencyCode | null;
   storeName: string;
   markdownPreview: string;
   markdownLength: number;

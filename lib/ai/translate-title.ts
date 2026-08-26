@@ -15,9 +15,52 @@
  * round-trip translatedTitle through the scrape cache (lib/types/cache.ts).
  */
 
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  FinishReason,
+  GoogleGenerativeAI,
+  type GenerationConfig,
+} from "@google/generative-ai";
 
 const DEFAULT_MODEL = "gemini-2.5-flash";
+
+/**
+ * `thinkingConfig` postdates the pinned @google/generative-ai types but is
+ * honoured by the v1beta endpoint (verified: passing thinkingBudget 0 removes
+ * `thoughtsTokenCount` from usageMetadata entirely). Declared as a precise
+ * extension rather than cast through `any` so the rest of the config stays
+ * type-checked.
+ */
+interface ThinkingGenerationConfig extends GenerationConfig {
+  thinkingConfig?: { thinkingBudget: number };
+}
+
+/**
+ * Generous cap, because it is a *ceiling* and not a reservation — we are billed
+ * for the ~10 tokens a title translation actually emits.
+ *
+ * It used to be 40, which silently destroyed this feature: gemini-2.5-flash is a
+ * thinking model and thinking tokens are drawn from this same budget, so ~35 of
+ * the 40 went to reasoning and every single call came back truncated with
+ * finishReason=MAX_TOKENS. "totwoo Smart jewelry - תכשיטים חכמים" translated to
+ * "tot" — the first three characters — and "תכשיטים עם תמונה מוצפנת ומתנות
+ * מקוריות" to "Encrypted". Both passed the old length guard and poisoned every
+ * downstream consumer of translatedTitle.
+ */
+const MAX_OUTPUT_TOKENS = 256;
+
+/**
+ * Held in a typed const rather than inlined at the call site: the SDK parameter
+ * is the narrower `GenerationConfig`, and an inline literal would trip the
+ * excess-property check on `thinkingConfig`.
+ */
+const generationConfig: ThinkingGenerationConfig = {
+  maxOutputTokens: MAX_OUTPUT_TOKENS,
+  temperature: 0,
+  // A title translation needs no reasoning, and leaving thinking on makes the
+  // token budget unpredictable — the exact condition that truncated every call
+  // before. Also ~4× cheaper: 62-84 total tokens vs 232-324.
+  thinkingConfig: { thinkingBudget: 0 },
+};
 
 /** Unicode ranges that flag a title as non-Latin. */
 const NON_LATIN_RANGES: Array<[number, number]> = [
@@ -99,14 +142,26 @@ export async function translateTitle(title: string): Promise<string | null> {
           ],
         },
       ],
-      generationConfig: {
-        maxOutputTokens: 40,
-        temperature: 0,
-      },
+      generationConfig,
     });
 
+    const candidate = response.response?.candidates?.[0];
+
+    // Truncation guard. A cut-off translation is far worse than no translation:
+    // callers fall back to the original title on null, but a plausible-looking
+    // fragment ("tot", "Encrypted") silently corrupts keyword extraction and the
+    // Jaccard title overlap that supplier matching is scored on. Length checks
+    // cannot catch this — a 3-character answer looks perfectly well-formed — so
+    // gate on the one signal that is exact.
+    if (candidate?.finishReason === FinishReason.MAX_TOKENS) {
+      console.warn(
+        `[translate-title] discarding truncated translation for "${trimmed}" (finishReason=MAX_TOKENS)`,
+      );
+      return null;
+    }
+
     const raw =
-      response.response?.candidates?.[0]?.content?.parts
+      candidate?.content?.parts
         ?.map((p) => ("text" in p ? (p as { text: string }).text : ""))
         .join("") ?? "";
 

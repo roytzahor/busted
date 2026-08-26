@@ -58,20 +58,29 @@ Secondary route: `app/api/dev-test/route.ts` (dev-only health probes, guarded by
 `DropshipPrediction` (in `lib/ai/dropship-verifier.ts`) is the contract between the AI layer and everything downstream:
 
 ```ts
-verdict: "dropship" | "legit" | "insufficient_evidence" | "not_a_product"
-isLikelyDropship: boolean             // derived from verdict, kept for back-compat
+verdict: "dropship" | "legit" | "insufficient_evidence" | "not_a_product" | "collection_page"
+isLikelyDropship: boolean             // derived from verdict (always `verdict === "dropship"`), kept for back-compat
 confidence: number                    // 0..1
+productCategory: string
+reasoning: string
 reasoningSignals: string[]            // concrete evidence from the scrape — MUST be non-empty for dropship/legit
 missingSignals: string[]              // what would have raised confidence
 redFlags: string[]
+aliexpressKeywords: string[]
+styleTokens: string[]                 // browse-mode only — populated ONLY for collection_page
+materialPriors: string[]              // browse-mode only — populated ONLY for collection_page
 estimatedStorePriceUsd / estimatedSupplierPriceUsd / estimatedMarkupPercent
 ```
 
 **Humility rules** (enforced in code via `applyClamps()` even if the model violates them):
 - Empty `reasoningSignals` + verdict `dropship`/`legit` → demoted to `insufficient_evidence`, confidence clamped to ≤ 0.4
-- Fewer than 3 scrape attributes (title >5 chars, price, description >50 chars, image) → confidence on dropship/legit clamped to ≤ 0.5
+- Fewer than 3 scrape attributes (title >5 chars, price, description >50 chars, image) → confidence on dropship/legit clamped to ≤ `SPARSE_EVIDENCE_CONFIDENCE_CEILING`
 - Verdict `insufficient_evidence` → confidence clamped to `[0.2, 0.5]`
-- Verdict `not_a_product` → all price estimates zeroed; supplier search disabled in route handler
+- Verdict `not_a_product` → price estimates, `aliexpressKeywords`, `styleTokens` and `materialPriors` all zeroed; supplier search disabled in route handler
+- Verdict `collection_page` → confidence floored at 0.7; prices and `aliexpressKeywords` cleared, but `styleTokens`/`materialPriors` **kept** (the browse path builds its query from category + those tokens)
+- Every other verdict → `styleTokens`/`materialPriors` cleared, so browse-mode tokens never leak into the product path
+
+`applyClamps()` code comments cite the prompt's rule numbers (`rule 2/3/7/10/11`) — renumbering the prompt means updating those comments.
 
 The cache parser (`lib/types/cache.ts`) accepts both the new shape and legacy boolean-only entries (derives `verdict` from `isLikelyDropship`).
 
@@ -165,31 +174,101 @@ When modifying the prompt (`lib/ai/dropship-verifier.ts`) or scoring (`lib/aliex
 | `scripts/eval/run-fixtures.ts` | `npm run eval` — confusion matrix + calibration + per-fixture failures |
 | `scripts/eval/capture-fixture.ts` | `npm run eval:capture` — captures a live URL into a fixture |
 
-## Codebase Navigation (graphify)
+## Codebase Navigation (codebase-memory)
 
-This project has a knowledge graph at `graphify-out/` with god nodes, community structure, and cross-file relationships.
+This project is indexed into the **codebase-memory** knowledge graph (MCP server
+`codebase-memory-mcp`, project name `Users-tzahore-github-busted`). It is the
+default way to answer structural questions about this repo — a `trace_path` call
+costs a few hundred tokens where the equivalent grep sweep costs tens of
+thousands.
+
+**The index maintains itself.** A background daemon watches the repo with a
+git-aware watcher and re-indexes on change. Do not run `index_repository` as
+routine hygiene after edits — only when `index_status` shows the project stale
+or missing, or after a large external change (branch switch with a huge diff,
+dependency bump, bulk codegen).
 
 Rules:
-- For codebase questions, first run `graphify query "<question>"` when `graphify-out/graph.json` exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, much smaller than raw grep output.
-- If `graphify-out/wiki/index.md` exists, use it for broad navigation instead of raw source browsing.
-- Read `graphify-out/GRAPH_REPORT.md` only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- For "who calls X", "what breaks if I change X", "where is X", "what does this
+  module do" — query the graph BEFORE grepping or reading source files.
+- `trace_path(function_name=…, direction="inbound")` for callers and blast
+  radius; `direction="outbound"` for dependencies. It returns the **transitive**
+  chain, not just direct call sites.
+- `search_graph(query="…")` to find code by name or intent;
+  `get_code_snippet(qualified_name=…)` to read the exact source once found.
+- `detect_changes()` maps the working diff to its blast radius — run it before
+  touching anything load-bearing (`DropshipPrediction`, `computeMatchConfidence`,
+  `MATCH_CONFIDENCE_MIN`, the analyze route).
+- `get_architecture(aspects=["clusters"])` for orientation on unfamiliar areas.
+
+**Coverage is best-effort, never proof.** Call `check_index_coverage` on the
+paths behind any negative or exhaustive claim ("nothing calls X", "this is dead
+code"). `index_status` currently flags `lib/index/embeddings.ts` (L131, L142)
+and `scripts/index/cluster-products.ts` (L93) as `parse_partial` — constructs in
+those ranges may be missing from the graph, so grep them directly rather than
+trusting a graph miss. Absence from the flagged list is not a guarantee either.
+
+`.env`, `node_modules`, `.next` and `graphify-out/` are excluded by design.
+
+**graft is the third layer — concepts and prose, not call graphs.** `graft/` is a
+gitignored local cache built from `npm run graph:graft` (structural, $0, no key)
+plus `npm run graph:graft:deep` (adds an LLM "meaning" tier: a one-line summary
+for every symbol). Use `graft ask "<question>" .` when the question is
+*conceptual* ("how does presence tier get computed", "what does this module do")
+and you want ranked symbols with `file:line` plus a plain-English summary.
+Use `graft skeleton <file>` for a signatures-only view of one file's API surface.
+
+Precedence — pick by question shape, do not query all three:
+- **"who calls X" / "what breaks if I change X"** → codebase-memory `trace_path`.
+  Authoritative for call edges.
+- **"what is X" / "how does X work" / "where do I start"** → `graft ask`.
+- **broad architecture prose / wiki** → graphify, on demand only.
+
+`npm run graph:all` refreshes every graph at once. The deep tier runs on
+`gemini-flash-latest` via `scripts/graft-deep.sh`, **not** the pipeline's pinned
+`GOOGLE_AI_MODEL` — `graft/` is a regenerable cache so tracking the newest flash
+is safe there, while the eval harness needs the pipeline model pinned.
+`gemini-2.5-flash` produces summaries graft cannot parse; `gemini-2.5-pro` 404s
+on the OpenAI-compat endpoint.
+
+**graphify is deprecated for this repo.** It is kept only for `/graphify` wiki
+generation on demand. It is not maintained by a watcher (it needs a manual
+`graphify update .`), and its call edges are heuristic: asked for the callers of
+`computeMatchConfidence` it missed both production callers
+(`lib/aliexpress/find-supplier.ts`, `lib/supplier/router.ts`) and reported the
+edges it did find in the wrong direction. Never use it for call-graph or
+impact questions.
 
 ## Design Language
 
-**Style**: Cinematic dark + glassmorphism + bento grid (ui-ux-pro-max: "Modern Dark / Cinema Mobile")
+**Style**: migrating to **"The Ledger"** — dark textured room + opaque manila paper evidence, with a to-scale **markup bar** as the signature element. Full spec and rationale in **`DESIGN.md`**; read it before any UI work. Phases 1–3 (tokens, grain, blobs removed; `Paper`/`Stamp` primitives; tier-driven `VerdictSheet`) plus the motion pass have landed; the glass/bento surfaces below still exist and are being replaced phase by phase. The earlier "The Teardown" direction and its tear-to-reveal animation were **cancelled before being built** — see `DESIGN.md` §0.2.
 
 **Dark mode is default** — `<html>` always has the `dark` class. Never remove it or add a light mode toggle without explicit user instruction.
 
 ### Color Tokens (dark mode)
+Authoritative values live in `app/globals.css` — this table mirrors it, so update both together.
+
 | Role | Value | Usage |
 |------|-------|-------|
-| Background | `oklch(0.09 0.02 45)` | Deep warm dark base |
-| Card/glass | `oklch(0.13 0.025 45)` | Slightly elevated surfaces |
-| Primary/fire | `oklch(0.72 0.17 50)` | Amber-orange — brand accent |
-| Success/relief | `oklch(0.68 0.14 155)` | Green — AliExpress / savings CTA |
-| Destructive | `oklch(0.65 0.2 25)` | Red — dropship markup detected |
-| Border | `oklch(1 0 0 / 12%)` | Hairline white borders |
+| Background | `oklch(0.11 0.014 48)` | The room — deep, near-neutral warm dark |
+| Paper | `oklch(0.855 0.032 82)` | Opaque **manila** evidence stock. Consumed via `<Paper>`, never applied directly. NOT bone — `oklch(0.94 0.012 85)` was tried and read as a flashbang against the room, and as light mode leaking into a dark-only product |
+| Paper ink | `oklch(0.24 0.03 55)` | Text on paper — 10.6:1 |
+| Paper muted | `oklch(0.44 0.03 60)` | Secondary text on paper — 5.0:1. Use this, never `text-muted-foreground`, inside `<Paper>` |
+| Paper rule | `oklch(0.24 0.03 55 / 0.2)` | Hairlines on paper |
+| Paper money | `oklch(0.42 0.10 155)` | Savings green **on paper** — 5.2:1. `--success` scores 1.7:1 on manila and is invisible there. Chroma pinned into sRGB — 0.16 was out of gamut and being clamped |
+| Primary/fire | `oklch(0.72 0.17 50)` | Amber-orange — brand, `flame` tier |
+| Amber tier | `oklch(0.80 0.13 78)` | `amber` tier — must stay distinct from fire |
+| Stamp | `oklch(0.55 0.22 27)` | **BUSTED stamp only** — never for errors. Chroma pinned into sRGB; 3.8:1 room / 3.5:1 paper |
+| Success/relief | `oklch(0.68 0.14 155)` | Green — the user's win (savings, real link). Room only; on paper use Paper money |
+| Destructive | `oklch(0.65 0.2 25)` | Red — errors and destructive actions |
+| Border | `oklch(1 0.02 55 / 10%)` | Hairline white borders |
+
+**Room tokens are not paper tokens.** Assume every room colour fails on paper
+until measured, and measure by converting oklch to *linear* RGB and feeding the
+WCAG luminance formula directly — running the sRGB transfer function over
+already-linear values double-converts and fabricates failures.
+
+**Design intensity is derived from `presenceTier`, never chosen**: `flame` → solid markup bar, count-up, stamp; `amber` → same sheet, ghosted bar, no stamp and no count-up; `silent` → one muted line, no card. Decorating the `silent` state defeats the purpose of having tiers. The tier must never be carried by hue alone — `--primary` and `--amber-tier` measure 1.38:1 (`DESIGN.md` §2.3).
 
 ### Glass Effect Pattern
 Use these Tailwind classes together for glassmorphism cards:
@@ -201,11 +280,8 @@ For more opaque surfaces (inside cards): `bg-white/[0.07] backdrop-blur-sm`
 Custom `.glass` and `.glass-md` utility classes are defined in `globals.css`.
 
 ### Ambient Background
-- Fixed-position radial blur blobs behind content (in `app/page.tsx`)
-- Primary blob: top-right, `bg-primary/10 blur-[140px]`
-- Success blob: bottom-left, `bg-success/7 blur-[120px]`
-- Center blob: middle, `bg-primary/5 blur-[100px]`
-- Dot-grid texture on body: `radial-gradient(oklch(1 0 0 / 0.035) 1px, transparent 1px)` at 28px grid
+- **Film grain on `body::after`** (`app/globals.css`) — one tiled inline SVG turbulence, no network request, `z-index: 100` so it sits over every app layer (highest in use is the recent-scans drawer at `z-[70]`), `pointer-events: none`.
+- **Never animate the grain**, and never reintroduce the ambient blur blobs or the dot grid: the blobs were the strongest "generic AI SaaS" tell and among the most expensive things on the page to paint. Removed from `app/page.tsx`, `app/scan/[id]/page.tsx`, `app/store/[domain]/page.tsx`.
 
 ### Typography
 - Font: Geist Sans (variable, loaded in `layout.tsx`)
@@ -228,10 +304,24 @@ transition-colors hover:border-white/12 hover:bg-white/[0.05]
 - `.glow-primary` and `.glow-success` utility classes in `globals.css`
 
 ### Animation
-- Entry: `animate-in fade-in slide-in-from-bottom-6 duration-700`
-- Fast entry: `animate-in fade-in slide-in-from-bottom-4 duration-500`
-- Transitions: `transition-all duration-200` (150–300ms, ease-out)
-- Respect `prefers-reduced-motion` (shadcn/ui handles this via `tw-animate-css`)
+Full motion system in `DESIGN.md` §7. The load-bearing details:
+- **One house curve**, `cubic-bezier(0.2, 0, 0, 1)`, set in `app/globals.css` by
+  overriding the *stock* Tailwind tokens `--ease-out` and
+  `--default-transition-timing-function`. Both stock curves ramp in before they
+  move; overriding the standard names means `ease-out` and every bare
+  `transition-*` inherit the house curve with no call-site change.
+- Entry: `animate-in fade-in slide-in-from-bottom-2 ease-out duration-300`
+  (fade + 8px rise). **`ease-out` is not optional** — `tw-animate-css` defines
+  `--animate-in` with a `var(--tw-ease, ease)` fallback, so an `animate-in`
+  with no `ease-*` class silently animates on plain `ease`, which ramps in.
+- Transitions: name the properties (`transition-[color,box-shadow]`), 150–300ms.
+  Never `transition-all`.
+- Press: `active:scale-[0.96]` — never below `0.95`.
+- `prefers-reduced-motion` (`globals.css`): entry *animations* jump to their
+  final state, but *transitions* are narrowed to opacity/colour rather than
+  killed. Zeroing every transition makes meaningful state changes teleport,
+  which is the jarring result the transition existed to prevent.
+- `animate-pulse` is for skeletons only — never on status text being read.
 
 ### Accessibility
 - Contrast ≥4.5:1 on all text (`muted-foreground` on dark meets AA)

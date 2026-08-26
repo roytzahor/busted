@@ -49,3 +49,17 @@ next-env.d.ts
 
 # Feedback-harvested fixture drafts — hand-verified before promotion to products/
 tests/fixtures/candidates/
+
+# Globally-installed agent skills. `npx skills add -g` installs to ~/.agents/skills
+# but ALSO mirrors the tree into the repo (plus a top-level agent/), so a routine
+# `git add -A` would commit another machine's skill library. The project's own
+# skills are re-included below; everything else under these paths is machine state.
+/agent/
+/.agents/skills/*
+!/.agents/skills/neon-postgres/
+/.claude/skills/*
+!/.claude/skills/graphify/
+
+
+# graft's local graph cache — regenerable, not committed (run `graft build`).
+/graft/

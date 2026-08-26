@@ -1,3 +1,4 @@
+import type { CurrencyCode } from "@/lib/currency";
 import type { RawScrapeResult, ScrapedProductAttributes } from "@/lib/scraping/types";
 import type { AliExpressProductCandidate } from "@/lib/aliexpress/types";
 import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
@@ -50,6 +51,10 @@ export interface FixtureScrape {
   raw: RawScrapeResult;
   attributes: ScrapedProductAttributes;
   detectedStorePriceUsd: number | null;
+  /** Native price + currency as printed. Optional: fixtures captured before
+   *  currency-aware extraction carry only the USD value. */
+  detectedStorePriceNative?: number | null;
+  detectedStorePriceCurrency?: CurrencyCode | null;
   storeName: string | null;
 }
 

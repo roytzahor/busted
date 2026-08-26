@@ -51,7 +51,7 @@ export function PartialResult({ result, onRetry, className }: PartialResultProps
     <section
       aria-label="Partial scan result"
       className={cn(
-        "animate-in fade-in slide-in-from-bottom-4 mx-auto w-full max-w-2xl space-y-4 duration-500",
+        "animate-in fade-in slide-in-from-bottom-2 ease-out mx-auto w-full max-w-2xl space-y-4 duration-300",
         className,
       )}
     >

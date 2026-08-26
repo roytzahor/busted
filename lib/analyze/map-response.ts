@@ -6,6 +6,7 @@ import type {
   AnalyzeResponse,
 } from "@/lib/types/analyze";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
+import type { PresenceTier } from "@/lib/analyze/presence-tier";
 
 export interface DropshipAnalysisResult {
   originalUrl: string;
@@ -17,6 +18,13 @@ export interface DropshipAnalysisResult {
   sourceType: ProductSourceType;
   supplierStatus: "skipped" | "pending" | "complete";
   supplierSkipReason?: string;
+  /**
+   * Server-computed presence tier, passed through untouched. The UI must
+   * never derive this from `dropshipPrediction.confidence` itself — that is
+   * the one rule that keeps the web page and the extension badge from
+   * disagreeing about how confident we are. Absent means silent.
+   */
+  presenceTier: PresenceTier;
 }
 
 export interface BrowseAnalysisResult {
@@ -209,6 +217,10 @@ export function mapAnalyzeResponseToComparison(
       sourceType: response.sourceType,
       supplierStatus: response.supplierStatus === "complete" ? "complete" : "skipped",
       supplierSkipReason: response.supplierSkipReason,
+      // Pass-through, never recomputed. An older response without the field
+      // falls back to silent — the safe direction: we under-claim rather than
+      // alarm on a scan whose tier we don't actually know.
+      presenceTier: response.presenceTier ?? "silent",
     },
     browse: null,
     partial: null,

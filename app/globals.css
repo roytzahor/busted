@@ -7,9 +7,11 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  /* Must resolve to the next/font variable from layout.tsx, not to itself —
+     a self-referential var is invalid and silently falls back to serif. */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -27,6 +29,13 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-paper: var(--paper);
+  --color-paper-ink: var(--paper-ink);
+  --color-paper-muted: var(--paper-muted);
+  --color-paper-rule: var(--paper-rule);
+  --color-paper-money: var(--paper-money);
+  --color-stamp: var(--stamp);
+  --color-amber-tier: var(--amber-tier);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
   --color-accent-foreground: var(--accent-foreground);
@@ -48,6 +57,22 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ── Motion tokens ──────────────────────────────────────────────────────────
+   One house curve, from DESIGN.md §7. Both Tailwind stock curves it replaces
+   ramp IN before they move — `--ease-out` is cubic-bezier(0, 0, 0.2, 1) and the
+   default transition curve is cubic-bezier(0.4, 0, 0.2, 1) — and the start is
+   the exact moment the user is watching, so a slow ramp reads as lag no matter
+   how short the duration is.
+
+   Overriding the stock token names rather than adding a parallel `--ease-house`
+   is deliberate: every bare `transition-*` and every `ease-out` already written
+   in this codebase picks the curve up with no call-site change, and code written
+   later gets it by default instead of by remembering. */
+@theme {
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --default-transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
 }
 
 /* Fire palette (busted) + green relief (we got you) */
@@ -89,8 +114,51 @@
 }
 
 .dark {
-  --background: oklch(0.15 0.03 52);
+  /* ── The room ──────────────────────────────────────────────────────────
+     Deeper and less saturated than before (was 0.15 0.03 52). The evidence
+     surfaces below are opaque paper, and paper only reads as paper against a
+     ground dark enough to be a room rather than a card. See DESIGN.md §4. */
+  --background: oklch(0.11 0.014 48);
   --foreground: oklch(0.97 0.01 55);
+
+  /* ── Paper ─────────────────────────────────────────────────────────────
+     Opaque stock for anything that states a fact: price teardown, evidence
+     list, supplier card, scan receipt. Never translucent — the hard edge is
+     the whole point, and "is it on paper?" is the site's hierarchy.
+     Consumed via <Paper> (components/ui/paper.tsx), not applied directly.
+
+     Manila, not bright bone. The first pass used oklch(0.94 0.012 85) and it
+     read as a flashbang against the room — and as light mode leaking into a
+     dark-only product. Lower luminance + a warmer cast reads as aged case-file
+     stock instead of a lit screen. */
+  --paper: oklch(0.855 0.032 82);
+  --paper-ink: oklch(0.24 0.03 55);
+  --paper-muted: oklch(0.44 0.03 60);
+  --paper-rule: oklch(0.24 0.03 55 / 0.2);
+
+  /* Savings green ON PAPER. --success is tuned for the dark room and scores
+     1.7:1 against manila — effectively invisible. Anything on paper needs a
+     paper-specific ink; this one measures 5.2:1. Verified, not eyeballed.
+
+     Chroma pinned 0.16 -> 0.10 because 0.16 is OUTSIDE sRGB at this L and hue
+     (it needs R_linear = -0.037). Browsers were already clamping it, so the
+     rendered colour was never the specified one and a P3 display would not
+     clamp identically. Pinning makes the token honest; it also measures BETTER
+     than the clamped value did (4.8:1). */
+  --paper-money: oklch(0.42 0.10 155);
+
+  /* Reserved for the BUSTED stamp and nothing else. A colour used once is a
+     signature; used twice it is just part of the palette. Errors and
+     destructive actions keep --destructive.
+
+     Chroma pinned 0.24 -> 0.22: 0.24 is outside sRGB here (needs G_linear =
+     -0.014) and was being clamped. Still clears its decorative 3.0 bar at
+     3.8:1 on the room and 3.5:1 on paper. */
+  --stamp: oklch(0.55 0.22 27);
+
+  /* presenceTier "amber". Must stay visibly distinct from --primary (fire,
+     the flame tier) or the tier system is decorative rather than legible. */
+  --amber-tier: oklch(0.80 0.13 78);
   --card: oklch(0.20 0.03 50);
   --card-foreground: oklch(0.97 0.01 55);
   --popover: oklch(0.20 0.03 50);
@@ -131,6 +199,10 @@
   body {
     @apply bg-background text-foreground;
     overflow-x: hidden;
+    /* Prices, confidence percentages and the live pipeline all update in
+       place. Proportional digits shift the layout on every tick, which reads
+       as instability in a product whose entire pitch is certainty. */
+    font-variant-numeric: tabular-nums;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     /* Kill the gray tap-flash on mobile — we provide our own active states. */
@@ -162,10 +234,50 @@
     *,
     *::before,
     *::after {
+      /* Entry animations jump to their final state — DESIGN.md §8. The
+         information is identical either way, which is the test of whether the
+         motion was decoration or content. */
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
+      /* Without this, a staggered group still SEQUENCES under reduced motion —
+         each item waits out its delay and then pops. "Jump to the final state"
+         has to include the delay or it isn't a jump. */
+      animation-delay: 0ms !important;
       scroll-behavior: auto !important;
+
+      /* Kept as a near-zero blanket, deliberately.
+
+         An earlier version of this rule narrowed `transition-property` to a
+         colour/opacity list at 200ms, to preserve the fades that carry meaning.
+         That was wrong twice over. `transition-property` initially computes to
+         `all`, so naming a list here GIVES a 200ms transition to every element
+         that never declared one — and because this rule lives in `@layer base`,
+         its `!important` outranks any utility-layer `!important`, so nothing
+         downstream can opt out. The practical cost lands exactly where reduced
+         motion can least afford it: a press whose colour feedback was instant
+         starts lagging 200ms.
+
+         The premise was also overstated. A colour changing instantly is not
+         "jarring" — it is immediate, which is the correct reduced-motion
+         reading. Preserving a specific fade is a per-component opt-in, not
+         something a global rule can infer. See DESIGN.md §7.12. */
+      transition-duration: 0.01ms !important;
+    }
+
+    /* The spinner is the one exemption. The blanket reset above resolves
+       `spin 1s linear infinite` to a single 360° turn in 0.01ms, leaving a
+       MOTIONLESS spinner on screen for the 8-20s of a live scan — it reads as a
+       hung app, which inverts the indicator's meaning and is a worse outcome
+       than the motion it removed. A spinner is the rare case where the motion
+       IS the information. Small fixed-centre rotation is not the large-area
+       translation this media query exists to suppress; slow it, don't stop it.
+
+       `animate-pulse` and `animate-live` need NO exemption: both keyframe sets
+       end on `opacity: 1`, so the blanket rule settles them at a solid block and
+       a solid dot — correct static readings of "loading" and "live". */
+    .animate-spin {
+      animation-duration: 1.4s !important;
+      animation-iteration-count: infinite !important;
     }
   }
   /* Hebrew (RTL) — switch the font stack to Heebo so Hebrew glyphs render
@@ -188,6 +300,61 @@
 }
 
 @layer utilities {
+  /* Paper fibre — sub-perceptual, but it stops the stock reading as flat
+     #fff next to the film grain. Texture ONLY: colour, radius and shadow
+     live in <Paper> (components/ui/paper.tsx) as Tailwind classes, so
+     tailwind-merge can dedupe a caller's `rounded-*`/`shadow-*` override.
+     A composite `.paper` utility could not be overridden predictably —
+     tailwind-merge doesn't know it, so CSS source order would decide. */
+  .paper-fibre {
+    background-image:
+      /* Slight lift at the head of the sheet — stops manila reading flat. */
+      radial-gradient(120% 80% at 50% 0%, oklch(1 0 0 / 0.1), transparent 60%),
+      repeating-linear-gradient(
+        0deg,
+        oklch(0.24 0.03 55 / 0.028) 0px,
+        transparent 1px,
+        transparent 3px
+      );
+  }
+
+  /* ── Torn bottom edge ─────────────────────────────────────────────────
+     The fix for "it looks bureaucratic". A perfect rectangle reads as a form;
+     a torn sheet reads as something someone ripped up. It also makes the
+     product's core metaphor physical in the surface itself, not just in the
+     phase-4 animation.
+
+     Irregular on purpose — evenly spaced points read as a zigzag border, which
+     is worse than a clean edge.
+
+     clip-path clips box-shadow away, so torn sheets get their depth from
+     filter: drop-shadow instead, which follows the clip. That is the more
+     expensive of the two, so keep this for the few sheets that carry the
+     teardown — not every surface on the page. */
+  .paper-torn {
+    padding-bottom: 2rem;
+    clip-path: polygon(
+      0 0,
+      100% 0,
+      100% calc(100% - 9px),
+      92% calc(100% - 4px),
+      85% calc(100% - 12px),
+      77% calc(100% - 5px),
+      68% calc(100% - 13px),
+      60% calc(100% - 6px),
+      51% calc(100% - 14px),
+      43% calc(100% - 5px),
+      34% calc(100% - 12px),
+      26% calc(100% - 4px),
+      17% calc(100% - 13px),
+      9% calc(100% - 6px),
+      0 calc(100% - 11px)
+    );
+    box-shadow: none;
+    filter: drop-shadow(0 2px 2px oklch(0 0 0 / 0.35))
+      drop-shadow(0 14px 26px oklch(0 0 0 / 0.45));
+  }
+
   /* Glassmorphism card */
   .glass {
     background: oklch(1 0 0 / 0.04);
@@ -214,16 +381,42 @@
   }
 }
 
-/* Dot grid texture on dark backgrounds */
-.dark body {
-  background-image: radial-gradient(oklch(1 0 0 / 0.045) 1px, transparent 1px);
-  background-size: 28px 28px;
+/* ── Film grain ─────────────────────────────────────────────────────────
+   Replaces the dot-grid texture AND the four fixed blur(120-160px) ambient
+   blobs that used to live in app/page.tsx. A regular dot lattice reads as
+   "digital product"; grain reads as a physical surface, which is what the
+   paper stock needs to sit on.
+
+   One tiled inline SVG turbulence — no network request, ~1.2KB, and far
+   cheaper to paint than the blur layers it replaces.
+
+   z-index 100 puts it over every app layer (highest in use is the
+   recent-scans drawer at z-[70]), so the texture unifies modals and drawers
+   too. pointer-events:none keeps it non-interactive.
+
+   Deliberately NOT animated: moving noise costs battery and repaints for an
+   effect nobody consciously registers, and it reads as a broken codec. */
+.dark body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media print {
+  .dark body::after { display: none; }
 }
 
 /* Live indicator dot */
+/* A 1 → 0.2 swing is a blink, not a pulse: at the trough the dot has all but
+   left the page, so peripheral vision keeps getting dragged back to it. 0.45
+   still reads as alive without competing with the content beside it. */
 @keyframes live-pulse {
   0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
+  50% { opacity: 0.45; }
 }
 
 @layer utilities {

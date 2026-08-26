@@ -535,7 +535,7 @@ export function SearchHub() {
 
       {/* ── Progress ──────────────────────────────────────────────── */}
       {phase === "analyzing" ? (
-        <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="mb-10 animate-in fade-in slide-in-from-bottom-2 ease-out duration-300">
           {liveStages.size > 0 ? (
             <LivePipelineView stageMap={liveStages} />
           ) : (
@@ -548,7 +548,7 @@ export function SearchHub() {
       {phase === "error" && analysisError ? (
         <div
           role="alert"
-          className="mb-6 animate-in fade-in rounded-xl border border-destructive/30 bg-destructive/8 p-4 text-sm text-destructive backdrop-blur-sm"
+          className="mb-6 animate-in fade-in ease-out rounded-xl border border-destructive/30 bg-destructive/8 p-4 text-sm text-destructive backdrop-blur-sm"
         >
           <div className="flex items-start gap-2">
             <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -568,7 +568,7 @@ export function SearchHub() {
       ) : null}
 
       {hasResults ? (
-        <div className="mb-16 animate-in fade-in slide-in-from-bottom-6 duration-700">
+        <div className="mb-16 animate-in fade-in slide-in-from-bottom-2 ease-out duration-300">
           <AnalysisTabs
             comparison={comparison}
             dropshipResult={dropshipResult}

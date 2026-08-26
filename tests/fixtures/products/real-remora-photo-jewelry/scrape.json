@@ -16,8 +16,10 @@
     "mainImageUrl": "http://remoraisrael.shop/cdn/shop/files/Remora_2025_Logo_500x500_9207f1a0-ae32-4239-957d-c63f378db1fa.png?v=1755622294",
     "sourceUrl": "https://remoraisrael.shop/",
     "provider": "crawlbase",
-    "translatedTitle": "Encrypted"
+    "translatedTitle": "Jewelry with Encrypted Photo and Original Gifts"
   },
-  "detectedStorePriceUsd": null,
-  "storeName": "Remoraisrael"
+  "detectedStorePriceUsd": 53.78,
+  "storeName": "Remoraisrael",
+  "detectedStorePriceNative": 199,
+  "detectedStorePriceCurrency": "ILS"
 }

@@ -16,7 +16,7 @@ export function AnalysisSkeleton({ step, progress }: AnalysisSkeletonProps) {
       aria-busy="true"
       aria-live="polite"
       aria-label="Analyzing product"
-      className="animate-in fade-in slide-in-from-bottom-4 w-full duration-500"
+      className="animate-in fade-in slide-in-from-bottom-2 ease-out w-full duration-300"
     >
       <Card className="overflow-hidden border-dashed">
         <CardHeader className="space-y-4 pb-4">
@@ -73,7 +73,7 @@ function SkeletonPanel({
     <div
       className={cn(
         "space-y-3 rounded-xl border p-4",
-        delay && "animate-in fade-in duration-700 fill-mode-both delay-150",
+        delay && "animate-in fade-in ease-out duration-300 fill-mode-both delay-150",
       )}
     >
       <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">

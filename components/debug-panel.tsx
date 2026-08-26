@@ -21,6 +21,27 @@ interface DebugPanelProps {
   className?: string;
 }
 
+/**
+ * Show the price as the page printed it alongside the USD figure the pipeline
+ * actually compares against. Seeing "238 ₪ → $64.32" makes it obvious at a
+ * glance whether a suspicious markup came from bad extraction or a stale FX
+ * rate — with only the USD value, the two are indistinguishable.
+ */
+function formatDetectedPrice(scrape: AnalyzeDebugInfo["scrape"]): string {
+  const { detectedStorePriceUsd, detectedStorePriceNative, detectedStorePriceCurrency } = scrape;
+  if (detectedStorePriceUsd === null) return "Not detected";
+
+  const usd = `$${detectedStorePriceUsd.toFixed(2)}`;
+  if (
+    typeof detectedStorePriceNative !== "number" ||
+    !detectedStorePriceCurrency ||
+    detectedStorePriceCurrency === "USD"
+  ) {
+    return usd;
+  }
+  return `${detectedStorePriceNative} ${detectedStorePriceCurrency} → ${usd}`;
+}
+
 export function DebugPanel({ debug, className }: DebugPanelProps) {
   const [openSection, setOpenSection] = useState<string>("scrape");
 
@@ -103,11 +124,7 @@ export function DebugPanel({ debug, className }: DebugPanelProps) {
               <DebugField label="Provider" value={debug.scrape.provider} />
               <DebugField
                 label="Detected price"
-                value={
-                  debug.scrape.detectedStorePriceUsd !== null
-                    ? `$${debug.scrape.detectedStorePriceUsd.toFixed(2)}`
-                    : "Not detected"
-                }
+                value={formatDetectedPrice(debug.scrape)}
               />
               <DebugField label="Title (extracted)" value={debug.scrape.attributes.title} />
               <DebugField

@@ -182,7 +182,7 @@ export function BulkPaste({ className }: { className?: string }) {
   return (
     <section
       aria-labelledby="bulk-heading"
-      className={cn("animate-in fade-in space-y-4 duration-500", className)}
+      className={cn("animate-in fade-in ease-out space-y-4 duration-300", className)}
     >
       <div
         className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.04] p-5 shadow-2xl backdrop-blur-xl sm:p-6"

@@ -25,7 +25,7 @@ export function AnalysisTabs({
   browseResult,
 }: AnalysisTabsProps) {
   return (
-    <section className="animate-in fade-in w-full space-y-4 duration-500">
+    <section className="animate-in fade-in ease-out w-full space-y-4 duration-300">
       {browseResult ? <BrowseAnalysisResults result={browseResult} /> : null}
       {dropshipResult ? (
         <DropshipAnalysisResults result={dropshipResult} />
