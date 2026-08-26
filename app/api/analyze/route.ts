@@ -52,6 +52,8 @@ import {
   parseAliExpressData,
 } from "@/lib/types/analyze";
 
+import { flashModel } from "@/lib/ai/models";
+
 const MARKDOWN_PREVIEW_CHARS = 1_500;
 
 export const runtime = "nodejs";
@@ -689,7 +691,7 @@ async function runAnalysisPipeline(
     : {
         prediction: null,
         provider: "google",
-        model: process.env.GOOGLE_AI_MODEL ?? "gemini-3.5-flash",
+        model: flashModel(),
         rawResponse: "",
         error: verdictRes.error.message,
         isSupplierListing: sourceType === "supplier_marketplace",

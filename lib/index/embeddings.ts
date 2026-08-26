@@ -16,7 +16,8 @@
 
 import { prisma } from "@/lib/prisma";
 
-export const EMBEDDING_MODEL = "gemini-embedding-001";
+import { embeddingModel } from "../ai/models";
+
 export const EMBEDDING_DIMS = 768;
 
 const EMBED_TIMEOUT_MS = 10_000;
@@ -47,7 +48,7 @@ export async function embedProductText(text: string): Promise<number[] | null> {
   const timeout = setTimeout(() => controller.abort(), EMBED_TIMEOUT_MS);
   try {
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${embeddingModel()}:embedContent`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": key },
@@ -94,7 +95,7 @@ export async function upsertProductEmbedding(input: UpsertEmbeddingInput): Promi
     VALUES
       (gen_random_uuid()::text, ${input.scanId ?? null}, ${input.network}, ${input.productId ?? null},
        ${input.title}, ${input.sourceUrl}, ${input.priceUsd ?? null}, ${input.imageUrl ?? null},
-       ${vectorLiteral}::vector, ${EMBEDDING_MODEL})
+       ${vectorLiteral}::vector, ${embeddingModel()})
     ON CONFLICT ("sourceUrl") DO UPDATE SET
       "title" = EXCLUDED."title",
       "priceUsd" = EXCLUDED."priceUsd",
@@ -133,7 +134,7 @@ export async function findNearestProducts(
              "priceUsd", "imageUrl",
              ("embedding" <=> ${vectorLiteral}::vector)::float AS "distance"
       FROM "ProductEmbedding"
-      WHERE "embedding" IS NOT NULL AND "model" = ${EMBEDDING_MODEL}
+      WHERE "embedding" IS NOT NULL AND "model" = ${embeddingModel()}
         AND "network" = ${opts.network}
       ORDER BY "embedding" <=> ${vectorLiteral}::vector
       LIMIT ${limit}
@@ -144,7 +145,7 @@ export async function findNearestProducts(
            "priceUsd", "imageUrl",
            ("embedding" <=> ${vectorLiteral}::vector)::float AS "distance"
     FROM "ProductEmbedding"
-    WHERE "embedding" IS NOT NULL AND "model" = ${EMBEDDING_MODEL}
+    WHERE "embedding" IS NOT NULL AND "model" = ${embeddingModel()}
     ORDER BY "embedding" <=> ${vectorLiteral}::vector
     LIMIT ${limit}
   `;

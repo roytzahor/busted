@@ -37,9 +37,22 @@ export function visionModel(): string {
   return process.env.GOOGLE_AI_VISION_MODEL ?? flashModel();
 }
 
-/** Image *generation* model. Distinct from the vision (image-reading) model. */
+/**
+ * Image *generation* model (the nano-banana family). Distinct from the vision
+ * (image-reading) model — see `visionModel()`.
+ *
+ * NOT gemini-2.5-flash-image: measured on this repo's own preprocess prompt it
+ * returned no image part at all in 8 of 11 attempts (the model satisfies a
+ * TEXT+IMAGE request by answering only the text half), which surfaces as
+ * GEMINI_NO_IMAGE_OUTPUT and silently falls back to the raw source URL. It also
+ * ignores the prompt's 1:1 request and rejects `imageConfig.imageSize: "512"`
+ * with a 400. gemini-3.1-flash-image returned an image in 12 of 15 attempts at
+ * a correct 1024x1024.
+ *
+ * No image model has a `-latest` alias — this family must be pinned.
+ */
 export function imageModel(): string {
-  return process.env.GOOGLE_AI_IMAGE_MODEL ?? "gemini-2.5-flash-image";
+  return process.env.GOOGLE_AI_IMAGE_MODEL ?? "gemini-3.1-flash-image";
 }
 
 /**

@@ -31,6 +31,7 @@ import {
 } from "@/lib/ai/preprocess-cache";
 
 import { imageModel as imageModelId, visionModel as visionModelId } from "./models";
+
 /* ─── Constants ──────────────────────────────────────────────────────────── */
 
 // gemini-3-flash-image was the original default but returns 404 on v1beta.

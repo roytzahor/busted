@@ -22,15 +22,24 @@ import { verifyDropshipLikelihood } from "../../lib/ai/dropship-verifier";
  * Verify against ai.google.dev/gemini-api/docs/pricing before trusting a
  * dollar figure — these rot, and a stale table produces confident wrong costs.
  */
-const PRICING: Record<string, { in: number; out: number }> = {
+const PRICING: Record<
+  string,
+  { in: number; out: number; after2027?: { in: number; out: number } }
+> = {
+  // Verified against ai.google.dev/gemini-api/docs/pricing on 2026-08-26.
+  // Gemini 3.x flash prices are PROMOTIONAL through 2026-12-31 and DOUBLE on
+  // 2027-01-01 — the `after2027` column is the post-promo rate. Re-verify
+  // before trusting any dollar figure; the previous table understated real
+  // spend by 1.5-2.5x, which is exactly the failure this comment warns about.
   "gemini-2.5-flash": { in: 0.3, out: 2.5 },
   "gemini-2.5-flash-lite": { in: 0.1, out: 0.4 },
-  "gemini-3-flash-preview": { in: 0.3, out: 2.5 },
-  "gemini-3.1-flash-lite": { in: 0.1, out: 0.4 },
-  "gemini-3.5-flash": { in: 0.3, out: 2.5 },
-  "gemini-3.5-flash-lite": { in: 0.1, out: 0.4 },
-  "gemini-3.6-flash": { in: 0.3, out: 2.5 },
-  "gemini-3.7-flash": { in: 0.3, out: 2.5 },
+  "gemini-3-flash-preview": { in: 0.5, out: 3.0 },
+  "gemini-3.1-flash-lite": { in: 0.25, out: 1.5 },
+  "gemini-3.1-pro-preview": { in: 2.0, out: 12.0 },
+  "gemini-3.5-flash": { in: 1.5, out: 9.0 },
+  "gemini-3.5-flash-lite": { in: 0.3, out: 2.5 },
+  "gemini-3.6-flash": { in: 0.75, out: 3.75, after2027: { in: 1.5, out: 7.5 } },
+  "gemini-3.7-flash": { in: 0.75, out: 3.75, after2027: { in: 1.5, out: 7.5 } },
 };
 
 interface Row {

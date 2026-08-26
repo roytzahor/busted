@@ -1,6 +1,6 @@
 /**
  * Type-safe AI Core client shell.
- * Default: Google Gemini 3.5 Flash — ultra-low latency, cost-effective parsing.
+ * Model ids are never hardcoded here — they resolve through ./models.
  * Uses the official @google/generative-ai SDK with automatic model fallback.
  * Scraped content must be pre-stripped to optimized Markdown/JSON before calling.
  */
@@ -11,6 +11,12 @@ import {
   type GenerativeModel,
   type Part,
 } from "@google/generative-ai";
+import {
+  anthropicModel,
+  flashModel,
+  googleModelFallbackChain,
+  openaiModel,
+} from "./models";
 
 export type AIProvider = "google" | "anthropic" | "openai";
 
@@ -57,23 +63,20 @@ export interface AIClientConfig {
   openaiApiKey?: string;
 }
 
-const DEFAULT_MODELS: Record<AIProvider, string> = {
-  google: "gemini-2.5-flash",
-  anthropic: "claude-3-5-haiku-20241022",
-  openai: "gpt-4o-mini",
-};
-
 /**
- * Ordered fallback chain. Aliases first so the chain cannot rot the way the
- * previous one did: gemini-2.0-flash was retired out from under us mid-run and
- * every hardcoded reference 404'd. The concrete pin at the end is the floor —
- * keep it on a version that is verified live, not the newest one you recall.
+ * Resolved per call, not cached: the model registry reads `process.env` lazily
+ * so a runtime override (model-benchmark) is honoured.
  */
-export const GOOGLE_MODEL_FALLBACK_CHAIN = [
-  "gemini-flash-latest",
-  "gemini-2.5-flash",
-  "gemini-flash-lite-latest",
-] as const;
+function defaultModelFor(provider: AIProvider): string {
+  switch (provider) {
+    case "google":
+      return flashModel();
+    case "anthropic":
+      return anthropicModel();
+    case "openai":
+      return openaiModel();
+  }
+}
 
 function resolveProvider(config: AIClientConfig): AIProvider {
   if (config.provider) return config.provider;
@@ -91,13 +94,12 @@ function resolveProvider(config: AIClientConfig): AIProvider {
 }
 
 function resolvePrimaryGoogleModel(config: AIClientConfig): string {
-  return config.model ?? process.env.GOOGLE_AI_MODEL ?? DEFAULT_MODELS.google;
+  return config.model ?? flashModel();
 }
 
 function resolveGoogleModelChain(config: AIClientConfig): string[] {
   const primary = resolvePrimaryGoogleModel(config);
-  const chain = [primary, ...GOOGLE_MODEL_FALLBACK_CHAIN.filter((m) => m !== primary)];
-  return [...new Set(chain)];
+  return Array.from(new Set([primary, ...googleModelFallbackChain()]));
 }
 
 function resolveApiKey(provider: AIProvider, config: AIClientConfig): string {
@@ -439,7 +441,7 @@ export class AIClient {
     this.model =
       this.provider === "google"
         ? this.googleModelChain[0]
-        : config.model ?? DEFAULT_MODELS[this.provider];
+        : config.model ?? defaultModelFor(this.provider);
     this.config = config;
   }
 

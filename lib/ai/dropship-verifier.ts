@@ -2,6 +2,8 @@ import { getAIClient } from "@/lib/ai/client";
 import type { ScrapedProductAttributes } from "@/lib/scraping/types";
 import type { ProductIdentity } from "@/lib/services/types";
 
+import { flashModel } from "./models";
+
 export type DropshipVerdict =
   | "dropship"
   | "legit"
@@ -509,7 +511,7 @@ export async function verifyDropshipLikelihood(params: {
    *  text-only behavior, so existing callers are unaffected. */
   identity?: ProductIdentity | null;
 }): Promise<DropshipVerificationResult> {
-  let clientModel = process.env.GOOGLE_AI_MODEL ?? "gemini-3.5-flash";
+  let clientModel = flashModel();
   const attributeCount = countAttributeSignals(params.attributes, params.storePriceUsd);
 
   try {

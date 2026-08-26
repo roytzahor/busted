@@ -16,6 +16,8 @@
 
 import { GoogleGenerativeAI, type Part } from "@google/generative-ai";
 
+import { flashModel } from "./models";
+
 export interface RerankCandidate {
   id: string;
   title: string;
@@ -46,7 +48,6 @@ export interface RerankResult {
 
 const FETCH_TIMEOUT_MS = 8_000;
 const MAX_IMAGE_BYTES = 3 * 1024 * 1024;
-const DEFAULT_MODEL = "gemini-3.5-flash";
 const MAX_CANDIDATES = 12;
 
 const SYSTEM_PROMPT = `You are a product matching expert. Given a source product image and several candidate images from AliExpress, rate each candidate on how likely it is the SAME PRODUCT with the SAME FUNCTION as the source.
@@ -142,7 +143,7 @@ export async function rerankCandidatesByImage(
   const apiKey = process.env.GOOGLE_AI_API_KEY ?? process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const modelName = input.modelName ?? process.env.GOOGLE_AI_MODEL ?? DEFAULT_MODEL;
+  const modelName = input.modelName ?? flashModel();
 
   // Cap at MAX_CANDIDATES so the multimodal call stays within token budget
   const candidates = input.candidates.slice(0, MAX_CANDIDATES);

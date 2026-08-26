@@ -13,6 +13,8 @@
 
 import { GoogleGenerativeAI, type Part } from "@google/generative-ai";
 
+import { flashModel } from "./models";
+
 export interface ImageMatchCandidate {
   id: string;
   title: string;
@@ -46,7 +48,6 @@ export interface ImageMatchResult {
 
 const FETCH_TIMEOUT_MS = 8_000;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
-const DEFAULT_MODEL = "gemini-3.5-flash";
 
 const SYSTEM_PROMPT = `You are a product-matching vision expert for Busted, a dropship-detection tool.
 You are given ONE source product image (from a retail store) and several CANDIDATE images (from AliExpress).
@@ -177,7 +178,7 @@ export async function compareProductImagesWithAI(
   if (!apiKey) return null;
 
   const modelName =
-    input.modelName ?? process.env.GOOGLE_AI_MODEL ?? DEFAULT_MODEL;
+    input.modelName ?? flashModel();
 
   // Fetch all images in parallel; drop failures
   const sourceFetch = fetchImageAsBase64(input.sourceImageUrl);

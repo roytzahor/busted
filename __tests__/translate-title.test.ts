@@ -144,7 +144,11 @@ describe("translateTitle", () => {
     await translateTitle("סט רויאל — בדיקת תקציב");
 
     const config = generateContent.mock.calls[0][0].generationConfig;
-    expect(config.thinkingConfig).toEqual({ thinkingBudget: 0 });
+    // Budget is 1, not 0: gemini-*-flash-lite rejects thinkingBudget 0 with a
+    // 400 INVALID_ARGUMENT. Both flash and flash-lite accept 1 and measure
+    // think=0, so thinking is still effectively off — which is what this
+    // guards. Must stay minimal; a large budget truncates the answer.
+    expect(config.thinkingConfig).toEqual({ thinkingBudget: 1 });
     // Guards the regression directly: 40 was the value that broke it.
     expect(config.maxOutputTokens).toBeGreaterThan(40);
   });
