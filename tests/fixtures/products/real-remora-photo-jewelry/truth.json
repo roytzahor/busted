@@ -4,7 +4,7 @@
   "expectedVerdict": "dropship",
   "expectedSupplier": {
     "shouldFindMatch": true,
-    "notes": "Sentimental photo jewelry. Classic dropship. Homepage — sparse-scrape fallback acceptable. RESOLVED 2026-08-26: same eval-tooling keyword bug as real-giftorder-wood-family (searched only the mistranslated single word \"encrypted\" instead of the AI's own aliexpressKeywords). Fixed the shared tooling; live re-capture now finds a confident match (score 0.589, margin +0.189) using AI keyword \"encrypted photo necklace\"."
+    "notes": "Sentimental photo jewelry. Classic dropship. Homepage — sparse-scrape fallback acceptable. RESOLVED 2026-08-26: same eval-tooling keyword bug as real-giftorder-wood-family (searched only the mistranslated single word \"encrypted\" instead of the AI's own aliexpressKeywords). Fixed the shared tooling; live re-capture merges both AI keywords (\"encrypted photo necklace\" + \"custom projection bracelet\") into 48 real candidates and finds a confident match: score 0.612, margin +0.212."
   },
   "notes": "Sentimental photo jewelry. Classic dropship. Homepage — sparse-scrape fallback acceptable.",
   "capturedAt": "2026-06-27T08:18:53.554Z"

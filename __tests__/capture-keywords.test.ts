@@ -59,9 +59,13 @@ describe("searchWithAiKeywordsFirst", () => {
 
   it("uses only the first two AI keywords, matching production's slice(0, 2)", async () => {
     const searchFn = vi.fn(async (_kw: string) => [] as AliExpressProductCandidate[]);
-    await searchWithAiKeywordsFirst("some title", ["kw1", "kw2", "kw3"], searchFn);
+    await searchWithAiKeywordsFirst(
+      "some title",
+      ["ai keyword one", "ai keyword two", "ai keyword three"],
+      searchFn,
+    );
     const calledWith = searchFn.mock.calls.map((c) => c[0]);
-    expect(calledWith).not.toContain("kw3");
+    expect(calledWith).not.toContain("ai keyword three");
   });
 
   it("skips AI keywords too short to be useful (<=3 chars)", async () => {
@@ -69,6 +73,41 @@ describe("searchWithAiKeywordsFirst", () => {
     const r = await searchWithAiKeywordsFirst("real title words", ["ab", ""], searchFn);
     expect(searchFn).not.toHaveBeenCalledWith("ab");
     expect(r.candidates.map((c) => c.productId)).toEqual(["T"]);
+  });
+
+  it("filters short keywords BEFORE slicing to two, matching find-supplier.ts's filter-then-slice order", async () => {
+    // Two junk (<=3 char) entries precede two genuinely usable ones. A
+    // slice-then-filter implementation would lock onto "ab"/"cd", skip both
+    // as too short, and never try either real keyword. Filter-then-slice
+    // (the fix) drops the junk first, then takes the first two survivors.
+    const searchFn = vi.fn(async (kw: string) =>
+      kw === "second real ai keyword" ? [candidate("T")] : [],
+    );
+    const r = await searchWithAiKeywordsFirst(
+      "fallback title",
+      ["ab", "cd", "first real ai keyword", "second real ai keyword"],
+      searchFn,
+    );
+    expect(searchFn).not.toHaveBeenCalledWith("ab");
+    expect(searchFn).not.toHaveBeenCalledWith("cd");
+    expect(searchFn).toHaveBeenCalledWith("first real ai keyword");
+    expect(searchFn).toHaveBeenCalledWith("second real ai keyword");
+    expect(r.candidates.map((c) => c.productId)).toEqual(["T"]);
+  });
+
+  it("propagates a real failure instead of silently treating it as zero results", async () => {
+    // Only the exact "result is empty" case should be swallowed and moved
+    // past — any other error (auth, network, a genuinely different query
+    // failure) must reach the caller's own try/catch, which distinguishes a
+    // real capture failure from a legitimate empty search. Swallowing
+    // everything would make an infrastructure failure indistinguishable
+    // from "searched, found nothing" in the written fixture.
+    const searchFn = vi.fn(async () => {
+      throw new Error("AliExpress Affiliate API credentials are not configured.");
+    });
+    await expect(
+      searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn),
+    ).rejects.toThrow("credentials are not configured");
   });
 
   it("falls back to title-derived keywords when no AI keywords are given", async () => {

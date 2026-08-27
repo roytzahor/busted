@@ -13,12 +13,17 @@
  * what a real user's scan would surface, which understates real
  * supplier-match accuracy in the eval corpus.
  *
- * Mirrors production's actual accumulation, not just its ordering: tries
- * both of the first two AI keywords AND the title arm unconditionally,
- * merging every non-empty result via the SAME mergeAndDeduplicateCandidates
- * find-supplier.ts uses — reused, not reimplemented, so the two can't drift
- * on dedup semantics the way lib/eval/derive-verdict.ts had to be extracted
- * to fix once already on this branch.
+ * Mirrors production's actual accumulation and filtering order, not just
+ * ordering:
+ *  - Tries both of the first two AI keywords AND the title arm
+ *    unconditionally, merging every non-empty result via the SAME
+ *    mergeAndDeduplicateCandidates find-supplier.ts uses — reused, not
+ *    reimplemented, so the two can't drift on dedup semantics the way
+ *    lib/eval/derive-verdict.ts had to be extracted to fix once already.
+ *  - Filters keywords by length BEFORE slicing to the first two, matching
+ *    find-supplier.ts's filter-then-slice order. Slicing first (as an
+ *    earlier version of this file did) can lock onto two short/junk AI
+ *    keywords and never reach a longer, useful one further down the array.
  *
  * Deliberately NOT a full port of find-supplier.ts's precedence — no
  * identity/vision keywords, category vocab, locale-aware price bands, or
@@ -38,6 +43,21 @@ export interface KeywordSearchOutcome {
   candidates: AliExpressProductCandidate[];
 }
 
+/**
+ * True only for the specific "this exact keyword matched nothing" case the
+ * AliExpress affiliate API reports as a thrown error rather than an empty
+ * array. Any OTHER error (auth, network, HTTP, a genuinely different query
+ * failure) must propagate to the caller — capture-fixture.ts and
+ * refresh-fixture.ts both have their own try/catch that logs a real failure
+ * distinctly from "searched, found nothing". Swallowing every error here
+ * unconditionally would make a real infrastructure failure indistinguishable
+ * from a legitimate zero-result search, silently writing an aliexpress.json
+ * that LOOKS like it was searched when the search actually errored out.
+ */
+function isEmptyResultError(err: unknown): boolean {
+  return err instanceof Error && /result is empty/i.test(err.message);
+}
+
 export async function searchWithAiKeywordsFirst(
   effectiveTitle: string,
   aiKeywords: string[] | undefined,
@@ -47,18 +67,21 @@ export async function searchWithAiKeywordsFirst(
   let candidates: AliExpressProductCandidate[] = [];
   const keywordsUsed: string[] = [];
 
-  for (const kw of (aiKeywords ?? []).slice(0, 2)) {
-    if (!kw || kw.trim().length <= 3) continue;
+  // Filter-then-slice, matching find-supplier.ts:353-357+453 — slicing
+  // first would lock onto two junk keywords and never try a good third one.
+  const usableAiKeywords = (aiKeywords ?? [])
+    .filter((kw) => kw.trim().length > 3)
+    .slice(0, 2);
+
+  for (const kw of usableAiKeywords) {
     try {
       const results = await searchFn(kw);
       if (results.length > 0) {
         candidates = mergeAndDeduplicateCandidates(candidates, results);
         keywordsUsed.push(kw);
       }
-    } catch {
-      // This exact keyword found nothing (the AliExpress affiliate API
-      // throws rather than returning [] on a zero-result query) — try the
-      // next arm rather than failing the whole capture.
+    } catch (err) {
+      if (!isEmptyResultError(err)) throw err;
     }
   }
 
@@ -69,8 +92,8 @@ export async function searchWithAiKeywordsFirst(
         candidates = mergeAndDeduplicateCandidates(candidates, results);
         keywordsUsed.push(titleKeywords);
       }
-    } catch {
-      // fall through — every arm found nothing
+    } catch (err) {
+      if (!isEmptyResultError(err)) throw err;
     }
   }
 
