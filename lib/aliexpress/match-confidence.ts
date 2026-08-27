@@ -129,6 +129,30 @@ function applyIdentityClamps(
   return score;
 }
 
+/**
+ * The single choke point every score-producing path in this file must go
+ * through. Before this existed, applyIdentityClamps() was called from three
+ * separate sites and scoreToQuality()'s score->quality mapping was
+ * duplicated inline (not called) in both fold functions — two independently
+ * re-synced invariants, which is exactly how the fold functions ended up
+ * omitting the identity clamp entirely for a while. A hypothetical fourth
+ * scorer added to this file gets both invariants for free just by calling
+ * this, instead of needing to remember two separate rules.
+ *
+ * Also fixes a latent (currently harmless, since every clamp ceiling here is
+ * already within [0,1]) inconsistency: the fold functions previously derived
+ * `quality` from the score BEFORE the final [0,1] clamp while `score` used
+ * the clamped value, so they could theoretically disagree. quality is now
+ * always derived from the exact score returned.
+ */
+function finalizeMatchConfidence(
+  rawScore: number,
+  base: Pick<MatchConfidence, "titleOverlap" | "priceVerdict">,
+): { score: number; quality: MatchQuality } {
+  const score = Math.max(0, Math.min(1, applyIdentityClamps(rawScore, base)));
+  return { score, quality: scoreToQuality(score) };
+}
+
 export function computeMatchConfidence(
   scrapedAttrs: ScrapedProductAttributes,
   storePriceUsd: number | null,
@@ -200,17 +224,12 @@ export function computeMatchConfidence(
   // Final weighted score
   // Title overlap is the strongest signal — getting the right *product*
   // matters more than markup ratio (which can still be valid at unusual values).
-  let finalScore =
-    titleOverlap * 0.55 + priceScore * 0.3 + trustScore * 0.15;
-  finalScore = Math.max(0, Math.min(1, finalScore));
-
-  // See applyIdentityClamps() for why this exists and why it must also be
-  // applied inside both fold functions below, not only here.
-  finalScore = applyIdentityClamps(finalScore, { titleOverlap, priceVerdict: verdict });
+  const rawScore = titleOverlap * 0.55 + priceScore * 0.3 + trustScore * 0.15;
+  const { score, quality } = finalizeMatchConfidence(rawScore, { titleOverlap, priceVerdict: verdict });
 
   return {
-    score: finalScore,
-    quality: scoreToQuality(finalScore),
+    score,
+    quality,
     titleOverlap,
     priceRatio: ratio,
     priceVerdict: verdict,
@@ -284,7 +303,7 @@ export function foldVariantIntoConfidence(
   if (variant.hardMismatch) {
     folded = Math.min(folded, VARIANT_HARD_MISMATCH_CEILING);
   }
-  folded = applyIdentityClamps(folded, base);
+  const { score, quality } = finalizeMatchConfidence(folded, base);
 
   const reasons = [...base.reasons];
   if (variant.reasons.length > 0) {
@@ -296,9 +315,8 @@ export function foldVariantIntoConfidence(
 
   return {
     ...base,
-    score: Math.max(0, Math.min(1, folded)),
-    quality:
-      folded >= 0.65 ? "high" : folded >= 0.4 ? "medium" : folded >= 0.2 ? "low" : "none",
+    score,
+    quality,
     reasons,
     variantScore: variant.score,
     variantHardMismatch: variant.hardMismatch,
@@ -347,7 +365,7 @@ export function foldImageMatchIntoConfidence(
   if (!image.sameFunction) {
     folded = Math.min(folded, 0.35);
   }
-  folded = applyIdentityClamps(folded, base);
+  const { score, quality } = finalizeMatchConfidence(folded, base);
 
   const reasons = [...base.reasons];
   reasons.push(`Image AI: ${image.reasoning} (score ${(image.score * 100).toFixed(0)}%)`);
@@ -357,9 +375,8 @@ export function foldImageMatchIntoConfidence(
 
   return {
     ...base,
-    score: Math.max(0, Math.min(1, folded)),
-    quality:
-      folded >= 0.65 ? "high" : folded >= 0.4 ? "medium" : folded >= 0.2 ? "low" : "none",
+    score,
+    quality,
     reasons,
     imageMatchScore: image.score,
     imageMatchSameFunction: image.sameFunction,
