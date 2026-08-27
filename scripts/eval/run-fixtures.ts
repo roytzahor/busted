@@ -15,8 +15,10 @@ import {
   computeMatchConfidence,
   MATCH_CONFIDENCE_MIN,
 } from "@/lib/aliexpress/match-confidence";
+import { computePresenceTier, type PresenceTier } from "@/lib/analyze/presence-tier";
 import { detectProductSource } from "@/lib/scraping/detect-source";
 import { buildSupplierMarketplacePrediction } from "@/lib/ai/supplier-marketplace-analysis";
+import { deriveVerdict } from "@/lib/eval/derive-verdict";
 import { loadAllFixtures } from "@/lib/eval/fixture-store";
 import { runStoreFingerprint } from "@/lib/tier0/store-fingerprint";
 import type {
@@ -72,28 +74,6 @@ function parseOptions(): CliOptions {
 }
 
 
-function deriveVerdict(
-  prediction: { isLikelyDropship: boolean; confidence: number; verdict?: string } | null,
-  attributes: { title: string; description: string; mainImageUrl: string | null },
-): ExpectedVerdict {
-  if (!prediction) return "insufficient_evidence";
-
-  // AI explicitly flagged a non-product page → honour that verdict directly.
-  // "not_a_product" maps directly; "collection_page" represents a legitimate
-  // store showing a catalog — map it to "legit" since there IS a real store
-  // behind it (the AI dropship determination must come from individual PDPs).
-  if (prediction.verdict === "not_a_product") return "not_a_product";
-  if (prediction.verdict === "collection_page") return "legit";
-
-  const attrCount =
-    Number(attributes.title.length > 0) +
-    Number(attributes.description.length > 50) +
-    Number(attributes.mainImageUrl !== null);
-
-  if (attrCount < 2) return "not_a_product";
-  if (prediction.confidence < 0.4) return "insufficient_evidence";
-  return prediction.isLikelyDropship ? "dropship" : "legit";
-}
 
 interface FixtureOutcome {
   id: string;
@@ -102,6 +82,13 @@ interface FixtureOutcome {
   predictedVerdict: ExpectedVerdict;
   confidence: number;
   verdictMatch: boolean;
+  /**
+   * What the extension would actually render. Computed with the PRODUCTION
+   * function, never re-derived here — re-deriving a tier is exactly what the
+   * presence-tier contract forbids, and a divergent copy would make this
+   * metric lie in the reassuring direction.
+   */
+  presenceTier: PresenceTier;
   expectedSupplier: { shouldFindMatch: boolean };
   supplierFound: boolean;
   supplierMatch: boolean;
@@ -291,6 +278,14 @@ async function evaluateFixture(
     predictedVerdict,
     confidence: prediction?.confidence ?? 0,
     verdictMatch,
+    presenceTier: computePresenceTier(
+      prediction
+        ? ({
+            ...prediction,
+            verdict: predictedVerdict,
+          } as unknown as Parameters<typeof computePresenceTier>[0])
+        : null,
+    ),
     expectedSupplier: { shouldFindMatch: fixture.truth.expectedSupplier.shouldFindMatch },
     supplierFound,
     supplierMatch,
@@ -514,6 +509,79 @@ function printFailures(outcomes: FixtureOutcome[]): void {
   }
 }
 
+/**
+ * Shown-verdict precision — the Phase 1 exit gate ("shown-verdict precision
+ * >= 95%", ROADMAP.md).
+ *
+ * This is NOT `verdict accuracy`. Verdict accuracy asks "did the model emit
+ * the exact expected enum", which counts failures the user never sees: a legit
+ * brand's collection page scored as `collection_page` instead of `legit` is an
+ * enum miss but renders `silent`, so nobody is accused of anything. The gate
+ * that actually protects trust asks the narrower question: of the pages where
+ * we DO speak (flame/amber), how often are we right?
+ *
+ * A false positive here is the worst failure mode in the product — a public
+ * accusation against a store that is not dropshipping. Recall is deliberately
+ * not gated: staying silent on a real dropshipper costs a missed scan, not
+ * trust.
+ */
+const SHOWN_VERDICT_PRECISION_BAR = 0.95;
+
+function printShownVerdictPrecision(outcomes: FixtureOutcome[]): number {
+  const shown = outcomes.filter((o) => o.presenceTier !== "silent");
+  const falsePositives = shown.filter((o) => o.expectedVerdict !== "dropship");
+  const truePositives = shown.length - falsePositives.length;
+  const precision = shown.length === 0 ? 1 : truePositives / shown.length;
+
+  // Real dropshippers we stayed quiet about. Tracked, never gated.
+  const missed = outcomes.filter(
+    (o) => o.presenceTier === "silent" && o.expectedVerdict === "dropship",
+  );
+
+  console.log("\n=== Shown-Verdict Precision (Phase 1 exit gate) ===\n");
+  console.log("(only flame/amber count as 'shown' — silent accuses nobody)");
+  console.log(
+    `${pad("tier", 10)}${pad("shown", 8)}${pad("correct", 10)}false accusations`,
+  );
+  for (const tier of ["flame", "amber"] as const) {
+    const rows = shown.filter((o) => o.presenceTier === tier);
+    const bad = rows.filter((o) => o.expectedVerdict !== "dropship").length;
+    console.log(
+      `${pad(tier, 10)}${pad(String(rows.length), 8)}${pad(String(rows.length - bad), 10)}${bad}`,
+    );
+  }
+
+  const pct = (precision * 100).toFixed(1);
+  const bar = (SHOWN_VERDICT_PRECISION_BAR * 100).toFixed(0);
+  console.log(
+    `\nshown-verdict precision: ${truePositives}/${shown.length} = ${pct}%  (gate: >= ${bar}%)`,
+  );
+  console.log(
+    precision >= SHOWN_VERDICT_PRECISION_BAR
+      ? "✓ meets the Phase 1 exit bar"
+      : `✗ BELOW the Phase 1 exit bar`,
+  );
+
+  if (falsePositives.length > 0) {
+    console.log("\nFALSE ACCUSATIONS (a non-dropship page we spoke up on):");
+    for (const o of falsePositives) {
+      console.log(
+        `  • ${o.id}  expected=${o.expectedVerdict} tier=${o.presenceTier} conf=${o.confidence.toFixed(2)}`,
+      );
+    }
+  }
+
+  console.log(
+    `\nstayed silent on ${missed.length} known dropshipper(s) — recall, not gated:`,
+  );
+  for (const o of missed.slice(0, 5)) {
+    console.log(`  • ${o.id}  conf=${o.confidence.toFixed(2)}`);
+  }
+  if (missed.length > 5) console.log(`  … and ${missed.length - 5} more`);
+
+  return precision;
+}
+
 function printSummary(outcomes: FixtureOutcome[]): void {
   const total = outcomes.length;
   const verdictCorrect = outcomes.filter((o) => o.verdictMatch).length;
@@ -575,6 +643,7 @@ async function main(): Promise<void> {
   const tier0FalseFires = printTier0Report(fixtures);
   const costBreached = printCostProjection(outcomes, opts.maxMeanCost, opts.enforceCost);
   printFailures(outcomes);
+  printShownVerdictPrecision(outcomes);
   printSummary(outcomes);
   printBlockedFixtures(outcomes);
 

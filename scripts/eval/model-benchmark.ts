@@ -16,6 +16,7 @@
  */
 import { loadAllFixtures } from "../../lib/eval/fixture-store";
 import { verifyDropshipLikelihood } from "../../lib/ai/dropship-verifier";
+import { deriveVerdict } from "../../lib/eval/derive-verdict";
 
 /**
  * USD per 1M tokens. Thinking tokens bill at the OUTPUT rate.
@@ -119,7 +120,11 @@ async function main() {
         r.outTok = u?.outputTokens ?? 0;
         r.thoughtTok = u?.thoughtTokens ?? 0;
         r.usd = costUsd(r.resolved, r.inTok, r.outTok, r.thoughtTok) ?? 0;
-        r.got = res.prediction?.verdict ?? "ERROR";
+        // Normalize through the SAME mapping run-fixtures uses. Comparing
+        // raw verdicts here reported collection_page as a "legit" regression.
+        r.got = res.prediction
+          ? deriveVerdict(res.prediction, f.scrape.attributes)
+          : "ERROR";
         r.confidence = res.prediction?.confidence ?? 0;
         r.error = res.error;
       } catch (e) {
