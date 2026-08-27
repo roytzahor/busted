@@ -175,6 +175,20 @@ export function computeMatchConfidence(
     finalScore = Math.min(finalScore, 0.1);
   }
 
+  if (titleOverlap === 0) {
+    // Hard clamp, same shape as the `absurd` one above: price + trust alone
+    // top out at 0.3*1 + 0.15*1 = 0.45, which clears MATCH_CONFIDENCE_MIN
+    // (0.4) on ZERO shared tokens — a 14k gold earrings PDP "matched" a
+    // sterling silver tennis bracelet at 0.45 (plausible 8x markup, high
+    // seller trust, nothing else in common) and a completely unrelated
+    // pressure-washer kit scored the identical 0.45 for the identical reason.
+    // Weak-but-nonzero overlap (seen as low as 0.04-0.12 on real, intentional
+    // matches in the fixture corpus) is a real signal and must NOT be
+    // touched — only an exact zero, where two titles share not one token
+    // even with productCategory + AI keywords folded in via extraMatchTerms.
+    finalScore = Math.min(finalScore, 0.1);
+  }
+
   return {
     score: finalScore,
     quality: scoreToQuality(finalScore),
