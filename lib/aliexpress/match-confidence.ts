@@ -93,6 +93,42 @@ function scoreToQuality(score: number): MatchQuality {
   return "none";
 }
 
+/**
+ * Shared identity floor for every scorer that can produce a MatchConfidence.
+ *
+ * Both fold functions below rebuild their score from base.titleOverlap and a
+ * freshly-recomputed priceScore rather than reusing base.score — necessarily,
+ * since folding a NEW signal (image/variant) into the weights means the old
+ * weighted sum isn't valid input. That rebuild silently DISCARDS any clamp
+ * applied only inside computeMatchConfidence: a candidate clamped to 0.1 for
+ * zero title overlap can still reach a folded score of 0.5 (variant fold:
+ * 0*0.5 + 1*0.25(price) + 1*0.25(matched SKU)) or 0.435 (image fold: even the
+ * MINIMUM admissible image.score of IMAGE_MATCH_MIN=0.5 with sameFunction=true
+ * gives 0.55*0.5 + 0*0.25 + 1*0.12 + 0.5*0.08 = 0.435) — both clear
+ * MATCH_CONFIDENCE_MIN (0.4) on a title with NOTHING in common with the
+ * source, reproducing the exact bug this floor exists to prevent, just
+ * routed through a different pair of signals. There is no candidate whose
+ * title shares zero tokens with the source that any amount of price, trust,
+ * variant, or image evidence should be allowed to rescue past this floor —
+ * apply this at every place a MatchConfidence.score is computed, not only
+ * the first one.
+ *
+ * Also carries the `absurd`-price floor for the same reason: neither fold
+ * function checks priceVerdict today, so a parse-error/wrong-magnitude price
+ * had the identical bypass even before the zero-overlap case existed.
+ */
+const IDENTITY_CLAMP_CEILING = 0.1;
+
+function applyIdentityClamps(
+  score: number,
+  base: Pick<MatchConfidence, "titleOverlap" | "priceVerdict">,
+): number {
+  if (base.priceVerdict === "absurd" || base.titleOverlap === 0) {
+    return Math.min(score, IDENTITY_CLAMP_CEILING);
+  }
+  return score;
+}
+
 export function computeMatchConfidence(
   scrapedAttrs: ScrapedProductAttributes,
   storePriceUsd: number | null,
@@ -168,26 +204,9 @@ export function computeMatchConfidence(
     titleOverlap * 0.55 + priceScore * 0.3 + trustScore * 0.15;
   finalScore = Math.max(0, Math.min(1, finalScore));
 
-  if (verdict === "absurd") {
-    // Hard clamp: a parse-error / wrong-product price must not be rescued by
-    // title overlap. Push below BEST_EFFORT_FLOOR so the candidate is suppressed
-    // rather than surfaced as a "closest match".
-    finalScore = Math.min(finalScore, 0.1);
-  }
-
-  if (titleOverlap === 0) {
-    // Hard clamp, same shape as the `absurd` one above: price + trust alone
-    // top out at 0.3*1 + 0.15*1 = 0.45, which clears MATCH_CONFIDENCE_MIN
-    // (0.4) on ZERO shared tokens — a 14k gold earrings PDP "matched" a
-    // sterling silver tennis bracelet at 0.45 (plausible 8x markup, high
-    // seller trust, nothing else in common) and a completely unrelated
-    // pressure-washer kit scored the identical 0.45 for the identical reason.
-    // Weak-but-nonzero overlap (seen as low as 0.04-0.12 on real, intentional
-    // matches in the fixture corpus) is a real signal and must NOT be
-    // touched — only an exact zero, where two titles share not one token
-    // even with productCategory + AI keywords folded in via extraMatchTerms.
-    finalScore = Math.min(finalScore, 0.1);
-  }
+  // See applyIdentityClamps() for why this exists and why it must also be
+  // applied inside both fold functions below, not only here.
+  finalScore = applyIdentityClamps(finalScore, { titleOverlap, priceVerdict: verdict });
 
   return {
     score: finalScore,
@@ -265,6 +284,7 @@ export function foldVariantIntoConfidence(
   if (variant.hardMismatch) {
     folded = Math.min(folded, VARIANT_HARD_MISMATCH_CEILING);
   }
+  folded = applyIdentityClamps(folded, base);
 
   const reasons = [...base.reasons];
   if (variant.reasons.length > 0) {
@@ -327,6 +347,7 @@ export function foldImageMatchIntoConfidence(
   if (!image.sameFunction) {
     folded = Math.min(folded, 0.35);
   }
+  folded = applyIdentityClamps(folded, base);
 
   const reasons = [...base.reasons];
   reasons.push(`Image AI: ${image.reasoning} (score ${(image.score * 100).toFixed(0)}%)`);
