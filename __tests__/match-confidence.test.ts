@@ -17,6 +17,7 @@ import {
   foldImageMatchIntoConfidence,
   foldVariantIntoConfidence,
   MATCH_CONFIDENCE_MIN,
+  BEST_EFFORT_FLOOR,
 } from "@/lib/aliexpress/match-confidence";
 import type { AliExpressProductCandidate } from "@/lib/aliexpress/types";
 import type { ScrapedProductAttributes } from "@/lib/scraping/types";
@@ -52,6 +53,19 @@ function candidate(overrides: Partial<AliExpressProductCandidate> = {}): AliExpr
 // possible, so a passing score can ONLY be explained by title/identity.
 const STORE_PRICE_USD = 155.41;
 
+// Source title tokenizes to exactly {14k, gold, earrings} — every one of
+// those appears here too, guaranteeing nonzero overlap so tests using this
+// can isolate a DIFFERENT clamp (sameFunction, absurd price) from the
+// zero-overlap identity clamp under test elsewhere in this file.
+function overlappingCandidate(
+  overrides: Partial<AliExpressProductCandidate> = {},
+): AliExpressProductCandidate {
+  return candidate({
+    title: "14k Gold Earrings Hoop Style For Women",
+    ...overrides,
+  });
+}
+
 describe("computeMatchConfidence — zero title overlap", () => {
   it("clamps a zero-overlap candidate below MATCH_CONFIDENCE_MIN even with a plausible price and high seller trust", () => {
     const result = computeMatchConfidence(attrs(), STORE_PRICE_USD, candidate());
@@ -73,13 +87,42 @@ describe("computeMatchConfidence — zero title overlap", () => {
 
   it("does NOT clamp a real, low-but-nonzero overlap — only exact zero is touched", () => {
     // "gold" is the only shared token; a real corpus fixture sits at this
-    // kind of overlap (0.04-0.12) and must keep passing.
+    // kind of overlap (0.04-0.12) and must keep passing. Asserting on score
+    // and quality, not just titleOverlap>0: a regression that widened the
+    // clamp condition from `=== 0` to e.g. `< 0.15` would still leave
+    // titleOverlap positive here while wrongly suppressing the score — this
+    // must fail if that happens.
     const weakButReal = candidate({
       title: "1 Set Sunflower Necklace Gold Plated Gift Box For Girlfriend",
       priceUsd: 12.0,
     });
     const result = computeMatchConfidence(attrs(), STORE_PRICE_USD, weakButReal);
     expect(result.titleOverlap).toBeGreaterThan(0);
+    expect(result.titleOverlap).toBeLessThan(0.15);
+    expect(result.score).toBeGreaterThanOrEqual(MATCH_CONFIDENCE_MIN);
+    expect(result.quality).not.toBe("none");
+  });
+
+  it("rejects a candidate whose price is a parse error, even with strong title overlap", () => {
+    // Isolates the OTHER arm of applyIdentityClamps: priceVerdict==="absurd"
+    // must clamp regardless of title overlap, exactly as it must regardless
+    // of price when titleOverlap===0. Neither arm may depend on the other.
+    const absurdPrice = overlappingCandidate({ priceUsd: 999_999 });
+    const result = computeMatchConfidence(attrs(), STORE_PRICE_USD, absurdPrice);
+    expect(result.titleOverlap).toBeGreaterThan(0.3);
+    expect(result.priceVerdict).toBe("absurd");
+    expect(result.score).toBeLessThan(MATCH_CONFIDENCE_MIN);
+  });
+
+  it("keeps the identity clamp below BEST_EFFORT_FLOOR, not just MATCH_CONFIDENCE_MIN", () => {
+    // find-supplier.ts hard-rejects below BEST_EFFORT_FLOOR (0.2) and only
+    // downgrades to bestEffortOnly between FLOOR and MATCH_CONFIDENCE_MIN
+    // (0.4). The identity clamp must clear the HARDER bar — if it only beat
+    // MATCH_CONFIDENCE_MIN, a zero-overlap candidate would still surface as
+    // a "closest match" instead of being suppressed outright.
+    const result = computeMatchConfidence(attrs(), STORE_PRICE_USD, candidate());
+    expect(result.titleOverlap).toBe(0);
+    expect(result.score).toBeLessThan(BEST_EFFORT_FLOOR);
   });
 });
 
@@ -117,7 +160,12 @@ describe("foldImageMatchIntoConfidence — zero title overlap must survive the f
   });
 
   it("still clamps hard when image AI flags a different function, independent of the title clamp", () => {
-    const base = computeMatchConfidence(attrs(), STORE_PRICE_USD, candidate());
+    // Uses overlappingCandidate (nonzero titleOverlap) so the identity clamp
+    // is NOT what drives this down — a prior version of this test used the
+    // zero-overlap `candidate()`, which meant deleting the sameFunction
+    // clamp entirely would still pass (0.1 from the identity clamp alone).
+    const base = computeMatchConfidence(attrs(), STORE_PRICE_USD, overlappingCandidate());
+    expect(base.titleOverlap).toBeGreaterThan(0.3);
     const folded = foldImageMatchIntoConfidence(base, {
       score: 0.9,
       sameFunction: false,
