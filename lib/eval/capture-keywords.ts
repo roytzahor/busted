@@ -13,17 +13,27 @@
  * what a real user's scan would surface, which understates real
  * supplier-match accuracy in the eval corpus.
  *
- * Mirrors production's actual accumulation and filtering order, not just
- * ordering:
+ * Mirrors production's actual accumulation, filtering order, AND per-attempt
+ * error philosophy — not just ordering:
  *  - Tries both of the first two AI keywords AND the title arm
  *    unconditionally, merging every non-empty result via the SAME
- *    mergeAndDeduplicateCandidates find-supplier.ts uses — reused, not
- *    reimplemented, so the two can't drift on dedup semantics the way
- *    lib/eval/derive-verdict.ts had to be extracted to fix once already.
+ *    mergeAndDeduplicateCandidates find-supplier.ts uses.
  *  - Filters keywords by length BEFORE slicing to the first two, matching
- *    find-supplier.ts's filter-then-slice order. Slicing first (as an
- *    earlier version of this file did) can lock onto two short/junk AI
- *    keywords and never reach a longer, useful one further down the array.
+ *    find-supplier.ts's filter-then-slice order.
+ *  - Swallows a per-arm failure and moves to the next arm, exactly like
+ *    find-supplier.ts's searchCandidates() (`catch { return []; }` /
+ *    `catch { // swallow and try next fallback }`) — NOT by pattern-matching
+ *    a specific error message. An earlier version of this file only
+ *    swallowed errors whose text matched the AliExpress affiliate API's
+ *    zero-result wording, which never matches searchAliExpressViaScrape's
+ *    actual error ("No AliExpress products found for..."), so a zero-result
+ *    keyword on the scrape-fallback provider aborted every remaining arm —
+ *    the opposite of what this file exists to fix.
+ *  - The ONE error that must NOT be swallowed: ALIEXPRESS_NOT_CONFIGURED.
+ *    That's a setup problem (missing credentials), not a per-keyword result,
+ *    and swallowing it would silently write every subsequent fixture with
+ *    candidates: [] — indistinguishable from a real empty search — instead
+ *    of failing loudly the first time someone runs the tool without creds.
  *
  * Deliberately NOT a full port of find-supplier.ts's precedence — no
  * identity/vision keywords, category vocab, locale-aware price bands, or
@@ -33,6 +43,7 @@
  */
 import { extractSearchKeywords } from "@/lib/aliexpress/keywords";
 import { mergeAndDeduplicateCandidates } from "@/lib/aliexpress/find-supplier";
+import { AliExpressSearchError } from "@/lib/aliexpress/types";
 import type { AliExpressProductCandidate } from "@/lib/aliexpress/types";
 
 export interface KeywordSearchOutcome {
@@ -43,19 +54,8 @@ export interface KeywordSearchOutcome {
   candidates: AliExpressProductCandidate[];
 }
 
-/**
- * True only for the specific "this exact keyword matched nothing" case the
- * AliExpress affiliate API reports as a thrown error rather than an empty
- * array. Any OTHER error (auth, network, HTTP, a genuinely different query
- * failure) must propagate to the caller — capture-fixture.ts and
- * refresh-fixture.ts both have their own try/catch that logs a real failure
- * distinctly from "searched, found nothing". Swallowing every error here
- * unconditionally would make a real infrastructure failure indistinguishable
- * from a legitimate zero-result search, silently writing an aliexpress.json
- * that LOOKS like it was searched when the search actually errored out.
- */
-function isEmptyResultError(err: unknown): boolean {
-  return err instanceof Error && /result is empty/i.test(err.message);
+function isMisconfiguration(err: unknown): boolean {
+  return err instanceof AliExpressSearchError && err.code === "ALIEXPRESS_NOT_CONFIGURED";
 }
 
 export async function searchWithAiKeywordsFirst(
@@ -81,7 +81,9 @@ export async function searchWithAiKeywordsFirst(
         keywordsUsed.push(kw);
       }
     } catch (err) {
-      if (!isEmptyResultError(err)) throw err;
+      if (isMisconfiguration(err)) throw err;
+      // Any other failure — including a legitimate zero-result search on
+      // EITHER provider — means only "this arm found nothing." Move on.
     }
   }
 
@@ -93,7 +95,7 @@ export async function searchWithAiKeywordsFirst(
         keywordsUsed.push(titleKeywords);
       }
     } catch (err) {
-      if (!isEmptyResultError(err)) throw err;
+      if (isMisconfiguration(err)) throw err;
     }
   }
 
