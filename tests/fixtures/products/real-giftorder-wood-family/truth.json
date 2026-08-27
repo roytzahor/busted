@@ -4,8 +4,7 @@
   "expectedVerdict": "dropship",
   "expectedSupplier": {
     "shouldFindMatch": true,
-    "blockedOnFixtureData": true,
-    "notes": "Wood family-of-lions gift. Classic dropship. Hebrew URL — translation pre-pass should fire. Captured aliexpress.json was searched with the raw untranslated Hebrew title (candidates are unrelated products); cached ai-response.json's aliexpressKeywords are correct English terms. Needs a live re-capture against current search pipeline, blocked on AliExpress API credentials."
+    "notes": "Wood family-of-lions gift. Classic dropship. Hebrew URL — translation pre-pass fires correctly. RESOLVED 2026-08-26: the eval capture tooling (scripts/eval/capture-fixture.ts, scripts/eval/refresh-fixture.ts) only ever searched AliExpress with extractSearchKeywords(title) and never the AI's own aliexpressKeywords, unlike production (find-supplier.ts), which tries AI keywords first. Fixed both scripts to share lib/eval/capture-keywords.ts, mirroring production's precedence. Live re-capture with the fixed tooling now finds a confident match (score 0.558, margin +0.158 above MATCH_CONFIDENCE_MIN) using AI keyword \"lion family puzzle personalized family gift\"."
   },
   "notes": "Wood family-of-lions gift. Classic dropship. Hebrew URL — translation pre-pass should fire.",
   "capturedAt": "2026-06-27T08:19:14.712Z"

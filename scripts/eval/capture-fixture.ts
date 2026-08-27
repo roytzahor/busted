@@ -22,7 +22,7 @@ import {
   searchAliExpressProducts,
 } from "@/lib/aliexpress/api-client";
 import { searchAliExpressViaScrape } from "@/lib/aliexpress/search-scrape-fallback";
-import { extractSearchKeywords } from "@/lib/aliexpress/keywords";
+import { searchWithAiKeywordsFirst } from "@/lib/eval/capture-keywords";
 import { saveFixture } from "@/lib/eval/fixture-store";
 import type {
   FixtureAiResponse,
@@ -119,14 +119,15 @@ async function main(): Promise<void> {
   try {
     const effectiveTitle =
       scrapeFixture.attributes.translatedTitle ?? scrapeFixture.attributes.title;
-    const keywords = extractSearchKeywords(effectiveTitle);
     const provider: "aliexpress_api" | "firecrawl_scrape" = isAliExpressApiConfigured()
       ? "aliexpress_api"
       : "firecrawl_scrape";
-    const candidates =
-      provider === "aliexpress_api"
-        ? await searchAliExpressProducts(keywords)
-        : await searchAliExpressViaScrape(keywords);
+    const searchFn = provider === "aliexpress_api" ? searchAliExpressProducts : searchAliExpressViaScrape;
+    const { keywords, candidates } = await searchWithAiKeywordsFirst(
+      effectiveTitle,
+      aiFixture?.prediction?.aliexpressKeywords,
+      searchFn,
+    );
     aliFixture = { keywords, provider, candidates };
     console.log(`[capture]   ✓ ${candidates.length} candidates via ${provider}`);
   } catch (err) {

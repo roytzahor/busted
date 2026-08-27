@@ -5,7 +5,7 @@
   "expectedSupplier": {
     "shouldFindMatch": true,
     "blockedOnFixtureData": true,
-    "notes": "Charm-bracelet dropship site. Homepage — scrape may be sparse and yield not_a_product/insufficient_evidence; acceptable secondary outcomes. Captured aliexpress.json was searched with the truncated keyword 'tot' (candidates are unrelated products); cached ai-response.json's aliexpressKeywords are correct English terms. Needs a live re-capture, blocked on AliExpress API credentials."
+    "notes": "Charm-bracelet dropship site. Homepage — scrape may be sparse and yield not_a_product/insufficient_evidence; acceptable secondary outcomes. UPDATED 2026-08-26: the old truncated-keyword ('tot') staleness is fixed (eval capture/refresh tooling now tries the AI's own aliexpressKeywords first, see lib/eval/capture-keywords.ts). Live re-capture with the correct keyword \"totwoo smart jewelry\" now returns real candidates, but the closest is a generic glow-in-the-dark couple bracelet, not the actual Bluetooth-connected smart jewelry totwoo sells — score 0.378, just under MATCH_CONFIDENCE_MIN (0.4, margin -0.022). This may be the correct behavior (no true AliExpress equivalent exists for a real connected-jewelry product) rather than a bug. Left blockedOnFixtureData so a future engineer investigates rather than assuming it's still the old staleness — it is not."
   },
   "notes": "Charm-bracelet dropship site. Homepage — scrape may be sparse and yield not_a_product/insufficient_evidence; acceptable secondary outcomes.",
   "capturedAt": "2026-06-27T08:17:55.636Z"
