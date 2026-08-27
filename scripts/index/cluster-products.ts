@@ -27,7 +27,7 @@
  */
 
 import { prisma } from "@/lib/prisma";
-import { EMBEDDING_MODEL } from "@/lib/index/embeddings";
+import { embeddingModel } from "@/lib/ai/models";
 import { compareProductImagesWithAI } from "@/lib/ai/image-match";
 
 /**
@@ -94,7 +94,7 @@ async function loadRows(): Promise<Row[]> {
     SELECT "id", "scanId", "network", "title", "sourceUrl", "imageUrl",
            "canonicalId", "embedding"::text AS "embeddingText"
     FROM "ProductEmbedding"
-    WHERE "embedding" IS NOT NULL AND "model" = ${EMBEDDING_MODEL}
+    WHERE "embedding" IS NOT NULL AND "model" = ${embeddingModel()}
     ORDER BY "createdAt" ASC, "id" ASC
   `;
   return raw.map(({ embeddingText, ...rest }) => ({
@@ -179,7 +179,7 @@ async function main(): Promise<void> {
   }
 
   const rows = await loadRows();
-  console.log(`Loaded ${rows.length} embedding row(s) [model=${EMBEDDING_MODEL}].`);
+  console.log(`Loaded ${rows.length} embedding row(s) [model=${embeddingModel()}].`);
   if (rows.length > 2000) {
     console.error("Corpus too large for the O(n²) pass — switch this script to ANN batching first.");
     process.exit(1);

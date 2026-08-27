@@ -23,12 +23,21 @@ export const DISCLAIMER_SHORT =
  * a more measured tone — meant to be read once, not glanced at.
  */
 export const DISCLAIMER_LONG =
-  "Busted is a price-comparison and education tool. Dropship detection and AliExpress matches are AI-generated estimates — verify product identity, seller reputation, and shipping before purchasing. Not affiliated with the stores or marketplaces we link to.";
+  "Busted is a price-comparison and education tool. Dropship detection and AliExpress matches are AI-generated estimates — verify product identity, seller reputation, and shipping before purchasing. We earn a commission when you buy through a supplier link. It does not change the verdict: the verdict is computed before the affiliate link is fetched.";
+
+/**
+ * One-line affiliate disclosure rendered inside the CTA container, directly
+ * above the supplier button — never below it. The conflict has to be visible
+ * at the moment of the click, not discoverable afterwards in a footer.
+ */
+export const AFFILIATE_DISCLOSURE =
+  "We earn a commission on this link. It never affects the verdict.";
 
 /**
  * "Why this exists" FAQ shown below the how-it-works grid in idle state.
- * Three items max — keep it skimmable; this is for the curious-but-not-sold
- * visitor.
+ * Keep it skimmable; this is for the curious-but-not-sold visitor. The
+ * money question is non-negotiable: a trust product that hides how it earns
+ * loses the argument the moment a sceptic hovers the affiliate link.
  */
 export interface FaqItem {
   question: string;
@@ -45,6 +54,11 @@ export const FAQ_ITEMS: FaqItem[] = [
     question: "Is comparing prices like this legal?",
     answer:
       "Yes. Comparing publicly listed prices and pointing users to a different retailer is standard consumer education — the same thing Honey, Capital One Shopping, and Google Shopping all do. We don’t bypass paywalls, scrape private data, or impersonate anyone.",
+  },
+  {
+    question: "How does Busted make money?",
+    answer:
+      "Affiliate commission. When you buy through a supplier link we earn a small cut from the marketplace — you pay the same price either way. The verdict is computed before any affiliate link is fetched, so what we earn can never change what we tell you. We don’t take money from merchants, and no store can pay to change or remove its verdict.",
   },
   {
     question: "Why AliExpress specifically?",

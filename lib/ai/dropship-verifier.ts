@@ -2,6 +2,8 @@ import { getAIClient } from "@/lib/ai/client";
 import type { ScrapedProductAttributes } from "@/lib/scraping/types";
 import type { ProductIdentity } from "@/lib/services/types";
 
+import { flashModel } from "./models";
+
 export type DropshipVerdict =
   | "dropship"
   | "legit"
@@ -41,6 +43,10 @@ export interface DropshipVerificationResult {
   prediction: DropshipPrediction | null;
   provider: string;
   model: string;
+  /** Model the provider actually served — differs from `model` when a
+   *  `-latest` alias is configured. Benchmarks must attribute results to this. */
+  resolvedModel?: string;
+  usage?: { inputTokens: number; outputTokens: number; thoughtTokens: number };
   rawResponse: string;
   error: string | null;
 }
@@ -505,7 +511,7 @@ export async function verifyDropshipLikelihood(params: {
    *  text-only behavior, so existing callers are unaffected. */
   identity?: ProductIdentity | null;
 }): Promise<DropshipVerificationResult> {
-  let clientModel = process.env.GOOGLE_AI_MODEL ?? "gemini-3.5-flash";
+  let clientModel = flashModel();
   const attributeCount = countAttributeSignals(params.attributes, params.storePriceUsd);
 
   try {
@@ -536,6 +542,8 @@ export async function verifyDropshipLikelihood(params: {
       prediction,
       provider: completion.provider,
       model: completion.model,
+      resolvedModel: completion.resolvedModel,
+      usage: completion.usage,
       rawResponse: completion.content,
       error: prediction ? null : "AI response could not be parsed as structured JSON.",
     };

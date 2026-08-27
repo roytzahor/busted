@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useMoney } from "@/components/currency-provider";
 import { ProductImage } from "@/components/product-image";
+import { SilentBoundary } from "@/components/ui/silent-boundary";
 import { VerdictSheet } from "@/components/verdict-sheet";
 import type { DropshipAnalysisResult } from "@/lib/analyze/map-response";
 import {
@@ -64,10 +65,15 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
             tier={presenceTier}
             storeName={storeProduct.storeName}
           />
-          <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
-            {confidencePct}% confidence ·{" "}
-            {cache === "HIT" ? "cached scrape + AI" : "fresh analysis"}
-          </p>
+          {/* The confidence figure is a second opinion beside a verdict the
+              tier already states — on silent it re-opens a question the sheet
+              just closed ("we couldn't tell" · "95% confidence"). */}
+          <SilentBoundary tier={presenceTier}>
+            <p className="font-mono text-[10px] tracking-[0.14em] text-muted-foreground uppercase">
+              {confidencePct}% confidence ·{" "}
+              {cache === "HIT" ? "cached scrape + AI" : "fresh analysis"}
+            </p>
+          </SilentBoundary>
         </div>
       )}
 
@@ -100,7 +106,20 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
           </CardContent>
         </Card>
       ) : (
-        <>
+        <SilentBoundary
+          tier={presenceTier}
+          quiet={
+            <p dir="auto" className="text-sm text-muted-foreground">
+              {storeProduct.title}
+              {storeProduct.priceUsd > 0 ? (
+                <>
+                  {" · "}
+                  <bdi dir="ltr">{formatMoney(storeProduct.priceUsd)}</bdi>
+                </>
+              ) : null}
+            </p>
+          }
+        >
           <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
             <Card>
               <CardHeader className="pb-3">
@@ -216,7 +235,7 @@ export function DropshipAnalysisResults({ result }: DropshipAnalysisResultsProps
               </div>
             </CardContent>
           </Card>
-        </>
+        </SilentBoundary>
       )}
     </section>
   );

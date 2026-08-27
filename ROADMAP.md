@@ -84,9 +84,12 @@ are tightened with data, not vibes.
    passively on every page load. Domain-level fallback added: when there's
    no usable per-URL scan (miss, unparseable, or past the 14-day cache TTL),
    falls back to the store's aggregate tier (`computeDomainTier()` in
-   `lib/store/report.ts`) — only a "flagged" store (≥2 decisive scans, ≥60%
+   `lib/store/report.ts`) — only a "flagged" store (≥4 decisive scans, ≥60%
    dropship) produces a signal, capped at `amber` (never `flame`, since it's
    inferred from other products on the store, not a verdict on this one).
+   A `dropship` verdict only counts toward "decisive" if its own
+   `presenceTier` is not `silent` — we never aggregate a verdict we would
+   have kept quiet about into a public accusation.
 6. ✅ Precision gate in CI: `.github/workflows/eval.yml` runs lint + tsc +
    `eval --skip-ai --enforce-cost` on every PR (fails on any fixture failure
    or Tier-0 false fire). Gate now excludes fixtures whose truth.json marks
@@ -135,8 +138,9 @@ end-to-end against local pipeline, first shareable card.
    added the missing bridge — `npm run eval:harvest` turns right/wrong
    feedback into draft fixture candidates (hand-verified before promotion).
 5. ✅ Programmatic SEO store pages: `/store/[domain]` ("Is {domain} legit?"),
-   hourly ISR, store-level tier requires ≥2 decisive scans (smoke-alarm rule
-   applies at store level), wired into sitemap.xml per scanned domain.
+   hourly ISR, store-level tier requires ≥4 decisive scans and counts only
+   non-`silent` dropship verdicts (smoke-alarm rule genuinely applies at store
+   level now), wired into sitemap.xml per scanned domain.
 6. ✅ Verified Product Map — the "Gold Path" (`lib/cache/verified-map.ts` +
    `VerifiedProductMap` table): a confirmed retail→supplier mapping bypasses
    the entire scrape + AI + supplier-search pipeline (instant HIT, $0).

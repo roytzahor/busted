@@ -12,6 +12,8 @@ import { prisma } from "@/lib/prisma";
 import { scrapeWithCrawlbase } from "@/lib/scraping/crawlbase";
 import { scrapeWithFirecrawl } from "@/lib/scraping/firecrawl";
 
+import { flashModel } from "../ai/models";
+
 function elapsed(start: number): number {
   return Math.round(performance.now() - start);
 }
@@ -27,7 +29,7 @@ export function buildServiceSnapshots(): Record<
   const firecrawlConfigured = Boolean(process.env.FIRECRAWL_API_KEY?.trim());
   const playwrightEnabled = process.env.PLAYWRIGHT_FALLBACK_ENABLED === "true";
   const aiProvider = process.env.AI_PROVIDER ?? "google";
-  const aiModel = process.env.GOOGLE_AI_MODEL ?? "gemini-3.5-flash";
+  const aiModel = flashModel();
   const aiConfigured = Boolean(
     process.env.GOOGLE_AI_API_KEY?.trim() ||
       process.env.GEMINI_API_KEY?.trim() ||

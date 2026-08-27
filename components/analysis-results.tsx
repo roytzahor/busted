@@ -9,6 +9,7 @@ import { estimateLandedCost } from "@/lib/pricing/landed-cost";
 import { MatchFeedback } from "@/components/match-feedback";
 import { ProductImage } from "@/components/product-image";
 import { ShareButton } from "@/components/share-button";
+import { AFFILIATE_DISCLOSURE } from "@/lib/brand";
 import { trackAffiliateClick } from "@/lib/clicks";
 import type { ProductComparisonResult } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -40,7 +41,9 @@ function formatOrders(count: number): string {
 export function AnalysisResults({ result }: AnalysisResultsProps) {
   const formatMoney = useMoney();
   const { storeProduct, supplierProduct, savingsUsd, savingsPercent, cache } = result;
-  const matchQuality = result.matchQuality ?? "high";
+  // Missing data must degrade, never promote: defaulting to "high" would
+  // suppress the uncertain-match warning on a response the server never scored.
+  const matchQuality = result.matchQuality ?? "low";
   const isBestEffort = result.bestEffortOnly === true;
   // Which marketplace the match came from — labels adapt so an eBay/Amazon
   // fallback match never renders as "AliExpress".
@@ -50,7 +53,11 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
       : result.supplierNetwork === "amazon"
         ? "Amazon"
         : "AliExpress";
-  const isUncertainMatch = isBestEffort || matchQuality === "medium" || matchQuality === "low";
+  const isUncertainMatch =
+    isBestEffort ||
+    result.matchQuality == null ||
+    matchQuality === "medium" ||
+    matchQuality === "low";
   const isVerifiedMatch = result.verified === true;
   const verifiedByUser = result.verifiedSource === "user_feedback";
   const matchPct =
@@ -307,7 +314,13 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
               {supplierProduct.sellerRating}★ seller rating.
             </p>
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+            {/* Above the button, never below it: the conflict has to be
+                visible at the moment of the click. */}
+            <p className="text-xs text-muted-foreground sm:text-right">
+              {AFFILIATE_DISCLOSURE}
+            </p>
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <ShareButton
               scanId={result.scanId}
               productUrl={result.originalUrl}
@@ -326,7 +339,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
               <a
                 href={supplierProduct.affiliateUrl}
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="noopener noreferrer sponsored"
                 onClick={() =>
                   trackAffiliateClick({
                     scanId: result.scanId,
@@ -344,6 +357,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                 <ExternalLink className="ml-1.5 size-4" aria-hidden="true" />
               </a>
             </Button>
+            </div>
           </div>
         </div>
 
@@ -408,7 +422,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
             <a
               href={supplierProduct.affiliateUrl}
               target="_blank"
-              rel="noopener noreferrer"
+              rel="noopener noreferrer sponsored"
               onClick={() =>
                 trackAffiliateClick({
                   scanId: result.scanId,

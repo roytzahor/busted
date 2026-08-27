@@ -26,7 +26,14 @@
     "eval:retrieval": "tsx --env-file=.env scripts/eval/retrieval-eval.ts",
     "eval:match-headroom": "tsx scripts/eval/match-headroom.ts",
     "index:ingest": "tsx --env-file=.env scripts/index/ingest-embeddings.ts",
-    "index:cluster": "tsx --env-file=.env scripts/index/cluster-products.ts"
+    "index:cluster": "tsx --env-file=.env scripts/index/cluster-products.ts",
+    "graph:graft": "graft build .",
+    "graph:graft:deep": "bash scripts/graft-deep.sh",
+    "graph:graft:check": "graft check .",
+    "graph:cbm": "codebase-memory-mcp cli index_repository --repo_path .",
+    "graph:all": "npm run graph:graft && npm run graph:cbm && graphify update .",
+    "eval:model": "tsx --env-file=.env scripts/eval/model-benchmark.ts",
+    "perf:budget": "tsx scripts/ci/check-bundle-budget.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

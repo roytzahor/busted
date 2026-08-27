@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { BRAND_NAME } from "@/lib/brand";
 import {
   loadStoreReport,
+  MIN_DECISIVE_SCANS,
   normalizeDomainParam,
   type StoreReport,
   type StoreTier,
@@ -46,7 +47,7 @@ const TIER_COPY: Record<
   insufficient: {
     label: "Not enough data yet",
     blurb: (r) =>
-      `Only ${r.totalScans} scan${r.totalScans === 1 ? "" : "s"} on record — too few for a store-level verdict. Scan a product below to add evidence.`,
+      `Only ${r.decisiveCount} decisive scan${r.decisiveCount === 1 ? "" : "s"} on record — too few for a store-level verdict. Scan a product below to add evidence.`,
   },
 };
 
@@ -68,10 +69,29 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+/**
+ * Verdict enums are an internal contract, not consumer copy. Shipping
+ * `insufficient_evidence` to a public page reads as a system leaking, and on
+ * a page that names a real business it reads as a machine passing judgement.
+ */
+const VERDICT_LABEL: Record<string, string> = {
+  dropship: "Dropship signals",
+  legit: "Looks legit",
+  collection_page: "Category page",
+  insufficient_evidence: "Not enough evidence",
+  not_a_product: "Not a product page",
+};
+
+function verdictLabel(verdict: string | null): string {
+  return verdict ? (VERDICT_LABEL[verdict] ?? "No verdict") : "No verdict";
+}
+
 function TierBanner({ report }: { report: StoreReport }) {
   const copy = TIER_COPY[report.tier];
   const styles: Record<StoreTier, string> = {
-    flagged: "border-destructive/30 bg-destructive/10 text-destructive",
+    // --primary (fire), not --destructive: red is the error colour here and
+    // everywhere else in the app. A flagged store is a finding, not a fault.
+    flagged: "border-primary/30 bg-primary/10 text-primary",
     mixed: "border-amber-400/30 bg-amber-400/10 text-amber-300",
     clean: "border-success/30 bg-success/10 text-success",
     insufficient: "border-white/10 bg-white/[0.04] text-muted-foreground",
@@ -136,7 +156,17 @@ export default async function StoreReportPage({ params }: PageProps) {
         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Store report
         </p>
-        <h1 className="mt-2 bg-gradient-to-br from-primary via-orange-400 to-amber-300 bg-clip-text text-4xl font-black tracking-tight text-transparent sm:text-5xl">
+        {/* The fire gradient is the flame register. Rendering it above "Not
+            enough data yet" makes the headline louder than the finding — the
+            accusation colour is earned by the tier, not by the page. */}
+        <h1
+          className={cn(
+            "mt-2 text-4xl font-black tracking-tight sm:text-5xl",
+            report.tier === "flagged"
+              ? "bg-gradient-to-br from-primary via-orange-400 to-amber-300 bg-clip-text text-transparent"
+              : "text-foreground",
+          )}
+        >
           Is {report.domain} legit?
         </h1>
 
@@ -153,6 +183,18 @@ export default async function StoreReportPage({ params }: PageProps) {
             value={report.avgSavingsPercent !== null ? `${report.avgSavingsPercent}%` : "—"}
           />
         </div>
+
+        {/* Above the evidence, at readable size. This page names a real
+            business on an indexed URL; the methodology is load-bearing, and a
+            disclaimer at 60% opacity below the fold is not a disclosure. */}
+        <p className="mt-8 max-w-prose text-sm leading-relaxed text-muted-foreground">
+          How this is produced: {BRAND_NAME} runs automated scans on individual
+          product pages and compares them against supplier listings. Verdicts
+          are AI-assisted estimates, not accusations or findings of
+          wrongdoing, and low-confidence results are excluded from the
+          store-level verdict entirely. A store-level verdict needs at least{" "}
+          {MIN_DECISIVE_SCANS} confident scans. Always verify before you buy.
+        </p>
 
         <h2 className="mt-10 text-sm font-bold uppercase tracking-widest text-muted-foreground">
           Scanned products
@@ -177,13 +219,13 @@ export default async function StoreReportPage({ params }: PageProps) {
                     className={cn(
                       "rounded-md border px-2 py-0.5 font-medium",
                       scan.verdict === "dropship"
-                        ? "border-destructive/30 bg-destructive/10 text-destructive"
+                        ? "border-primary/30 bg-primary/10 text-primary"
                         : scan.verdict === "legit" || scan.verdict === "collection_page"
                           ? "border-success/30 bg-success/10 text-success"
                           : "border-white/10 bg-white/5 text-muted-foreground",
                     )}
                   >
-                    {scan.verdict ?? "unknown"}
+                    {verdictLabel(scan.verdict)}
                   </span>
                 </span>
               </Link>
@@ -191,11 +233,12 @@ export default async function StoreReportPage({ params }: PageProps) {
           ))}
         </ul>
 
+        {/* Provenance only — the methodology and its limits are stated above
+            the evidence, not after it. */}
         <p className="mt-10 text-center text-xs text-muted-foreground/60">
           Automated report from {report.totalScans} {BRAND_NAME} scan
           {report.totalScans === 1 ? "" : "s"} · last scan{" "}
-          {new Date(report.lastScannedAt).toLocaleDateString()} · verdicts are
-          AI-assisted estimates, not accusations — always verify before you buy.
+          {new Date(report.lastScannedAt).toLocaleDateString()}
         </p>
       </div>
     </div>

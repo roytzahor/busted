@@ -45,3 +45,14 @@ jobs:
 
       - name: Fixture replay (cached AI, cost-enforced)
         run: npm run eval -- --skip-ai --enforce-cost
+
+      # Frontend performance gate. The replay above guards AI cost; nothing
+      # guarded shipped page weight, so it could drift up one PR at a time with
+      # no signal. Bundle bytes are the deterministic input behind the LCP/INP
+      # budgets in DESIGN.md §9 — a real browser measurement needs a browser,
+      # but this catches what actually moves those numbers.
+      - name: Production build
+        run: npm run build
+
+      - name: Bundle budget
+        run: npm run perf:budget

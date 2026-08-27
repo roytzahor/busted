@@ -19,11 +19,12 @@
 import { GoogleGenerativeAI, type Part } from "@google/generative-ai";
 import type { ProductIdentity } from "@/lib/services/types";
 
+import { flashModel } from "./models";
+
 export const IDENTIFIER_PROMPT_VERSION = "v1";
 
 const FETCH_TIMEOUT_MS = 8_000;
 const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
-const DEFAULT_MODEL = "gemini-3.5-flash";
 
 const SYSTEM_PROMPT = `You are a product cataloger for Busted, a tool that finds the AliExpress source of dropshipped products.
 
@@ -158,7 +159,7 @@ function parseIdentity(
 
 export async function identifyProduct(input: IdentifierInput): Promise<IdentifierResult> {
   const apiKey = process.env.GOOGLE_AI_API_KEY ?? process.env.GEMINI_API_KEY;
-  const modelName = input.modelName ?? process.env.GOOGLE_AI_MODEL ?? DEFAULT_MODEL;
+  const modelName = input.modelName ?? flashModel();
 
   if (!apiKey) {
     return { identity: null, rawResponse: "", model: modelName, error: "Missing GOOGLE_AI_API_KEY" };

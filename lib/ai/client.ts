@@ -1,6 +1,6 @@
 /**
  * Type-safe AI Core client shell.
- * Default: Google Gemini 3.5 Flash — ultra-low latency, cost-effective parsing.
+ * Model ids are never hardcoded here — they resolve through ./models.
  * Uses the official @google/generative-ai SDK with automatic model fallback.
  * Scraped content must be pre-stripped to optimized Markdown/JSON before calling.
  */
@@ -11,6 +11,12 @@ import {
   type GenerativeModel,
   type Part,
 } from "@google/generative-ai";
+import {
+  anthropicModel,
+  flashModel,
+  googleModelFallbackChain,
+  openaiModel,
+} from "./models";
 
 export type AIProvider = "google" | "anthropic" | "openai";
 
@@ -30,9 +36,22 @@ export interface AICompletionResult {
   content: string;
   provider: AIProvider;
   model: string;
+  /**
+   * The model the provider actually served. For a `-latest` alias this differs
+   * from `model` (the requested id) — `gemini-flash-latest` resolves to a
+   * concrete version that moves without warning, so benchmarks must record
+   * this, not the alias. Undefined when the provider doesn't report it.
+   */
+  resolvedModel?: string;
   usage?: {
     inputTokens: number;
     outputTokens: number;
+    /**
+     * Reasoning tokens. Billed at the output rate but NOT included in
+     * candidatesTokenCount, so cost computed from outputTokens alone
+     * understates spend on a thinking model (often by >10x on short answers).
+     */
+    thoughtTokens: number;
   };
 }
 
@@ -44,18 +63,20 @@ export interface AIClientConfig {
   openaiApiKey?: string;
 }
 
-const DEFAULT_MODELS: Record<AIProvider, string> = {
-  google: "gemini-2.5-flash",
-  anthropic: "claude-3-5-haiku-20241022",
-  openai: "gpt-4o-mini",
-};
-
-/** Ordered fallback chain — gemini-2.0-flash was retired; 2.5-flash is current stable. */
-export const GOOGLE_MODEL_FALLBACK_CHAIN = [
-  "gemini-2.5-flash",
-  "gemini-flash-latest",
-  "gemini-2.5-flash-lite",
-] as const;
+/**
+ * Resolved per call, not cached: the model registry reads `process.env` lazily
+ * so a runtime override (model-benchmark) is honoured.
+ */
+function defaultModelFor(provider: AIProvider): string {
+  switch (provider) {
+    case "google":
+      return flashModel();
+    case "anthropic":
+      return anthropicModel();
+    case "openai":
+      return openaiModel();
+  }
+}
 
 function resolveProvider(config: AIClientConfig): AIProvider {
   if (config.provider) return config.provider;
@@ -73,13 +94,12 @@ function resolveProvider(config: AIClientConfig): AIProvider {
 }
 
 function resolvePrimaryGoogleModel(config: AIClientConfig): string {
-  return config.model ?? process.env.GOOGLE_AI_MODEL ?? DEFAULT_MODELS.google;
+  return config.model ?? flashModel();
 }
 
 function resolveGoogleModelChain(config: AIClientConfig): string[] {
   const primary = resolvePrimaryGoogleModel(config);
-  const chain = [primary, ...GOOGLE_MODEL_FALLBACK_CHAIN.filter((m) => m !== primary)];
-  return [...new Set(chain)];
+  return Array.from(new Set([primary, ...googleModelFallbackChain()]));
 }
 
 function resolveApiKey(provider: AIProvider, config: AIClientConfig): string {
@@ -240,15 +260,23 @@ async function callGoogleOnce(
       }
 
       const usage = response.usageMetadata;
+      const usageWithThoughts = usage as
+        | (typeof usage & { thoughtsTokenCount?: number })
+        | undefined;
+      const resolvedModel = (
+        response as typeof response & { modelVersion?: string }
+      ).modelVersion;
 
       return {
         content: text,
         provider: "google",
         model: modelName,
+        resolvedModel,
         usage: usage
           ? {
               inputTokens: usage.promptTokenCount ?? 0,
               outputTokens: usage.candidatesTokenCount ?? 0,
+              thoughtTokens: usageWithThoughts?.thoughtsTokenCount ?? 0,
             }
           : undefined,
       };
@@ -350,6 +378,7 @@ async function callAnthropic(
       ? {
           inputTokens: data.usage.input_tokens,
           outputTokens: data.usage.output_tokens,
+          thoughtTokens: 0,
         }
       : undefined,
   };
@@ -392,6 +421,7 @@ async function callOpenAI(
       ? {
           inputTokens: data.usage.prompt_tokens,
           outputTokens: data.usage.completion_tokens,
+          thoughtTokens: 0,
         }
       : undefined,
   };
@@ -411,7 +441,7 @@ export class AIClient {
     this.model =
       this.provider === "google"
         ? this.googleModelChain[0]
-        : config.model ?? DEFAULT_MODELS[this.provider];
+        : config.model ?? defaultModelFor(this.provider);
     this.config = config;
   }
 

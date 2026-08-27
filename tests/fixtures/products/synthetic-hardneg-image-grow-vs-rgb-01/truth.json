@@ -1,0 +1,13 @@
+{
+  "url": "https://plantglow-shop.com/products/usb-led-grow-light-strip",
+  "category": "dropship_obvious",
+  "capturedAt": "2026-08-26",
+  "expectedVerdict": "dropship",
+  "confidenceMin": 0.5,
+  "expectedSupplier": {
+    "shouldFindMatch": true,
+    "expectedPriceUsdBand": [1.5, 4],
+    "notes": "REAL, currently-fetchable AliExpress images (not synthetic placeholder URLs like the other synthetic-hardneg-* fixtures). The correct candidate is a USB LED plant-grow strip; the pool also contains a visually near-identical RGB ambiance strip (same coiled-reel-on-white-background composition, same USB cable) with a MUCH higher order count (57973/36755/28508 vs 888/796/519) and comparable price. This is a genuine test of the image sameFunction guard, not just the text scorer: 'plant grow light' vs 'RGB room light' share the token 'led strip' and little else in the title, but the PHOTOS are what a naive image match could confuse. Verified live before this fixture was built: compareProductImagesWithAI correctly scored the true match 0.95 (sameProduct=true, sameFunction=true) and the RGB decoy 0.15 (sameFunction=false, reasoning correctly identified it as ambient room lighting, not a grow light) — lib/ai/image-match.ts."
+  },
+  "notes": "Built to close a real gap: every existing synthetic-hardneg-* and synthetic-* fixture uses placeholder image URLs (e.g. trendypicks-shop.com/img/*.jpg, ae01.alicdn.com/kf/*-1.jpg) that were never real or are no longer fetchable, so the sameFunction guard in lib/ai/image-match.ts had ZERO fixtures that could actually exercise it end-to-end. This fixture uses real, live AliExpress-hosted images for both the source and every candidate, verified fetchable and verified against the live model at capture time. It is the first fixture in the corpus that can be used to test image-match discrimination, not just text/price scoring."
+}

@@ -21,11 +21,12 @@ import {
   type GenerationConfig,
 } from "@google/generative-ai";
 
-const DEFAULT_MODEL = "gemini-2.5-flash";
+
+import { liteModel } from "./models";
 
 /**
  * `thinkingConfig` postdates the pinned @google/generative-ai types but is
- * honoured by the v1beta endpoint (verified: passing thinkingBudget 0 removes
+ * honoured by the v1beta endpoint (verified: a minimal thinkingBudget removes
  * `thoughtsTokenCount` from usageMetadata entirely). Declared as a precise
  * extension rather than cast through `any` so the rest of the config stays
  * type-checked.
@@ -58,8 +59,16 @@ const generationConfig: ThinkingGenerationConfig = {
   temperature: 0,
   // A title translation needs no reasoning, and leaving thinking on makes the
   // token budget unpredictable — the exact condition that truncated every call
-  // before. Also ~4× cheaper: 62-84 total tokens vs 232-324.
-  thinkingConfig: { thinkingBudget: 0 },
+  // before. Omitting thinkingConfig entirely costs ~9x and returns NOTHING:
+  // measured gemini-3.7-flash burn 96 thinking tokens and finish MAX_TOKENS
+  // with an empty response.
+  //
+  // Budget is 1, not 0: gemini-*-flash-lite REJECTS thinkingBudget 0 with a
+  // 400 INVALID_ARGUMENT, which silently failed 17/17 translations. A budget
+  // of 1 is accepted by both flash and flash-lite and neither actually spends
+  // a thinking token (measured think=0 on both), so this is 0 in practice
+  // while staying compatible with the lite models.
+  thinkingConfig: { thinkingBudget: 1 },
 };
 
 /** Unicode ranges that flag a title as non-Latin. */
@@ -120,10 +129,7 @@ export async function translateTitle(title: string): Promise<string | null> {
   try {
     const client = new GoogleGenerativeAI(apiKey);
     const model = client.getGenerativeModel({
-      model:
-        process.env.GOOGLE_AI_VISION_MODEL ??
-        process.env.GOOGLE_AI_MODEL ??
-        DEFAULT_MODEL,
+      model: liteModel(),
     });
 
     const response = await model.generateContent({
