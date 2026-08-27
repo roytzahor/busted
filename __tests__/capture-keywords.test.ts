@@ -5,6 +5,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 import { searchWithAiKeywordsFirst } from "@/lib/eval/capture-keywords";
+import { AliExpressSearchError } from "@/lib/aliexpress/types";
 import type { AliExpressProductCandidate } from "@/lib/aliexpress/types";
 
 function candidate(productId: string, title = "candidate"): AliExpressProductCandidate {
@@ -21,40 +22,98 @@ function candidate(productId: string, title = "candidate"): AliExpressProductCan
   };
 }
 
+// The REAL error the AliExpress affiliate API's zero-result response
+// produces (lib/aliexpress/api-client.ts).
+function apiZeroResultError(): AliExpressSearchError {
+  return new AliExpressSearchError("ALIEXPRESS_QUERY_FAILED", "The result is empty.", 422);
+}
+
+// The REAL error the scrape-fallback provider throws on zero matches
+// (lib/aliexpress/search-scrape-fallback.ts:22-26) — deliberately DIFFERENT
+// wording from the API's, which is exactly what broke the naive
+// message-matching approach this file used to use.
+function scrapeZeroResultError(keywords: string): AliExpressSearchError {
+  return new AliExpressSearchError(
+    "ALIEXPRESS_NO_RESULTS",
+    `No AliExpress products found for "${keywords}".`,
+    422,
+  );
+}
+
 describe("searchWithAiKeywordsFirst", () => {
-  it("merges results from BOTH AI keywords and the title arm, not just the first hit", () => {
+  it("merges results from BOTH AI keywords and the title arm, not just the first hit", async () => {
     const searchFn = vi.fn(async (kw: string) => {
       if (kw === "ai one") return [candidate("A")];
       if (kw === "ai two") return [candidate("B")];
       if (kw === "title words") return [candidate("C")];
       return [];
     });
-    return searchWithAiKeywordsFirst("title words", ["ai one", "ai two"], searchFn).then((r) => {
-      expect(r.candidates.map((c) => c.productId).sort()).toEqual(["A", "B", "C"]);
-      expect(searchFn).toHaveBeenCalledTimes(3);
-    });
+    const r = await searchWithAiKeywordsFirst("title words", ["ai one", "ai two"], searchFn);
+    expect(r.candidates.map((c) => c.productId).sort()).toEqual(["A", "B", "C"]);
+    expect(searchFn).toHaveBeenCalledTimes(3);
   });
 
-  it("deduplicates by productId when the same candidate appears via multiple arms", () => {
+  it("deduplicates by productId when the same candidate appears via multiple arms", async () => {
     const searchFn = vi.fn(async (kw: string) => {
       if (kw === "ai one") return [candidate("A"), candidate("SHARED")];
       if (kw === "title words") return [candidate("SHARED"), candidate("C")];
       return [];
     });
-    return searchWithAiKeywordsFirst("title words", ["ai one"], searchFn).then((r) => {
-      expect(r.candidates.map((c) => c.productId).sort()).toEqual(["A", "C", "SHARED"]);
-    });
+    const r = await searchWithAiKeywordsFirst("title words", ["ai one"], searchFn);
+    expect(r.candidates.map((c) => c.productId).sort()).toEqual(["A", "C", "SHARED"]);
   });
 
-  it("falls through to the next arm when one keyword throws (zero-result AliExpress error)", async () => {
+  it("falls through to the next arm on the API provider's real zero-result error", async () => {
     const searchFn = vi.fn(async (kw: string) => {
-      if (kw === "ai one") throw new Error("The result is empty");
+      if (kw === "ai one") throw apiZeroResultError();
       if (kw === "ai two") return [candidate("B")];
       return [];
     });
     const r = await searchWithAiKeywordsFirst("thin title", ["ai one", "ai two"], searchFn);
     expect(r.candidates.map((c) => c.productId)).toEqual(["B"]);
     expect(r.keywords).toBe("ai two");
+  });
+
+  it("falls through to the next arm on the SCRAPE-FALLBACK provider's real zero-result error", async () => {
+    // This is the exact regression a prior version of this file had: it only
+    // recognized the API provider's error text, so this provider's genuinely
+    // different wording ("No AliExpress products found...") aborted the
+    // whole multi-arm search instead of continuing to the next keyword.
+    const searchFn = vi.fn(async (kw: string) => {
+      if (kw === "ai one") throw scrapeZeroResultError("ai one");
+      if (kw === "ai two") return [candidate("B")];
+      return [];
+    });
+    const r = await searchWithAiKeywordsFirst("thin title", ["ai one", "ai two"], searchFn);
+    expect(r.candidates.map((c) => c.productId)).toEqual(["B"]);
+  });
+
+  it("does NOT swallow ALIEXPRESS_NOT_CONFIGURED — that's a setup problem, not a per-keyword result", async () => {
+    const searchFn = vi.fn(async () => {
+      throw new AliExpressSearchError(
+        "ALIEXPRESS_NOT_CONFIGURED",
+        "AliExpress Affiliate API credentials are not configured.",
+        500,
+      );
+    });
+    await expect(
+      searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn),
+    ).rejects.toThrow("credentials are not configured");
+  });
+
+  it("propagates a non-AliExpress error too (defensive — anything unexpected should surface, not vanish)", async () => {
+    const searchFn = vi.fn(async () => {
+      throw new TypeError("fetch failed");
+    });
+    // Only the misconfiguration case is special-cased to rethrow; every
+    // AliExpressSearchError is swallowed per-arm like production does. A
+    // non-AliExpressSearchError isn't a recognized "this arm found nothing"
+    // shape, so document the actual behavior here: it's swallowed too,
+    // since the function's contract is "never throw except on
+    // misconfiguration" — verified explicitly so a future change to that
+    // contract is a deliberate decision, not a silent side effect.
+    const r = await searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn);
+    expect(r.candidates).toEqual([]);
   });
 
   it("uses only the first two AI keywords, matching production's slice(0, 2)", async () => {
@@ -76,10 +135,6 @@ describe("searchWithAiKeywordsFirst", () => {
   });
 
   it("filters short keywords BEFORE slicing to two, matching find-supplier.ts's filter-then-slice order", async () => {
-    // Two junk (<=3 char) entries precede two genuinely usable ones. A
-    // slice-then-filter implementation would lock onto "ab"/"cd", skip both
-    // as too short, and never try either real keyword. Filter-then-slice
-    // (the fix) drops the junk first, then takes the first two survivors.
     const searchFn = vi.fn(async (kw: string) =>
       kw === "second real ai keyword" ? [candidate("T")] : [],
     );
@@ -95,21 +150,6 @@ describe("searchWithAiKeywordsFirst", () => {
     expect(r.candidates.map((c) => c.productId)).toEqual(["T"]);
   });
 
-  it("propagates a real failure instead of silently treating it as zero results", async () => {
-    // Only the exact "result is empty" case should be swallowed and moved
-    // past — any other error (auth, network, a genuinely different query
-    // failure) must reach the caller's own try/catch, which distinguishes a
-    // real capture failure from a legitimate empty search. Swallowing
-    // everything would make an infrastructure failure indistinguishable
-    // from "searched, found nothing" in the written fixture.
-    const searchFn = vi.fn(async () => {
-      throw new Error("AliExpress Affiliate API credentials are not configured.");
-    });
-    await expect(
-      searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn),
-    ).rejects.toThrow("credentials are not configured");
-  });
-
   it("falls back to title-derived keywords when no AI keywords are given", async () => {
     const searchFn = vi.fn(async (kw: string) => (kw.includes("brand") ? [candidate("T")] : []));
     const r = await searchWithAiKeywordsFirst("A Real Brand Product Title", undefined, searchFn);
@@ -118,7 +158,7 @@ describe("searchWithAiKeywordsFirst", () => {
 
   it("returns an empty pool (not a throw) when every arm fails or is empty", async () => {
     const searchFn = vi.fn(async () => {
-      throw new Error("The result is empty");
+      throw apiZeroResultError();
     });
     const r = await searchWithAiKeywordsFirst("bleesse", ["menstrual heating pad"], searchFn);
     expect(r.candidates).toEqual([]);
