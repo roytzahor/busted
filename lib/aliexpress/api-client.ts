@@ -12,6 +12,15 @@ import type { SortStrategy } from "@/lib/aliexpress/category-map";
 
 const DEFAULT_API_URL = "https://api-sg.aliexpress.com/sync";
 
+/**
+ * Exported so callers that need to distinguish "credentials aren't
+ * configured" from "this search attempt found nothing" can compare against
+ * the constant instead of a hardcoded string literal — a typo in an inline
+ * literal comparison is a silent runtime miss, a typo in an import is a
+ * compile error. See lib/eval/capture-keywords.ts's isMisconfiguration().
+ */
+export const ALIEXPRESS_NOT_CONFIGURED = "ALIEXPRESS_NOT_CONFIGURED" as const;
+
 interface AffiliateApiProduct {
   product_id?: number | string;
   product_title?: string;
@@ -72,7 +81,7 @@ async function callAffiliateApi(
   const config = getAffiliateConfig();
   if (!config) {
     throw new AliExpressSearchError(
-      "ALIEXPRESS_NOT_CONFIGURED",
+      ALIEXPRESS_NOT_CONFIGURED,
       "AliExpress Affiliate API credentials are not configured.",
       500,
     );
@@ -164,7 +173,7 @@ export async function searchAliExpressProducts(
   const config = getAffiliateConfig();
   if (!config) {
     throw new AliExpressSearchError(
-      "ALIEXPRESS_NOT_CONFIGURED",
+      ALIEXPRESS_NOT_CONFIGURED,
       "AliExpress Affiliate API credentials are not configured.",
       500,
     );

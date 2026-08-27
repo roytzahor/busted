@@ -167,14 +167,31 @@ async function refreshAli(id: string): Promise<{ ok: boolean; note: string }> {
       ? "aliexpress_api"
       : "firecrawl_scrape";
     const searchFn = provider === "aliexpress_api" ? searchAliExpressProducts : searchAliExpressViaScrape;
-    const { keywords, candidates } = await searchWithAiKeywordsFirst(
+    const { keywords, candidates, warnings } = await searchWithAiKeywordsFirst(
       effectiveTitle,
       fixture.aiResponse?.prediction?.aliexpressKeywords,
       searchFn,
     );
+    if (candidates.length === 0 && warnings.length > 0) {
+      // Every arm failed for a reason we couldn't classify as a normal
+      // empty result — NOT the same as genuinely searching and finding
+      // nothing. Do NOT overwrite this fixture's existing aliexpress.json:
+      // it may hold real, previously-captured candidates that a transient
+      // failure (network blip, ScraperError, missing credentials) has no
+      // business clobbering with an empty array.
+      return {
+        ok: false,
+        note: `all arms failed, existing aliexpress.json left untouched: ${[...new Set(warnings)].join(" | ")}`,
+      };
+    }
     const ali: FixtureAliExpress = { keywords, provider, candidates };
     writeJson(path.join(FIXTURES_ROOT, id, "aliexpress.json"), ali);
-    return { ok: true, note: `${candidates.length} candidates via ${provider} kw="${keywords}"` };
+    const warningNote =
+      warnings.length > 0 ? `  [arm warning(s): ${[...new Set(warnings)].join(" | ")}]` : "";
+    return {
+      ok: true,
+      note: `${candidates.length} candidates via ${provider} kw="${keywords}"${warningNote}`,
+    };
   } catch (err) {
     return { ok: false, note: `AliExpress threw: ${(err as Error).message}` };
   }
