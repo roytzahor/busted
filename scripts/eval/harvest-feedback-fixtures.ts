@@ -19,6 +19,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { gunzipSync } from "node:zlib";
+import { deriveVerdict } from "@/lib/eval/derive-verdict";
 import { domainFromUrl } from "@/lib/learning/priors";
 import { prisma } from "@/lib/prisma";
 import { parseCachedAiPrediction, parseCachedScrapeData } from "@/lib/types/cache";
@@ -80,10 +81,10 @@ async function main(): Promise<void> {
 
     const fullMarkdown = await fullMarkdownFor(row.originalUrl);
     const markdown = fullMarkdown ?? scrape.markdownPreview ?? "";
-    const aiVerdict = ai.prediction.verdict;
-    // Map pipeline verdicts onto the eval's ExpectedVerdict space (the eval
-    // treats collection_page as legit; see deriveVerdict in run-fixtures.ts).
-    const draftVerdict = aiVerdict === "collection_page" ? "legit" : aiVerdict;
+    // Shared with run-fixtures.ts / model-benchmark.ts — see
+    // lib/eval/derive-verdict.ts for why this must not be reimplemented
+    // ad hoc (it previously was, and dropped the sparse-evidence downgrade).
+    const draftVerdict = deriveVerdict(ai.prediction, scrape.attributes);
 
     const notes = [
       `DRAFT from user feedback ("${fb.verdict}" on ${fb.createdAt.toISOString().slice(0, 10)})`,

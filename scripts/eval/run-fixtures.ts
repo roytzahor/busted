@@ -278,11 +278,18 @@ async function evaluateFixture(
     predictedVerdict,
     confidence: prediction?.confidence ?? 0,
     verdictMatch,
+    // The RAW verdict the AI/rule-based path actually returned — NOT
+    // predictedVerdict. deriveVerdict() applies its own, looser attribute
+    // heuristic for the eval's accuracy bucket; feeding its output back into
+    // computePresenceTier would silently downgrade a real "dropship" to
+    // "silent" whenever the two heuristics disagree, hiding exactly the
+    // false-accusation case this metric exists to catch. Mirrors the
+    // existing `supplierSearchVerdict` fallback below.
     presenceTier: computePresenceTier(
       prediction
         ? ({
             ...prediction,
-            verdict: predictedVerdict,
+            verdict: prediction.verdict ?? predictedVerdict,
           } as unknown as Parameters<typeof computePresenceTier>[0])
         : null,
     ),
@@ -643,15 +650,26 @@ async function main(): Promise<void> {
   const tier0FalseFires = printTier0Report(fixtures);
   const costBreached = printCostProjection(outcomes, opts.maxMeanCost, opts.enforceCost);
   printFailures(outcomes);
-  printShownVerdictPrecision(outcomes);
+  const shownVerdictPrecision = printShownVerdictPrecision(outcomes);
   printSummary(outcomes);
   printBlockedFixtures(outcomes);
 
   const accuracyFailed = !outcomes.every(
     (o) => o.verdictMatch && (o.supplierMatch || o.blocked),
   );
+  // Unconditional, like accuracyFailed and tier0FalseFires — not behind
+  // --enforce-cost. This is the ROADMAP.md Phase 1 exit criterion; a false
+  // public accusation is the worst failure mode in the product (CLAUDE.md),
+  // so a report that only PRINTS "BELOW the Phase 1 exit bar" without
+  // failing the build is not a gate, it is a suggestion.
+  const shownVerdictPrecisionFailed = shownVerdictPrecision < SHOWN_VERDICT_PRECISION_BAR;
   const exitCode =
-    accuracyFailed || tier0FalseFires > 0 || (opts.enforceCost && costBreached) ? 1 : 0;
+    accuracyFailed ||
+    shownVerdictPrecisionFailed ||
+    tier0FalseFires > 0 ||
+    (opts.enforceCost && costBreached)
+      ? 1
+      : 0;
   process.exit(exitCode);
 }
 
