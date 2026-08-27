@@ -7,6 +7,7 @@ import { describe, it, expect, vi } from "vitest";
 import { searchWithAiKeywordsFirst } from "@/lib/eval/capture-keywords";
 import { AliExpressSearchError } from "@/lib/aliexpress/types";
 import type { AliExpressProductCandidate } from "@/lib/aliexpress/types";
+import { ScraperError } from "@/lib/scraping/types";
 
 function candidate(productId: string, title = "candidate"): AliExpressProductCandidate {
   return {
@@ -101,19 +102,28 @@ describe("searchWithAiKeywordsFirst", () => {
     ).rejects.toThrow("credentials are not configured");
   });
 
-  it("propagates a non-AliExpress error too (defensive — anything unexpected should surface, not vanish)", async () => {
+  it("propagates a non-AliExpressSearchError too — only a RECOGNIZED per-arm outcome is swallowed", async () => {
+    // A plain network/fetch failure isn't an AliExpressSearchError, so it's
+    // not a positively-identified "this arm found nothing" outcome — it must
+    // surface, not be swallowed as if the search just came back empty.
     const searchFn = vi.fn(async () => {
       throw new TypeError("fetch failed");
     });
-    // Only the misconfiguration case is special-cased to rethrow; every
-    // AliExpressSearchError is swallowed per-arm like production does. A
-    // non-AliExpressSearchError isn't a recognized "this arm found nothing"
-    // shape, so document the actual behavior here: it's swallowed too,
-    // since the function's contract is "never throw except on
-    // misconfiguration" — verified explicitly so a future change to that
-    // contract is a deliberate decision, not a silent side effect.
-    const r = await searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn);
-    expect(r.candidates).toEqual([]);
+    await expect(
+      searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn),
+    ).rejects.toThrow("fetch failed");
+  });
+
+  it("propagates a ScraperError from the Firecrawl-based scrape fallback the same way", async () => {
+    // The scrape-fallback provider's OWN transport failures (rate limit,
+    // blocked response) throw ScraperError, not AliExpressSearchError —
+    // a second, real example of "not a recognized per-arm outcome".
+    const searchFn = vi.fn(async () => {
+      throw new ScraperError("SCRAPE_BLOCKED", "Blocked by upstream.");
+    });
+    await expect(
+      searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn),
+    ).rejects.toThrow("Blocked by upstream");
   });
 
   it("uses only the first two AI keywords, matching production's slice(0, 2)", async () => {

@@ -13,35 +13,30 @@
  * what a real user's scan would surface, which understates real
  * supplier-match accuracy in the eval corpus.
  *
- * Mirrors production's actual accumulation, filtering order, AND per-attempt
- * error philosophy — not just ordering:
+ * Mirrors production's accumulation and filtering order — NOT its blanket
+ * per-attempt error swallowing:
  *  - Tries both of the first two AI keywords AND the title arm
  *    unconditionally, merging every non-empty result via the SAME
  *    mergeAndDeduplicateCandidates find-supplier.ts uses.
  *  - Filters keywords by length BEFORE slicing to the first two, matching
  *    find-supplier.ts's filter-then-slice order.
- *  - Swallows a per-arm failure and moves to the next arm, exactly like
- *    find-supplier.ts's searchCandidates() (`catch { return []; }` /
- *    `catch { // swallow and try next fallback }`) — NOT by pattern-matching
- *    a specific error message. An earlier version of this file only
- *    swallowed errors whose text matched the AliExpress affiliate API's
- *    zero-result wording, which never matches searchAliExpressViaScrape's
- *    actual error ("No AliExpress products found for..."), so a zero-result
- *    keyword on the scrape-fallback provider aborted every remaining arm —
- *    the opposite of what this file exists to fix.
- *  - The ONE error that must NOT be swallowed: ALIEXPRESS_NOT_CONFIGURED.
- *    That's a setup problem (missing credentials), not a per-keyword result,
- *    and swallowing it would silently write every subsequent fixture with
- *    candidates: [] — indistinguishable from a real empty search — instead
- *    of failing loudly the first time someone runs the tool without creds.
+ *  - Deliberately does NOT copy find-supplier.ts's `catch { return []; }` /
+ *    `catch { // swallow and try next fallback }` — swallow-everything is
+ *    correct for a live serving path (a fast soft-skip either way), but
+ *    wrong for a batch tool writing PERSISTENT fixture data: a transient
+ *    network blip or a Firecrawl rate-limit would get silently recorded as
+ *    "searched, found nothing", indistinguishable from a genuine empty
+ *    result. See shouldSwallow() for the actual classification this file
+ *    uses instead — narrower than production on purpose.
  *
- * Deliberately NOT a full port of find-supplier.ts's precedence — no
+ * Deliberately NOT a full port of find-supplier.ts's keyword precedence — no
  * identity/vision keywords, category vocab, locale-aware price bands, or
  * vertical-prior banning, since those need live production context (a
  * resolved category vocab, a learned keyword prior) a fixture capture
  * doesn't have and shouldn't fake.
  */
 import { extractSearchKeywords } from "@/lib/aliexpress/keywords";
+import { ALIEXPRESS_NOT_CONFIGURED } from "@/lib/aliexpress/api-client";
 import { mergeAndDeduplicateCandidates } from "@/lib/aliexpress/find-supplier";
 import { AliExpressSearchError } from "@/lib/aliexpress/types";
 import type { AliExpressProductCandidate } from "@/lib/aliexpress/types";
@@ -54,8 +49,35 @@ export interface KeywordSearchOutcome {
   candidates: AliExpressProductCandidate[];
 }
 
-function isMisconfiguration(err: unknown): boolean {
-  return err instanceof AliExpressSearchError && err.code === "ALIEXPRESS_NOT_CONFIGURED";
+/**
+ * True only for an error we can POSITIVELY identify as "this specific
+ * keyword attempt produced no results" — i.e. an AliExpressSearchError that
+ * isn't the one code meaning "credentials aren't configured at all".
+ *
+ * Two-part classification, both parts load-bearing:
+ *
+ * 1. Must be an AliExpressSearchError. A plain network/fetch failure (e.g.
+ *    a DNS timeout inside api-client.ts's unguarded fetch) or a ScraperError
+ *    from the Firecrawl-based scrape fallback (search-scrape-fallback.ts)
+ *    is NOT this type — those are unrecognized/unexpected failures, not a
+ *    known "this attempt found nothing" outcome, so they are NOT swallowed
+ *    here. They propagate to the caller's own try/catch
+ *    (capture-fixture.ts / refresh-fixture.ts), which logs a real failure
+ *    distinctly from "searched, found nothing".
+ *
+ * 2. Must NOT be ALIEXPRESS_NOT_CONFIGURED. That's a setup problem (missing
+ *    credentials), not a per-keyword result — swallowing it would silently
+ *    write every subsequent fixture with candidates: [], instead of failing
+ *    loudly the first time someone runs the tool without credentials
+ *    configured. Compared against the exported ALIEXPRESS_NOT_CONFIGURED
+ *    constant, not an inline string literal: this file already shipped one
+ *    bug from matching free-text error MESSAGE content instead of a stable
+ *    identifier, and a bare string literal here would have the same failure
+ *    mode one type level down (a typo silently misclassifying at runtime
+ *    instead of failing to compile).
+ */
+function shouldSwallow(err: unknown): boolean {
+  return err instanceof AliExpressSearchError && err.code !== ALIEXPRESS_NOT_CONFIGURED;
 }
 
 export async function searchWithAiKeywordsFirst(
@@ -81,9 +103,8 @@ export async function searchWithAiKeywordsFirst(
         keywordsUsed.push(kw);
       }
     } catch (err) {
-      if (isMisconfiguration(err)) throw err;
-      // Any other failure — including a legitimate zero-result search on
-      // EITHER provider — means only "this arm found nothing." Move on.
+      if (!shouldSwallow(err)) throw err;
+      // A recognized "this keyword found nothing" outcome. Move on.
     }
   }
 
@@ -95,7 +116,7 @@ export async function searchWithAiKeywordsFirst(
         keywordsUsed.push(titleKeywords);
       }
     } catch (err) {
-      if (isMisconfiguration(err)) throw err;
+      if (!shouldSwallow(err)) throw err;
     }
   }
 

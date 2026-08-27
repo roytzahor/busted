@@ -241,4 +241,40 @@ describe("computeMatchConfidence — plural/singular stemming", () => {
     const result = computeMatchConfidence(source, 145.68, totwooCandidate, matchTerms);
     expect(result.score).toBeGreaterThanOrEqual(MATCH_CONFIDENCE_MIN);
   });
+
+  it("correctly stems native '-ie' plurals (hoodies -> hoodie), not the consonant+y '-ies' pattern", () => {
+    // A first version of singularize() applied the general "-ies -> -y" rule
+    // unconditionally, turning "hoodies" into "hoody" instead of "hoodie" —
+    // a common apparel word in a dropship catalog that would then never
+    // match a candidate titled plain "Hoodie".
+    const result = computeMatchConfidence(
+      attrs({ title: "Blue Hoodie For Men" }),
+      30,
+      candidate({ title: "Warm Winter Hoodies For Men", priceUsd: 8 }),
+    );
+    expect(result.titleOverlap).toBeGreaterThan(0.3);
+  });
+
+  it("does not let a mis-stemmed 'sizes' escape the STOP_WORDS filter for 'size'", () => {
+    // A first version's "zes" suffix rule stripped 2 chars uniformly,
+    // turning "sizes" into "siz" instead of "size" — and since STOP_WORDS
+    // contains the literal "size" (not "siz"), the mis-stemmed plural
+    // silently escaped the filter and became a live scoring token instead
+    // of being correctly excluded as a too-generic word, same as "size" is.
+    const withoutSizes = computeMatchConfidence(
+      attrs({ title: "Cotton t-shirt for summer" }),
+      15,
+      candidate({ title: "Breathable cotton shirt for summer", priceUsd: 4 }),
+    );
+    const withSizes = computeMatchConfidence(
+      attrs({ title: "Cotton t-shirt for summer sizes" }),
+      15,
+      candidate({ title: "Breathable cotton shirt for summer sizes", priceUsd: 4 }),
+    );
+    // Adding the shared "sizes" pair on both sides must not raise overlap —
+    // it must be filtered on both sides, exactly as if neither title
+    // mentioned it, the same guarantee the existing "kits"/"kit" test locks
+    // in for the STOP_WORDS-after-stemming ordering.
+    expect(withSizes.titleOverlap).toBe(withoutSizes.titleOverlap);
+  });
 });

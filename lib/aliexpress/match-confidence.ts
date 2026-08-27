@@ -34,29 +34,67 @@ const STOP_WORDS = new Set([
  * "bracelets"/"couples" (candidate) never matched "bracelet"/"couple"
  * (scraped, singular) in the token sets.
  *
- * Deliberately NOT a real stemmer (Porter etc.) — just the two suffix rules
+ * Deliberately NOT a real stemmer (Porter etc.) — just a few suffix rules
  * that cover the overwhelming majority of real product-title plurals
  * (verified against every -s-ending token across the full fixture corpus:
  * bracelets, couples, earrings, necklaces, accessories, batteries, watches,
- * boxes, ...). Known, accepted limitation: a handful of native "-as"/"-us"
- * words that aren't plurals at all get over-stemmed (canvas->canva,
- * atlas->atla) since English spelling can't distinguish them from genuine
- * "-a"-noun plurals (cameras->camera, pizzas->pizza) without a dictionary.
- * This is a false NEGATIVE (a missed stem on an already-rare word), never a
- * false POSITIVE — nothing else in real product titles coincidentally stems
- * to "canva" or "atla", so it costs nothing but doesn't help. Consistent
- * with this codebase's priority: false positives are the damaging failure
- * mode, not missed matches.
+ * boxes, ...). A first version of this function had two real bugs a review
+ * caught before this one ever shipped: "hoodies" (a native "-ie" noun, not
+ * a consonant+"y"->"ies" word) was stemming to "hoody" instead of "hoodie",
+ * and "sizes"/"prizes"/"mazes" (already end in silent "e" before "z") were
+ * stemming to "siz"/"priz"/"maz" — which mattered specifically because
+ * STOP_WORDS contains the literal "size", so the mis-stemmed plural was
+ * silently escaping that filter. Both are fixed below (IE_PLURAL_EXCEPTIONS,
+ * and dropping "zes" from the ches/shes/xes/sses group).
  *
- * "series"/"species"-class words are a known miss (stemmed to "sery"/
- * "specy") — true stemmers special-case them; not worth the complexity here
- * since they're rare in product titles and the failure mode is the same
- * harmless false-negative described above.
+ * Known, accepted limitations — every one of these is a false NEGATIVE (a
+ * missed or imperfect stem on an already-rare word), never a false
+ * POSITIVE, which is consistent with this codebase's priority: false
+ * positives are the damaging failure mode, not missed matches.
+ *   - A handful of native "-as"/"-us" words that aren't plurals at all get
+ *     over-stemmed (canvas->canva, atlas->atla) since English spelling can't
+ *     distinguish them from genuine "-a"-noun plurals (cameras->camera,
+ *     pizzas->pizza) without a dictionary.
+ *   - "series"/"species"-class words stem to "sery"/"specy" — true stemmers
+ *     special-case them; not worth the complexity here.
+ *   - True double-consonant "-es" plurals not native to "-e" (buzz->buzzes,
+ *     quiz->quizzes) lose their doubled consonant (buzze, quizze) as the
+ *     trade-off for fixing size/prize/maze above — see the "zes" comment
+ *     below for why both can't be right with a suffix-only rule.
+ *   - IE_PLURAL_EXCEPTIONS is a hardcoded list, not exhaustive — a native
+ *     "-ie" noun not on it still mis-stems the old way.
  */
+// Common English nouns that natively end in "-ie" and just add "s" to
+// pluralize (hoodie->hoodies), NOT the consonant+"y"->"ies" pattern
+// (category->categories) the general -ies rule below assumes. Without this
+// exception, "hoodies" (a very common word in a dropship apparel catalog)
+// wrongly stems to "hoody" instead of "hoodie", and a candidate titled plain
+// "Hoodie" — which never matches "s", so it's untouched — never intersects
+// with it. Not exhaustive; add to this set on a confirmed real miss rather
+// than guessing further entries.
+const IE_PLURAL_EXCEPTIONS = new Set([
+  "hoodies", "movies", "cookies", "selfies", "zombies", "beanies",
+  "onesies", "veggies", "goodies", "rookies", "smoothies", "brownies",
+  "genies", "calories",
+]);
+
 function singularize(token: string): string {
   if (token.length <= 3) return token;
+  if (IE_PLURAL_EXCEPTIONS.has(token)) return token.slice(0, -1);
   if (token.endsWith("ies")) return `${token.slice(0, -3)}y`;
-  if (/(?:ches|shes|xes|zes|sses)$/.test(token)) return token.slice(0, -2);
+  // "zes" deliberately excluded from this group: it's correct for a true
+  // consonant+"es" plural (buzz->buzzes) but WRONG for a word that already
+  // ends in silent "e" before "z" and just adds "s" (size->sizes,
+  // prize->prizes, maze->mazes) — English spelling can't tell these apart
+  // without a dictionary. Falling through to the general single-"s"-strip
+  // rule below gets size/prize/maze right (the common e-commerce case:
+  // "available in multiple sizes") at the cost of buzz/quiz-style words
+  // losing their double consonant (buzzes->buzze) — a false NEGATIVE
+  // (harmless missed stem on an already-rare-in-product-titles word), never
+  // a false positive, and specifically important because STOP_WORDS
+  // contains the literal "size": a wrong 2-char strip previously produced
+  // "siz", which is NOT a stopword and silently escaped that filter.
+  if (/(?:ches|shes|xes|sses)$/.test(token)) return token.slice(0, -2);
   if (
     token.endsWith("s") &&
     !token.endsWith("ss") &&
