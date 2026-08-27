@@ -123,13 +123,14 @@ async function main(): Promise<void> {
       ? "aliexpress_api"
       : "firecrawl_scrape";
     const searchFn = provider === "aliexpress_api" ? searchAliExpressProducts : searchAliExpressViaScrape;
-    const { keywords, candidates } = await searchWithAiKeywordsFirst(
+    const { keywords, candidates, warnings } = await searchWithAiKeywordsFirst(
       effectiveTitle,
       aiFixture?.prediction?.aliexpressKeywords,
       searchFn,
     );
     aliFixture = { keywords, provider, candidates };
     console.log(`[capture]   ✓ ${candidates.length} candidates via ${provider}`);
+    for (const w of warnings) console.log(`[capture]   ! arm failed: ${w}`);
   } catch (err) {
     console.log(`[capture]   ! AliExpress search failed: ${(err as Error).message}`);
   }

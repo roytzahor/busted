@@ -64,7 +64,7 @@ describe("searchWithAiKeywordsFirst", () => {
     expect(r.candidates.map((c) => c.productId).sort()).toEqual(["A", "C", "SHARED"]);
   });
 
-  it("falls through to the next arm on the API provider's real zero-result error", async () => {
+  it("falls through to the next arm on the API provider's real zero-result error, no warning recorded", async () => {
     const searchFn = vi.fn(async (kw: string) => {
       if (kw === "ai one") throw apiZeroResultError();
       if (kw === "ai two") return [candidate("B")];
@@ -73,6 +73,7 @@ describe("searchWithAiKeywordsFirst", () => {
     const r = await searchWithAiKeywordsFirst("thin title", ["ai one", "ai two"], searchFn);
     expect(r.candidates.map((c) => c.productId)).toEqual(["B"]);
     expect(r.keywords).toBe("ai two");
+    expect(r.warnings).toEqual([]);
   });
 
   it("falls through to the next arm on the SCRAPE-FALLBACK provider's real zero-result error", async () => {
@@ -89,7 +90,34 @@ describe("searchWithAiKeywordsFirst", () => {
     expect(r.candidates.map((c) => c.productId)).toEqual(["B"]);
   });
 
-  it("does NOT swallow ALIEXPRESS_NOT_CONFIGURED — that's a setup problem, not a per-keyword result", async () => {
+  it("never throws, and keeps candidates already found by an earlier arm, when a LATER arm hits an unrecognized error", async () => {
+    // The core guarantee: an unexpected failure (network blip, ScraperError,
+    // anything that isn't a recognized AliExpressSearchError zero-result)
+    // must not discard progress already made by a prior successful arm.
+    const searchFn = vi.fn(async (kw: string) => {
+      if (kw === "ai one") return [candidate("A")];
+      if (kw === "ai two") throw new TypeError("fetch failed");
+      return [];
+    });
+    const r = await searchWithAiKeywordsFirst("thin title", ["ai one", "ai two"], searchFn);
+    expect(r.candidates.map((c) => c.productId)).toEqual(["A"]);
+    expect(r.warnings).toHaveLength(1);
+    expect(r.warnings[0]).toContain("fetch failed");
+  });
+
+  it("records a warning (does not throw) for a ScraperError from the scrape-fallback provider", async () => {
+    const searchFn = vi.fn(async () => {
+      throw new ScraperError("SCRAPE_BLOCKED", "Blocked by upstream.");
+    });
+    const r = await searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn);
+    expect(r.candidates).toEqual([]);
+    expect(r.warnings[0]).toContain("Blocked by upstream");
+  });
+
+  it("records a warning for ALIEXPRESS_NOT_CONFIGURED instead of swallowing it silently", async () => {
+    // Missing credentials is a setup problem, not a per-keyword result — it
+    // must be visible to the caller (via warnings), unlike a normal
+    // zero-result search, which produces no warning at all.
     const searchFn = vi.fn(async () => {
       throw new AliExpressSearchError(
         "ALIEXPRESS_NOT_CONFIGURED",
@@ -97,33 +125,9 @@ describe("searchWithAiKeywordsFirst", () => {
         500,
       );
     });
-    await expect(
-      searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn),
-    ).rejects.toThrow("credentials are not configured");
-  });
-
-  it("propagates a non-AliExpressSearchError too — only a RECOGNIZED per-arm outcome is swallowed", async () => {
-    // A plain network/fetch failure isn't an AliExpressSearchError, so it's
-    // not a positively-identified "this arm found nothing" outcome — it must
-    // surface, not be swallowed as if the search just came back empty.
-    const searchFn = vi.fn(async () => {
-      throw new TypeError("fetch failed");
-    });
-    await expect(
-      searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn),
-    ).rejects.toThrow("fetch failed");
-  });
-
-  it("propagates a ScraperError from the Firecrawl-based scrape fallback the same way", async () => {
-    // The scrape-fallback provider's OWN transport failures (rate limit,
-    // blocked response) throw ScraperError, not AliExpressSearchError —
-    // a second, real example of "not a recognized per-arm outcome".
-    const searchFn = vi.fn(async () => {
-      throw new ScraperError("SCRAPE_BLOCKED", "Blocked by upstream.");
-    });
-    await expect(
-      searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn),
-    ).rejects.toThrow("Blocked by upstream");
+    const r = await searchWithAiKeywordsFirst("some title", ["a real ai keyword"], searchFn);
+    expect(r.candidates).toEqual([]);
+    expect(r.warnings[0]).toContain("credentials are not configured");
   });
 
   it("uses only the first two AI keywords, matching production's slice(0, 2)", async () => {
@@ -166,12 +170,13 @@ describe("searchWithAiKeywordsFirst", () => {
     expect(r.candidates.map((c) => c.productId)).toEqual(["T"]);
   });
 
-  it("returns an empty pool (not a throw) when every arm fails or is empty", async () => {
+  it("returns an empty pool with no warnings when every arm is a normal zero-result search", async () => {
     const searchFn = vi.fn(async () => {
       throw apiZeroResultError();
     });
     const r = await searchWithAiKeywordsFirst("bleesse", ["menstrual heating pad"], searchFn);
     expect(r.candidates).toEqual([]);
+    expect(r.warnings).toEqual([]);
     expect(r.keywords.length).toBeGreaterThan(0);
   });
 });

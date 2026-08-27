@@ -38,14 +38,10 @@ const STOP_WORDS = new Set([
  * that cover the overwhelming majority of real product-title plurals
  * (verified against every -s-ending token across the full fixture corpus:
  * bracelets, couples, earrings, necklaces, accessories, batteries, watches,
- * boxes, ...). A first version of this function had two real bugs a review
- * caught before this one ever shipped: "hoodies" (a native "-ie" noun, not
- * a consonant+"y"->"ies" word) was stemming to "hoody" instead of "hoodie",
- * and "sizes"/"prizes"/"mazes" (already end in silent "e" before "z") were
- * stemming to "siz"/"priz"/"maz" — which mattered specifically because
- * STOP_WORDS contains the literal "size", so the mis-stemmed plural was
- * silently escaping that filter. Both are fixed below (IE_PLURAL_EXCEPTIONS,
- * and dropping "zes" from the ches/shes/xes/sses group).
+ * boxes, ...). See IE_PLURAL_EXCEPTIONS and the "zes" comment below for two
+ * silent-trailing-"e" cases ("hoodies", "sizes") that need special handling
+ * — "sizes" matters specifically because STOP_WORDS contains the literal
+ * "size", so a wrong stem there silently escapes that filter.
  *
  * Known, accepted limitations — every one of these is a false NEGATIVE (a
  * missed or imperfect stem on an already-rare word), never a false

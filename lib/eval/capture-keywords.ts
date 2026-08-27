@@ -13,27 +13,22 @@
  * what a real user's scan would surface, which understates real
  * supplier-match accuracy in the eval corpus.
  *
- * Mirrors production's accumulation and filtering order — NOT its blanket
- * per-attempt error swallowing:
+ * Mirrors production's accumulation and filtering order:
  *  - Tries both of the first two AI keywords AND the title arm
  *    unconditionally, merging every non-empty result via the SAME
  *    mergeAndDeduplicateCandidates find-supplier.ts uses.
  *  - Filters keywords by length BEFORE slicing to the first two, matching
  *    find-supplier.ts's filter-then-slice order.
- *  - Deliberately does NOT copy find-supplier.ts's `catch { return []; }` /
- *    `catch { // swallow and try next fallback }` — swallow-everything is
- *    correct for a live serving path (a fast soft-skip either way), but
- *    wrong for a batch tool writing PERSISTENT fixture data: a transient
- *    network blip or a Firecrawl rate-limit would get silently recorded as
- *    "searched, found nothing", indistinguishable from a genuine empty
- *    result. See shouldSwallow() for the actual classification this file
- *    uses instead — narrower than production on purpose.
  *
- * Deliberately NOT a full port of find-supplier.ts's keyword precedence — no
- * identity/vision keywords, category vocab, locale-aware price bands, or
- * vertical-prior banning, since those need live production context (a
- * resolved category vocab, a learned keyword prior) a fixture capture
- * doesn't have and shouldn't fake.
+ * NEVER THROWS. Every arm's failure — recognized (a real zero-result
+ * search) or not (a network blip, a ScraperError from the Firecrawl-based
+ * scrape fallback, missing credentials) — is recorded into `warnings` and
+ * the search continues to the next arm, returning whatever candidates WERE
+ * found. Throwing here would discard every candidate already merged from
+ * prior successful arms — neither caller (capture-fixture.ts /
+ * refresh-fixture.ts) treats a thrown error as fatal anyway, so a thrown
+ * exception would only cost partial progress for no benefit. Warnings give
+ * the caller an honest, inspectable signal instead.
  */
 import { extractSearchKeywords } from "@/lib/aliexpress/keywords";
 import { ALIEXPRESS_NOT_CONFIGURED } from "@/lib/aliexpress/api-client";
@@ -47,37 +42,18 @@ export interface KeywordSearchOutcome {
    *  about the full accumulated search, not just the first arm tried. */
   keywords: string;
   candidates: AliExpressProductCandidate[];
+  /**
+   * One entry per arm that failed for a reason OTHER than "this exact
+   * keyword matched nothing" — an unrecognized error type, or missing
+   * credentials. Empty when every arm either succeeded or was a normal
+   * empty result. The caller decides whether to log this or ignore it;
+   * this function's job is only to never lose information silently.
+   */
+  warnings: string[];
 }
 
-/**
- * True only for an error we can POSITIVELY identify as "this specific
- * keyword attempt produced no results" — i.e. an AliExpressSearchError that
- * isn't the one code meaning "credentials aren't configured at all".
- *
- * Two-part classification, both parts load-bearing:
- *
- * 1. Must be an AliExpressSearchError. A plain network/fetch failure (e.g.
- *    a DNS timeout inside api-client.ts's unguarded fetch) or a ScraperError
- *    from the Firecrawl-based scrape fallback (search-scrape-fallback.ts)
- *    is NOT this type — those are unrecognized/unexpected failures, not a
- *    known "this attempt found nothing" outcome, so they are NOT swallowed
- *    here. They propagate to the caller's own try/catch
- *    (capture-fixture.ts / refresh-fixture.ts), which logs a real failure
- *    distinctly from "searched, found nothing".
- *
- * 2. Must NOT be ALIEXPRESS_NOT_CONFIGURED. That's a setup problem (missing
- *    credentials), not a per-keyword result — swallowing it would silently
- *    write every subsequent fixture with candidates: [], instead of failing
- *    loudly the first time someone runs the tool without credentials
- *    configured. Compared against the exported ALIEXPRESS_NOT_CONFIGURED
- *    constant, not an inline string literal: this file already shipped one
- *    bug from matching free-text error MESSAGE content instead of a stable
- *    identifier, and a bare string literal here would have the same failure
- *    mode one type level down (a typo silently misclassifying at runtime
- *    instead of failing to compile).
- */
-function shouldSwallow(err: unknown): boolean {
-  return err instanceof AliExpressSearchError && err.code !== ALIEXPRESS_NOT_CONFIGURED;
+function describeError(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }
 
 export async function searchWithAiKeywordsFirst(
@@ -88,6 +64,7 @@ export async function searchWithAiKeywordsFirst(
   const titleKeywords = extractSearchKeywords(effectiveTitle);
   let candidates: AliExpressProductCandidate[] = [];
   const keywordsUsed: string[] = [];
+  const warnings: string[] = [];
 
   // Filter-then-slice, matching find-supplier.ts:353-357+453 — slicing
   // first would lock onto two junk keywords and never try a good third one.
@@ -103,8 +80,18 @@ export async function searchWithAiKeywordsFirst(
         keywordsUsed.push(kw);
       }
     } catch (err) {
-      if (!shouldSwallow(err)) throw err;
-      // A recognized "this keyword found nothing" outcome. Move on.
+      // A recognized AliExpressSearchError that isn't a config problem just
+      // means this exact keyword found nothing — not worth a warning, that's
+      // the normal "try the next arm" case find-supplier.ts also treats as
+      // silent. Anything else (including missing credentials) is recorded
+      // and the loop still continues — a config problem will keep failing
+      // identically on every remaining arm, but that's cheap to discover
+      // and safer than assuming it based on one error.
+      const recognizedEmptyResult =
+        err instanceof AliExpressSearchError && err.code !== ALIEXPRESS_NOT_CONFIGURED;
+      if (!recognizedEmptyResult) {
+        warnings.push(`"${kw}": ${describeError(err)}`);
+      }
     }
   }
 
@@ -116,12 +103,17 @@ export async function searchWithAiKeywordsFirst(
         keywordsUsed.push(titleKeywords);
       }
     } catch (err) {
-      if (!shouldSwallow(err)) throw err;
+      const recognizedEmptyResult =
+        err instanceof AliExpressSearchError && err.code !== ALIEXPRESS_NOT_CONFIGURED;
+      if (!recognizedEmptyResult) {
+        warnings.push(`"${titleKeywords}": ${describeError(err)}`);
+      }
     }
   }
 
   return {
     keywords: keywordsUsed.length > 0 ? keywordsUsed.join("; ") : titleKeywords,
     candidates,
+    warnings,
   };
 }
