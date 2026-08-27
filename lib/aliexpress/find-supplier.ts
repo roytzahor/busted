@@ -245,7 +245,7 @@ async function findVectorCandidates(
   }
 }
 
-function mergeAndDeduplicateCandidates(
+export function mergeAndDeduplicateCandidates(
   primary: AliExpressProductCandidate[],
   secondary: AliExpressProductCandidate[],
 ): AliExpressProductCandidate[] {
