@@ -216,6 +216,9 @@ describe("preprocessForSmartMatch — results", () => {
     expect(result.cacheHit).toBe(false);
     expect(result.qualityScore).toBe(8);
     expect(result.lightPromptUsed).toBe(false);
+    // The counterpart to the reviewer-down cases below: a real review DOES
+    // get cached.
+    expect(mockedSave).toHaveBeenCalledTimes(1);
   });
 
   it("surfaces the analysis arms extracted by the review call", async () => {
@@ -311,7 +314,10 @@ describe("preprocessForSmartMatch — graceful degradation", () => {
     // A reviewer outage must not downgrade every scan to the raw-URL path.
     expect(result.qualityScore).toBe(7);
     expect(result.ocrTraces).toEqual([]);
-    expect(mockedSave).toHaveBeenCalledTimes(1);
+    // ...but it must not be cached either: the cache is keyed on
+    // (imageUrl, category) and never expires, so persisting the empty analysis
+    // would pin that pair to empty ocrTraces long after the outage ended.
+    expect(mockedSave).not.toHaveBeenCalled();
   });
 
   it("keeps the cleaned image when the reviewer returns unparseable JSON", async () => {
@@ -321,6 +327,8 @@ describe("preprocessForSmartMatch — graceful degradation", () => {
     const result = await preprocessForSmartMatch(SOURCE_URL, CATEGORY);
 
     expect(result.qualityScore).toBe(7);
+    // Unparseable is the same evidence state as unreachable — do not cache it.
+    expect(mockedSave).not.toHaveBeenCalled();
   });
 
   it("retries with the light prompt when the full pass scores below threshold", async () => {

@@ -23,12 +23,18 @@
  * WHY GENERATION AND ANALYSIS ARE SEPARATE CALLS
  * A single call asking for `responseModalities: ["TEXT", "IMAGE"]` plus a
  * two-task prompt is legally satisfied by answering only the TEXT half, and
- * that is what the models did: measured on this prompt with a real fixture,
- * gemini-2.5-flash-image returned an image part in 3/11 attempts and
- * gemini-3.1-flash-image in 12/15, each miss surfacing as
- * GEMINI_NO_IMAGE_OUTPUT and silently dropping the caller back to the raw
- * source URL. The same prompts split into one IMAGE-only call and one
- * TEXT-only call returned an image on every attempt. Never merge them back.
+ * that is what the models did. Measured 2026-08-26, 15 attempts per cell,
+ * real fixture image, counting responses that carried an image part:
+ *
+ *              dual-task TEXT+IMAGE    IMAGE-only (current)
+ *   flash-image        15/15                  15/15
+ *   flash-lite-image    8/15                  15/15
+ *
+ * Earlier runs of the dual-task prompt put gemini-2.5-flash-image at 3/11 and
+ * gemini-3.1-flash-image at 12/15, so the full model's failure rate is real but
+ * intermittent — a clean 15/15 on any one day does not clear it. Every miss
+ * surfaces as GEMINI_NO_IMAGE_OUTPUT and silently drops the caller back to the
+ * raw source URL, which is invisible from the outside. Never merge them back.
  *
  * The analysis rides on the REVIEW call rather than a third round-trip because
  * the reviewer is already holding the source image, and the analysis must read
@@ -60,8 +66,13 @@ import {
  * The supplier-find pipeline still runs SmartMatch using the raw source image
  * URL (the "url arm"), which costs nothing. Preprocess is only enabled when
  * `PREPROCESS_ENABLED=true` AND the initial text+image match score is below
- * the trigger threshold (0.6). This keeps cold-scan cost at ~$0.0015 instead
- * of ~$0.041 for the typical case.
+ * the trigger threshold (0.6).
+ *
+ * Measured cost when it does fire (2026-08-26, live prices): $0.0340 for the
+ * generation call plus $0.0039 for the review call = ~$0.038 on
+ * gemini-3.1-flash-lite-image, or ~$0.071 on gemini-3.1-flash-image. The
+ * "~$0.041" this comment used to claim came from gemini-2.5-flash-image's
+ * per-image price and never covered the second call.
  */
 export function isPreprocessEnabled(): boolean {
   return process.env.PREPROCESS_ENABLED === "true";
@@ -73,9 +84,14 @@ const MAX_SOURCE_BYTES = 8 * 1024 * 1024;
 /**
  * Output geometry for the generation call.
  *
- * `generationConfig.imageConfig` is the ONLY thing that controls it — the
- * prompt's textual "1:1, approximately 800×800 px" was measured to be ignored
- * by every image model tried. `{1:1, "1K"}` reliably yields 1024×1024.
+ * `generationConfig.imageConfig` is the only geometry instruction that exists
+ * now: `buildFullPrompt` deliberately says nothing about size or aspect,
+ * because prompt text was measured not to control either. A prompt asking for
+ * "approximately 800×800 px" produced 1024×1024 on every one of 18 attempts,
+ * with the config on AND off, from sources of 1000×1500, 1024×1024 and
+ * 1920×1920. Read that as: the model normalises to 1024×1024 on its own and
+ * this config makes the contract explicit rather than incidental — it is NOT
+ * evidence that dropping the config would change anything today.
  *
  * Do NOT drop `imageSize` below "1K" without gating on the resolved model:
  * `imageSize: "512"` is a 400 on gemini-2.5-flash-image and only accepted by

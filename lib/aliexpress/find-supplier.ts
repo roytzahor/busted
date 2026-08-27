@@ -74,7 +74,7 @@ import {
  *   Tier 1  SmartMatch (url)    always*    ~$0        raw image-URL arm (*API + image)
  *   Tier 2  Batch image rerank  score<0.85 ~$0.0001   TEXT_SCORE_SKIP_IMAGE_THRESHOLD
  *   Tier 3  Deep image match    score<0.85 ~$0.0001   per-candidate verification
- *   Tier 4  Preprocess+base64   score<0.60 ~$0.039    PREPROCESS_TRIGGER_THRESHOLD,
+ *   Tier 4  Preprocess+base64   score<0.60 ~$0.038    PREPROCESS_TRIGGER_THRESHOLD,
  *                                                      gated by isPreprocessEnabled()
  *
  * A confident text match (≥0.85) short-circuits the whole ladder — no image

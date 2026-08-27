@@ -41,18 +41,30 @@ export function visionModel(): string {
  * Image *generation* model (the nano-banana family). Distinct from the vision
  * (image-reading) model — see `visionModel()`.
  *
- * NOT gemini-2.5-flash-image: measured on this repo's own preprocess prompt it
- * returned no image part at all in 8 of 11 attempts (the model satisfies a
- * TEXT+IMAGE request by answering only the text half), which surfaces as
- * GEMINI_NO_IMAGE_OUTPUT and silently falls back to the raw source URL. It also
- * ignores the prompt's 1:1 request and rejects `imageConfig.imageSize: "512"`
- * with a 400. gemini-3.1-flash-image returned an image in 12 of 15 attempts at
- * a correct 1024x1024.
+ * The lite model is the floor on measured value-per-cost, but ONLY because
+ * `preprocess-image.ts` now asks for `responseModalities: ["IMAGE"]`. Measured
+ * 2026-08-26, 15 attempts per cell on a real fixture:
+ *
+ *   dual-task TEXT+IMAGE   lite 8/15 images returned · full 15/15
+ *   IMAGE-only (current)   lite 15/15               · full 15/15
+ *
+ * So lite is the model the old dual-task prompt punished hardest. If anyone
+ * ever re-merges generation and analysis into one call, this floor becomes a
+ * 53%-reliable model and must move back to gemini-3.1-flash-image.
+ *
+ * At IMAGE-only, lite costs $0.0336/image vs $0.067 and runs ~2.8x faster
+ * (p50 3.0s vs 8.5s), with cleanup quality indistinguishable to the pipeline's
+ * own reviewer across 3 fixtures x 3 runs (lite 7/7/7 everywhere; full scored
+ * one 5). Prices verified live against ai.google.dev/gemini-api/docs/pricing —
+ * the earlier in-repo figures were stale by 1.5-2.5x.
+ *
+ * gemini-2.5-flash-image additionally rejects `imageConfig.imageSize: "512"`
+ * with a 400, which the 3.x family accepts.
  *
  * No image model has a `-latest` alias — this family must be pinned.
  */
 export function imageModel(): string {
-  return process.env.GOOGLE_AI_IMAGE_MODEL ?? "gemini-3.1-flash-image";
+  return process.env.GOOGLE_AI_IMAGE_MODEL ?? "gemini-3.1-flash-lite-image";
 }
 
 /**
