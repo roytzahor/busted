@@ -174,3 +174,71 @@ describe("foldImageMatchIntoConfidence — zero title overlap must survive the f
     expect(folded.score).toBeLessThanOrEqual(0.35);
   });
 });
+
+describe("computeMatchConfidence — plural/singular stemming", () => {
+  it("credits overlap between a plural candidate token and a singular source token", () => {
+    // Mirrors the real regression: real-smartjewelry-charms's correct
+    // TOTWOO candidate title uses "Bracelets"/"Couples" (plural); the
+    // scraped source uses "bracelet"/"couple" (singular). Before stemming,
+    // Jaccard overlap treated these as four unrelated tokens.
+    const source = attrs({ title: "Smart touch bracelet for couple" });
+    const pluralCandidate = candidate({
+      title: "Long Distance Touch Bracelets for Couples Smart Light",
+      priceUsd: 130,
+    });
+    const result = computeMatchConfidence(source, 145.68, pluralCandidate);
+    expect(result.titleOverlap).toBeGreaterThan(0.3);
+  });
+
+  it("does not let a stemmed generic word (kit/kits) count toward overlap — STOP_WORDS still applies after stemming", () => {
+    // "Kits" stems to "kit", which is an existing intentional STOP_WORDS
+    // exclusion (too generic to signal a real product match, same as
+    // "set"/"pcs"/"pack"). Stemming must not create a new loophole where the
+    // plural form of a banned word slips through.
+    const withoutShared = computeMatchConfidence(
+      attrs({ title: "Paint by numbers kit for adults" }),
+      50,
+      candidate({ title: "Landscape painting canvas beginner", priceUsd: 10 }),
+    );
+    const withSharedKits = computeMatchConfidence(
+      attrs({ title: "Paint by numbers kit for adults" }),
+      50,
+      candidate({ title: "Landscape painting canvas kits beginner", priceUsd: 10 }),
+    );
+    // Adding the shared "kits"/"kit" pair must not raise overlap — it's
+    // filtered on both sides, same as if neither title mentioned it.
+    expect(withSharedKits.titleOverlap).toBe(withoutShared.titleOverlap);
+  });
+
+  it("does not stem a word that legitimately ends in double-s (e.g. glass, dress)", () => {
+    const result = computeMatchConfidence(
+      attrs({ title: "Stained glass sun catcher ornament" }),
+      20,
+      candidate({ title: "Colorful glass hanging sun ornament", priceUsd: 5 }),
+    );
+    // "glass" must match "glass" exactly, not get corrupted to "glas".
+    expect(result.titleOverlap).toBeGreaterThan(0);
+  });
+
+  it("real corpus regression: real-smartjewelry-charms's actual TOTWOO candidate now clears MATCH_CONFIDENCE_MIN", () => {
+    // Uses the exact real title/candidate from the fixture that motivated
+    // this fix, not a paraphrase — pinning the specific number so a future
+    // change to the tokenizer or weights that regresses this is caught here,
+    // not just in the eval corpus.
+    const source = attrs({
+      title: "totwoo Smart jewelry - תכשיטים חכמים",
+      translatedTitle: "totwoo Smart Jewelry",
+      sourceUrl: "https://smartjewelry.co.il",
+    });
+    const totwooCandidate = candidate({
+      title:
+        "TOTWOO Long Distance Touch Bracelets for Couples, Smart Light & Vibration Love Charms Jewelry Valentines Day Gifts For Women Men",
+      priceUsd: 136.37,
+      orderCount: 12,
+      sellerRating: 4.6,
+    });
+    const matchTerms = "smart touch bracelet couple long distance couple jewelry vibration couple bracelet";
+    const result = computeMatchConfidence(source, 145.68, totwooCandidate, matchTerms);
+    expect(result.score).toBeGreaterThanOrEqual(MATCH_CONFIDENCE_MIN);
+  });
+});

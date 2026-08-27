@@ -25,6 +25,49 @@ const STOP_WORDS = new Set([
   "style", "edition", "ultra", "pro", "max", "mini", "high", "low",
 ]);
 
+/**
+ * Lightweight, conservative English plural->singular stemmer. Exists because
+ * title-overlap Jaccard treats "Bracelets" and "bracelet" as two unrelated
+ * tokens — measured on a real fixture (real-smartjewelry-charms): the correct
+ * candidate is a genuine TOTWOO-branded match ("...Touch Bracelets for
+ * Couples...") that missed MATCH_CONFIDENCE_MIN by 0.022, partly because
+ * "bracelets"/"couples" (candidate) never matched "bracelet"/"couple"
+ * (scraped, singular) in the token sets.
+ *
+ * Deliberately NOT a real stemmer (Porter etc.) — just the two suffix rules
+ * that cover the overwhelming majority of real product-title plurals
+ * (verified against every -s-ending token across the full fixture corpus:
+ * bracelets, couples, earrings, necklaces, accessories, batteries, watches,
+ * boxes, ...). Known, accepted limitation: a handful of native "-as"/"-us"
+ * words that aren't plurals at all get over-stemmed (canvas->canva,
+ * atlas->atla) since English spelling can't distinguish them from genuine
+ * "-a"-noun plurals (cameras->camera, pizzas->pizza) without a dictionary.
+ * This is a false NEGATIVE (a missed stem on an already-rare word), never a
+ * false POSITIVE — nothing else in real product titles coincidentally stems
+ * to "canva" or "atla", so it costs nothing but doesn't help. Consistent
+ * with this codebase's priority: false positives are the damaging failure
+ * mode, not missed matches.
+ *
+ * "series"/"species"-class words are a known miss (stemmed to "sery"/
+ * "specy") — true stemmers special-case them; not worth the complexity here
+ * since they're rare in product titles and the failure mode is the same
+ * harmless false-negative described above.
+ */
+function singularize(token: string): string {
+  if (token.length <= 3) return token;
+  if (token.endsWith("ies")) return `${token.slice(0, -3)}y`;
+  if (/(?:ches|shes|xes|zes|sses)$/.test(token)) return token.slice(0, -2);
+  if (
+    token.endsWith("s") &&
+    !token.endsWith("ss") &&
+    !token.endsWith("us") &&
+    !token.endsWith("is")
+  ) {
+    return token.slice(0, -1);
+  }
+  return token;
+}
+
 function normalizeTokens(text: string): Set<string> {
   return new Set(
     text
@@ -32,6 +75,7 @@ function normalizeTokens(text: string): Set<string> {
       .replace(/[^\w\s-]/g, " ")
       .split(/\s+/)
       .map((t) => t.trim())
+      .map(singularize)
       .filter((t) => t.length > 2 && !STOP_WORDS.has(t)),
   );
 }
