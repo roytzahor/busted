@@ -128,9 +128,20 @@ async function main(): Promise<void> {
       aiFixture?.prediction?.aliexpressKeywords,
       searchFn,
     );
-    aliFixture = { keywords, provider, candidates };
-    console.log(`[capture]   ✓ ${candidates.length} candidates via ${provider}`);
     for (const w of warnings) console.log(`[capture]   ! arm failed: ${w}`);
+    if (candidates.length === 0 && warnings.length > 0) {
+      // Every arm failed for a reason we couldn't classify as a normal
+      // empty result (network blip, ScraperError, missing credentials) —
+      // NOT the same as genuinely searching and finding nothing. Leave
+      // aliFixture unset so saveFixture() writes no aliexpress.json at all
+      // (lib/eval/fixture-store.ts only writes it `if (record.aliexpress)`),
+      // matching the pre-existing "capture failed" signal instead of
+      // persisting a file indistinguishable from a real zero-result search.
+      console.log(`[capture]   ✗ all arms failed — no aliexpress.json written`);
+    } else {
+      aliFixture = { keywords, provider, candidates };
+      console.log(`[capture]   ✓ ${candidates.length} candidates via ${provider}`);
+    }
   } catch (err) {
     console.log(`[capture]   ! AliExpress search failed: ${(err as Error).message}`);
   }
