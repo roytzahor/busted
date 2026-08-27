@@ -1,0 +1,34 @@
+{
+  "prediction": {
+    "reasoning": "synthetic fixture — house-brand USB LED grow light at overseas-shipping markup, generic across countless dropship storefronts",
+    "styleTokens": [],
+    "materialPriors": [],
+    "verdict": "dropship",
+    "isLikelyDropship": true,
+    "confidence": 0.75,
+    "productCategory": "LED grow light strip",
+    "aliexpressKeywords": [
+      "usb led grow light strip plant",
+      "full spectrum led plant grow strip"
+    ],
+    "reasoningSignals": [
+      "12-20 day shipping indicates overseas fulfillment",
+      "Generic plant-care gadget under a house brand with no independent verification",
+      "High markup on a sub-$3 commodity component"
+    ],
+    "missingSignals": [
+      "No brand history or independent reviews"
+    ],
+    "redFlags": [
+      "Long overseas shipping",
+      "Commodity component resold as a finished product"
+    ],
+    "estimatedStorePriceUsd": 19.99,
+    "estimatedSupplierPriceUsd": 2.46,
+    "estimatedMarkupPercent": 713
+  },
+  "rawResponse": "{\"verdict\":\"dropship\"}",
+  "model": "synthetic",
+  "provider": "synthetic",
+  "error": null
+}
