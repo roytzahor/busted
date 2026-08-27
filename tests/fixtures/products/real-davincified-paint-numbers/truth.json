@@ -4,8 +4,7 @@
   "expectedVerdict": "dropship",
   "expectedSupplier": {
     "shouldFindMatch": true,
-    "blockedOnFixtureData": true,
-    "notes": "Paint-by-numbers kits. Classic dropship. Collection page — if scrape returns sparse data, insufficient_evidence is acceptable. No aliexpress.json captured yet — blocked on AliExpress API credentials."
+    "notes": "Paint-by-numbers kits. Classic dropship. Collection page — if scrape returns sparse data, insufficient_evidence is acceptable. RESOLVED 2026-08-26: same eval-tooling keyword bug (the old title-only search included brand/locale noise — \"israel davincified\" — that returned zero AliExpress results). Fixed the shared capture/refresh tooling to try AI keywords first and merge all arms. Live re-capture merges both AI keywords (\"paint by numbers kit adults\" + \"diy oil painting canvas numbers\") into 56 real candidates and finds a confident match: score 0.711, margin +0.311."
   },
   "notes": "Paint-by-numbers kits. Classic dropship. Collection page — if scrape returns sparse data, insufficient_evidence is acceptable.",
   "capturedAt": "2026-06-27T08:18:34.157Z"

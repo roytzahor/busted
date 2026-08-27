@@ -24,7 +24,7 @@ import {
   searchAliExpressProducts,
 } from "@/lib/aliexpress/api-client";
 import { searchAliExpressViaScrape } from "@/lib/aliexpress/search-scrape-fallback";
-import { extractSearchKeywords } from "@/lib/aliexpress/keywords";
+import { searchWithAiKeywordsFirst } from "@/lib/eval/capture-keywords";
 import { isNonLatinTitle, translateTitle } from "@/lib/ai/translate-title";
 import { loadFixture } from "@/lib/eval/fixture-store";
 import type {
@@ -163,14 +163,15 @@ async function refreshAli(id: string): Promise<{ ok: boolean; note: string }> {
         writeJson(scrapePath, scrape);
       }
     }
-    const keywords = extractSearchKeywords(effectiveTitle);
     const provider: "aliexpress_api" | "firecrawl_scrape" = isAliExpressApiConfigured()
       ? "aliexpress_api"
       : "firecrawl_scrape";
-    const candidates =
-      provider === "aliexpress_api"
-        ? await searchAliExpressProducts(keywords)
-        : await searchAliExpressViaScrape(keywords);
+    const searchFn = provider === "aliexpress_api" ? searchAliExpressProducts : searchAliExpressViaScrape;
+    const { keywords, candidates } = await searchWithAiKeywordsFirst(
+      effectiveTitle,
+      fixture.aiResponse?.prediction?.aliexpressKeywords,
+      searchFn,
+    );
     const ali: FixtureAliExpress = { keywords, provider, candidates };
     writeJson(path.join(FIXTURES_ROOT, id, "aliexpress.json"), ali);
     return { ok: true, note: `${candidates.length} candidates via ${provider} kw="${keywords}"` };

@@ -4,8 +4,7 @@
   "expectedVerdict": "dropship",
   "expectedSupplier": {
     "shouldFindMatch": true,
-    "blockedOnFixtureData": true,
-    "notes": "Heated belly massage device. Classic dropship. Expect supplier match on AliExpress. No aliexpress.json captured yet — blocked on AliExpress API credentials (see memory: busted-accuracy-refactor)."
+    "notes": "Heated belly massage device. Classic dropship. Expect supplier match on AliExpress. RESOLVED 2026-08-26: this fixture's scraped title is literally just the brand name (\"Bleesse\"), so the old title-only keyword search had nothing usable to search with. Fixed the eval capture/refresh tooling to try the AI's own aliexpressKeywords first (mirroring production's find-supplier.ts precedence) via lib/eval/capture-keywords.ts. Live re-capture merges both AI keywords (\"menstrual heating pad\" + \"period pain relief massager\") into 34 real candidates and finds a match: score 0.529, margin +0.129. Note the price arm is \"unknown\" here (no store price was detected on this sparse homepage scrape) — roughly 30% of the score's weight (the price component) is the neutral default rather than real price evidence; title overlap (47%) and seller trust are carrying this one."
   },
   "notes": "Heated belly massage device. Classic dropship. Expect supplier match on AliExpress.",
   "capturedAt": "2026-06-27T08:15:36.548Z"
