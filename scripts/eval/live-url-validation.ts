@@ -20,7 +20,8 @@
  * fast and cheap.
  *
  * Usage:
- *   npx tsx scripts/eval/live-url-validation.ts <candidates.json> [out.json]
+ *   npm run eval:live-validate -- <candidates.json> [out.json]
+ *   (or: npx tsx --env-file=.env scripts/eval/live-url-validation.ts <candidates.json> [out.json])
  *
  * candidates.json: array of { id, url, category, expectedVerdict, notes? }
  */
@@ -29,6 +30,7 @@ import { scrape as scraperService } from "@/lib/services/scraper";
 import { identify as identifierService } from "@/lib/services/product-identifier";
 import { verify as verdictService } from "@/lib/services/dropship-verdict";
 import { detectProductSource } from "@/lib/scraping/detect-source";
+import { normalizeProductUrl } from "@/lib/cache/product-cache";
 import { computePresenceTier, type PresenceTier } from "@/lib/analyze/presence-tier";
 import type { DropshipVerdict } from "@/lib/ai/dropship-verifier";
 
@@ -62,13 +64,19 @@ interface Outcome {
 const CONCURRENCY = 6;
 
 async function runOne(c: Candidate): Promise<Outcome> {
-  const scrapeRes = await scraperService({ url: c.url });
+  // Match app/api/analyze/route.ts, which normalizes (strips hash/query/
+  // trailing slash) before calling any of these three services — otherwise
+  // a candidate URL carrying a query string scrapes a different resource
+  // than what production would actually serve for that input.
+  const url = normalizeProductUrl(c.url);
+
+  const scrapeRes = await scraperService({ url });
   if (!scrapeRes.ok) {
     return { ...c, status: "scrape_failed", error: scrapeRes.error.message };
   }
   const scrapeOut = scrapeRes.value;
 
-  const sourceType = detectProductSource(c.url);
+  const sourceType = detectProductSource(url);
   let identity = null;
   let identityName: string | null = null;
   if (sourceType !== "supplier_marketplace") {
@@ -83,7 +91,7 @@ async function runOne(c: Candidate): Promise<Outcome> {
   }
 
   const verdictRes = await verdictService({
-    url: c.url,
+    url,
     attributes: scrapeOut.attributes,
     markdown: scrapeOut.markdown,
     html: scrapeOut.html,
@@ -116,7 +124,7 @@ async function runOne(c: Candidate): Promise<Outcome> {
   };
 }
 
-async function runBatch(candidates: Candidate[]): Promise<Outcome[]> {
+async function runBatch(candidates: Candidate[], outputPath?: string): Promise<Outcome[]> {
   const outcomes: Outcome[] = new Array(candidates.length);
   let next = 0;
   async function worker() {
@@ -124,13 +132,30 @@ async function runBatch(candidates: Candidate[]): Promise<Outcome[]> {
       const i = next++;
       const c = candidates[i];
       process.stdout.write(`[${i + 1}/${candidates.length}] ${c.id} ${c.url}\n`);
-      const o = await runOne(c);
+      let o: Outcome;
+      try {
+        o = await runOne(c);
+      } catch (err) {
+        // A live run against real external APIs is expensive and rate-limited
+        // — an uncaught throw from one candidate must not cost every other
+        // in-flight result. Isolate per-candidate, never let one bad URL
+        // take down Promise.all for the whole batch.
+        o = { ...c, status: "verdict_failed", error: `uncaught: ${(err as Error).message}` };
+      }
       const tag =
         o.status !== "ok"
           ? `✗ ${o.status}: ${o.error}`
           : `✓ verdict=${o.actualVerdict} conf=${(o.confidence! * 100).toFixed(0)}% tier=${o.presenceTier} src=${o.verdictSource} ${o.verdictMatch ? "MATCH" : "MISMATCH (expected " + c.expectedVerdict + ")"}`;
       process.stdout.write(`    ${tag}\n`);
       outcomes[i] = o;
+      // Persist after every completion, not just at the end — the run has
+      // already demonstrated real external flakiness (transient 503s), and
+      // this is a costly, rate-limited live run worth not losing to a crash
+      // partway through. Filters unset slots so a partial write is still
+      // valid JSON.
+      if (outputPath) {
+        fs.writeFileSync(outputPath, JSON.stringify(outcomes.filter(Boolean), null, 2));
+      }
     }
   }
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
@@ -201,13 +226,13 @@ function printReport(outcomes: Outcome[]): void {
 async function main(): Promise<void> {
   const [inputPath, outputPath] = process.argv.slice(2);
   if (!inputPath) {
-    console.error("Usage: npx tsx scripts/eval/live-url-validation.ts <candidates.json> [out.json]");
+    console.error("Usage: npm run eval:live-validate -- <candidates.json> [out.json]");
     process.exit(1);
   }
   const candidates: Candidate[] = JSON.parse(fs.readFileSync(inputPath, "utf-8"));
   console.log(`[live-validation] ${candidates.length} candidates, concurrency=${CONCURRENCY}\n`);
 
-  const outcomes = await runBatch(candidates);
+  const outcomes = await runBatch(candidates, outputPath);
   printReport(outcomes);
 
   if (outputPath) {

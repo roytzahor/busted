@@ -33,6 +33,7 @@
     "graph:cbm": "codebase-memory-mcp cli index_repository --repo_path .",
     "graph:all": "npm run graph:graft && npm run graph:cbm && graphify update .",
     "eval:model": "tsx --env-file=.env scripts/eval/model-benchmark.ts",
+    "eval:live-validate": "tsx --env-file=.env scripts/eval/live-url-validation.ts",
     "perf:budget": "tsx scripts/ci/check-bundle-budget.ts"
   },
   "dependencies": {
