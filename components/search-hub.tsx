@@ -32,7 +32,7 @@ import {
 } from "@/lib/examples";
 import { appendScan } from "@/lib/scan-history";
 import { track } from "@/lib/track";
-import { TrendingNow } from "@/components/trending-now";
+import { LandingLedger } from "@/components/landing-ledger";
 import { TrustCounter } from "@/components/trust-counter";
 import { useT } from "@/components/locale-provider";
 import { ValuePropFaq } from "@/components/value-prop-faq";
@@ -42,49 +42,13 @@ import {
   AlertCircle,
   ArrowRight,
   ClipboardPaste,
-  Clock,
   Flame,
   Info,
   Link2,
-  Shield,
-  Zap,
 } from "lucide-react";
 
 type SearchPhase = "idle" | "analyzing" | "complete" | "error";
 type SearchMode = "single" | "bulk";
-
-const STAT_KEYS = [
-  { icon: Zap, key: "stats.avgScan" as const, value: "~20s" },
-  { icon: Shield, key: "stats.detection" as const, value: "AI-powered" },
-  { icon: Clock, key: "stats.cache" as const, value: "14 days" },
-];
-
-const HOW_IT_WORKS = [
-  {
-    step: "01",
-    icon: Link2,
-    title: "Paste any product link",
-    body: "Drop a link from any online store — Shopify, TikTok Shop, or an independent brand. We handle the rest.",
-    colorClass: "text-primary",
-    glowClass: "bg-primary/12",
-  },
-  {
-    step: "02",
-    icon: Flame,
-    title: "See if they're marking it up",
-    body: "Our AI reads the product page and scores how likely it is you're paying a dropship premium.",
-    colorClass: "text-destructive",
-    glowClass: "bg-destructive/12",
-  },
-  {
-    step: "03",
-    icon: Shield,
-    title: "Find it cheaper, instantly",
-    body: "We find the same product at the source so you can buy direct and keep the difference.",
-    colorClass: "text-success",
-    glowClass: "bg-success/12",
-  },
-];
 
 export function SearchHub() {
   const searchParams = useSearchParams();
@@ -309,34 +273,22 @@ export function SearchHub() {
           {t("hero.tagline")}
         </div>
 
-        {/* Headline */}
-        <h1 className="mb-5 text-4xl font-black tracking-tight sm:text-5xl md:text-6xl lg:text-7xl md:leading-[1.05]">
-          <span className="bg-gradient-to-br from-primary via-orange-400 to-amber-300 bg-clip-text text-transparent">
-            {t("hero.headline.busted")}
-          </span>{" "}
-          <span className="bg-gradient-to-br from-success via-emerald-400 to-green-300 bg-clip-text text-transparent">
-            {t("hero.headline.relief")}
-          </span>
+        {/* Headline — solid foreground, DESIGN.md §4.4 Display scale.
+            Gradient clip-text killed: costs legibility, breaks
+            high-contrast modes, adds no information. Exactly one word
+            carries --primary. */}
+        <h1 className="mb-5 text-[clamp(2.25rem,5.5vw,3.75rem)] font-extrabold tracking-[-0.035em] leading-[1.04] text-balance">
+          <span className="text-primary">{t("hero.headline.busted")}</span>{" "}
+          <span className="text-foreground">{t("hero.headline.relief")}</span>
         </h1>
 
-        <p className="mx-auto mb-6 max-w-lg text-base text-muted-foreground sm:text-lg">
+        <p className="mx-auto mb-6 max-w-lg text-base leading-[1.6] text-pretty text-muted-foreground sm:text-lg">
           {t("hero.description")}
         </p>
 
         {/* Live trust counter — real DB aggregate, cached server-side 1h */}
-        <div className="mb-6 flex justify-center">
+        <div className="mb-10 flex justify-center">
           <TrustCounter />
-        </div>
-
-        {/* Stats bar — glass pill */}
-        <div className="mb-10 inline-flex items-center justify-center divide-x divide-white/10 overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] backdrop-blur-sm">
-          {STAT_KEYS.map(({ icon: Icon, key, value }) => (
-            <div key={key} className="flex items-center gap-1 px-3 py-2.5 text-xs sm:gap-2 sm:px-5 sm:text-sm">
-              <Icon className="size-3.5 shrink-0 text-primary sm:size-4" aria-hidden="true" />
-              <span className="hidden text-muted-foreground sm:inline">{t(key)}:</span>
-              <span className="font-semibold">{value}</span>
-            </div>
-          ))}
         </div>
 
         {/* ── Mode tabs: Single URL / Bulk paste ───────────────────── */}
@@ -381,8 +333,6 @@ export function SearchHub() {
         <>
         {/* ── Glass search card ────────────────────────────────────── */}
         <div className="relative mx-auto w-full max-w-xl overflow-hidden rounded-2xl border border-white/8 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-xl">
-          {/* Top-edge shine */}
-          <div aria-hidden="true" className="shine-top pointer-events-none absolute inset-x-0 top-0 h-px" />
           <form
             onSubmit={handleSubmit}
             className="space-y-4"
@@ -585,57 +535,11 @@ export function SearchHub() {
         </div>
       ) : null}
 
-      {/* ── Trending now — social proof rail (idle only) ──────────── */}
-      {isIdle ? (
-        <TrendingNow className="mb-12" />
-      ) : null}
-
-      {/* ── How it works — bento grid (idle only) ─────────────────── */}
+      {/* ── The open ledger — DESIGN.md §5.1 (idle only) ──────────── */}
       {isIdle ? (
         <>
-        <section aria-label={t("hero.howItWorks")} className="mb-12">
-          <p className="mb-5 text-center text-xs font-bold uppercase tracking-widest text-muted-foreground/50">
-            {t("hero.howItWorks")}
-          </p>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {HOW_IT_WORKS.map((item) => {
-              const Icon = item.icon;
-              return (
-                <article
-                  key={item.step}
-                  className="group relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] p-6 text-left backdrop-blur-sm transition-[border-color,background-color,transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:border-white/14 hover:bg-white/[0.055] hover:shadow-xl hover:shadow-black/20"
-                >
-                  {/* Color-coded ambient glow */}
-                  <div
-                    aria-hidden="true"
-                    className={cn(
-                      "pointer-events-none absolute -top-12 -left-12 h-40 w-40 rounded-full blur-3xl",
-                      item.glowClass,
-                    )}
-                  />
-
-                  {/* Large step number watermark */}
-                  <span
-                    aria-hidden="true"
-                    className="pointer-events-none absolute right-4 bottom-3 select-none text-8xl font-black leading-none text-foreground/[0.06]"
-                  >
-                    {item.step}
-                  </span>
-
-                  <div className="relative z-10 mb-4 inline-flex rounded-lg border border-white/10 bg-white/5 p-3 transition-colors duration-300 group-hover:border-white/15 group-hover:bg-white/8">
-                    <Icon className={cn("size-5", item.colorClass)} aria-hidden="true" />
-                  </div>
-
-                  <h2 className="relative z-10 mb-2 text-sm font-bold">{item.title}</h2>
-                  <p className="relative z-10 text-xs leading-relaxed text-muted-foreground">
-                    {item.body}
-                  </p>
-                </article>
-              );
-            })}
-          </div>
-        </section>
-        <ValuePropFaq className="mb-20" />
+          <LandingLedger className="mb-12" />
+          <ValuePropFaq className="mb-20" />
         </>
       ) : null}
     </div>
