@@ -33,8 +33,9 @@ See `standards/trust/affiliate-neutrality` for the mechanism-based restatement.
   verdict accuracy on the real subset is 92.3% (`npm run eval:model`), a
   different and smaller-sample number than the offline `--skip-ai` replay's
   100% (which re-tests the clamps against cached AI responses, not the live
-  model). **Verified 2026-08-28** via a 90-URL live validation outside the
-  fixture corpus: shown-verdict precision 100%, zero false accusations (see
+  model). **Verified 2026-08-28** via an 83-URL live validation (through the
+  real production service chain) outside the fixture corpus: shown-verdict
+  precision 100%, zero false accusations (see
   open question #1). Phase 1's exit is now met, not just provisional.
 - **Phase 2 — The Index**: pgvector ANN, canonical clustering, landed-cost,
   programmatic SEO store pages, Verified Product Map. Exit: median supplier
@@ -62,18 +63,26 @@ These came out of red-team review (original + 2026-08-28 follow-up) and are
 1. **Resolved 2026-08-28.** Ran the 100-hand-labeled-live-URL validation
    (`scripts/eval/live-url-validation.ts`, 90 fresh URLs, results in
    `tests/eval/live-validation/2026-08-28-90-urls.json`) — never executed
-   before this. **Shown-verdict precision: 29/29 = 100%**, zero false
-   accusations across 33 major real brands (Nike, Allbirds, Patagonia,
-   Casper, Sephora, Yeti, Hydro Flask, Away, Bombas, Theragun, Crocs,
-   Fjällräven, Solo Stove, a real Shopify-hosted brand chosen specifically to
-   test that the platform itself isn't a false signal) plus dropship-pattern
-   stores and non-product/collection pages. Raw verdict accuracy read 80% on
-   first pass; hand-reviewing every mismatch against actual scraped content
-   found 16/18 were my labeling errors (stale store state, multi-product
-   homepages mislabeled as single-product, one real brand I didn't
-   recognize), correcting to **87/88 = 98.9%** (one genuinely ambiguous case
-   excluded, one plausible subtle-dropship miss counted against the model).
-   This clears the bar that was blocking Busted Pro billing (Phase 3).
+   before this. First version of the script called the AI verifier directly;
+   self-review caught that it skipped the Tier-0 fingerprint gate and the
+   vision-grounded product identifier that production actually runs, so it
+   was re-run through the real `scraper → identifier → dropship-verdict`
+   service chain. 83/90 scraped and verdicted (7 excluded on a transient
+   Google AI 503 — a real single-key/no-fallback gap worth its own ticket).
+   **Shown-verdict precision: 28/28 = 100%**, zero false accusations across
+   33 major real brands (Nike, Allbirds, Patagonia, Casper, Sephora, Yeti,
+   Hydro Flask, Away, Bombas, Theragun, Crocs, Fjällräven, Solo Stove, a real
+   Shopify-hosted brand chosen specifically to test that the platform itself
+   isn't a false signal) plus dropship-pattern stores and non-product/
+   collection pages. Raw verdict accuracy read 70/83 = 84.3% on first pass;
+   hand-reviewing every mismatch against actual scraped content found 12/13
+   were my labeling errors (stale store state, multi-product homepages
+   mislabeled as single-product, one real brand I didn't recognize, URLs
+   that resolved to a different page than assumed), correcting to
+   **82/83 = 98.8%** (one plausible subtle-dropship miss counted against the
+   model — a single-SKU novelty store the identifier named correctly but the
+   verdict still called `legit`). This clears the bar that was blocking
+   Busted Pro billing (Phase 3).
 2. **Affiliate economics are negative per cold scan** in the base case, and
    break-even needs a very high cache hit rate. Instrument supplier-link CTR
    before building more monetization. Still unmeasured: 5 affiliate clicks,

@@ -11,6 +11,8 @@
     "verdictMatch": true,
     "title": "Untoom Car Phone Holder",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "dashboard magnetic car phone mount",
     "markdownExcerpt": "Untoom Car Phone Holder &ndash; One Design Shop Home Catalog Log In Create Account Search Terms of Service Refund policy Site navigation Home Catalog Log In Search Cart Cart Your cart Close Cart Untoom Car Phone Holder Regular price Sale price $11.48 Unit price / &nbsp;per&nbsp; Shipping calculated at checkout. Color Black Silver Gold Black - $11.48 USD Silver - $11.48 USD Gold - $11.48 USD Add to"
   },
   {
@@ -20,11 +22,13 @@
     "expectedVerdict": "dropship",
     "status": "ok",
     "actualVerdict": "not_a_product",
-    "confidence": 0.95,
+    "confidence": 0.98,
     "presenceTier": "silent",
     "verdictMatch": false,
     "title": "Tienda no disponible",
     "provider": "firecrawl",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "←Shopify\n\n# Esta tienda no está disponible en este momento.\n\n# Did you mean ?\n\n## ¿Eres el propietario de la tienda?\n\n¿Tienes problemas para acceder a la tienda?Prueba la función ¿Olvidaste tu tienda?. Si deseas reactivar tu tienda contacta a atención al cliente de Shopify."
   },
   {
@@ -34,11 +38,13 @@
     "expectedVerdict": "dropship",
     "status": "ok",
     "actualVerdict": "dropship",
-    "confidence": 0.98,
+    "confidence": 0.95,
     "presenceTier": "flame",
     "verdictMatch": true,
     "title": "Fitness Resistance Bands (Home gym equipment)",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "latex pull up assist resistance bands",
     "markdownExcerpt": "Fitness Resistance Bands (Home gym equipment) &ndash; shopwellstore Skip to content Submit Close search Submit Home Catalog SIGN IN Pick a currency --> USD US Dollar Euro British Pound Sterling Canadian Dollar Australian Dollar Israeli New Shekel Indian Rupee Afghan Afghani Albanian Lek Azerbaijani Manat Algerian Dinar Angolan Kwanza Argentine Peso Armenian Dram Aruban Florin Bahamian Dollar Bahra"
   },
   {
@@ -53,7 +59,9 @@
     "verdictMatch": true,
     "title": "Triple Chopper Food Slicer Kitchen Gadget Multifunctional Food Masher Press Proc",
     "provider": "crawlbase",
-    "markdownExcerpt": "Triple Chopper Food Slicer Kitchen Gadget Multifunctional Food Masher &ndash; Life Hack Stock Skip to content Someone purchased - Verified Crystalex | Honey and Syrup Dispenser Someone purchased - Verified Cupress | Compression Packing Cubes - Alameda Design Someone purchased - Verified \"YOU ARE MY SUNSHINE\" - SUNFLOWER NECKLACE Someone purchased - Verified KitCups | Kissing Cats Cup Set Someone p"
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "spring-loaded manual triple blade food chopper",
+    "markdownExcerpt": "Triple Chopper Food Slicer Kitchen Gadget Multifunctional Food Masher &ndash; Life Hack Stock Skip to content Someone purchased - Verified \"YOU ARE MY SUNSHINE\" - SUNFLOWER NECKLACE Someone purchased - Verified KitCups | Kissing Cats Cup Set Someone purchased - Verified DOM-INNATE Watch™ Someone purchased - Verified QuikSlim Detox Patch Someone purchased - Verified Magic Foundation Someone purchas"
   },
   {
     "id": "val-ds-007",
@@ -62,11 +70,13 @@
     "expectedVerdict": "dropship",
     "status": "ok",
     "actualVerdict": "dropship",
-    "confidence": 0.94,
+    "confidence": 0.95,
     "presenceTier": "flame",
     "verdictMatch": true,
     "title": "Vegetable Chopper Kitchen",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "multifunctional vegetable chopper and mandoline slicer set",
     "markdownExcerpt": "Vegetable Chopper Kitchen &ndash; WhoaDeals™ Skip to content Welcome to our store Home Catalog Contact Log in WhoaDeals™ Home Catalog Contact Collections Best Sellers Trending Deals Trendy Gadgets Dogs Jewelry Health Cats Kitchen Beauty Men&#39;s Fashion Search Log in Cart Item added to your cart View cart Check out Continue shopping Skip to product information Open media 1 in modal Open media 2 i"
   },
   {
@@ -81,6 +91,8 @@
     "verdictMatch": true,
     "title": "Multifunctional Rotate Vegetable Cutter",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "Multifunctional Rotate Vegetable Cutter &ndash; Heartlly Skip to content Submit Close search Submit Home Shop Track Your Order FAQ Help expand collapse Help Help Center &amp; FAQ Shipping Returns Contact Us About Us SIGN IN expand/collapse Home Shop Track Your Order FAQ Help Help Center &amp; FAQ Shipping Returns Contact Us About Us Search SIGN IN Cart Cart 0 $0.00 Previous slide Next slide Multif"
   },
   {
@@ -95,6 +107,8 @@
     "verdictMatch": true,
     "title": "Wild Terrain - Minimalist iPhone 12 Case",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "topographic contour line iPhone case",
     "markdownExcerpt": "Wild Terrain - Minimalist iPhone 12 Case &ndash; mwteststore1 Skip to content Welcome to our store Home Catalog Google Test mwteststore1 Home Catalog Google Test Search Cart Item added to your cart Check out Continue shopping Skip to product information Open media 1 in modal Open media 2 in modal Open media 3 in modal 1 / of 3 BURGA Wild Terrain - Minimalist iPhone 12 Case Regular price Rs. 23.95 "
   },
   {
@@ -109,6 +123,8 @@
     "verdictMatch": true,
     "title": "Vintage Bluetooth Speaker",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "portable fabric bluetooth speaker with handle",
     "markdownExcerpt": "Vintage Bluetooth Speaker &ndash; tech2audio Free Shipping Nation Wide!!!! Use Code FREESHIP at Checkout What&#39;s new Shop + - Phone Cases + - ALL IPHONE 6 IPHONE 6 PLUS IPHONE 7 IPHONE 7 PLUS Charging + - CABLES CAR CHARGERS PORTABLE CHARGERS AUDIO + - HEADPHONES EAR BUDS SPEAKERS COLLECTIONS + - Metallics Fashion Classic Car Accessories + - car mounts Car chargers FUN STUFF + - selfie stuff ot"
   },
   {
@@ -116,14 +132,8 @@
     "url": "https://tech2audio.myshopify.com/products/tune-bluetooth-speaker-1",
     "category": "dropship_obvious",
     "expectedVerdict": "dropship",
-    "status": "ok",
-    "actualVerdict": "dropship",
-    "confidence": 0.9,
-    "presenceTier": "flame",
-    "verdictMatch": true,
-    "title": "Tune Bluetooth Speaker",
-    "provider": "crawlbase",
-    "markdownExcerpt": "Tune Bluetooth Speaker &ndash; tech2audio Free Shipping Nation Wide!!!! Use Code FREESHIP at Checkout What&#39;s new Shop + - Phone Cases + - ALL IPHONE 6 IPHONE 6 PLUS IPHONE 7 IPHONE 7 PLUS Charging + - CABLES CAR CHARGERS PORTABLE CHARGERS AUDIO + - HEADPHONES EAR BUDS SPEAKERS COLLECTIONS + - Metallics Fashion Classic Car Accessories + - car mounts Car chargers FUN STUFF + - selfie stuff other"
+    "status": "verdict_failed",
+    "error": "Google AI API error: all 1 key(s) exhausted. Last error: Google AI API error (gemini-3.7-flash): [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent: [503 ] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
   },
   {
     "id": "val-ds-012",
@@ -137,6 +147,8 @@
     "verdictMatch": true,
     "title": "Premium Yoga Mat",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "PU natural rubber yoga mat",
     "markdownExcerpt": "Premium Yoga Mat &ndash; Flexana Skip to content Just added to your cart Qty: View cart ( ) Continue shopping Submit Close search We Deliver All Around Egypt Home Contact / Apply Page Contact us About the Teachers Search Log in Cart 0 items Home Contact / Apply Page Contact us About the Teachers Premium Yoga Mat Regular price LE 2,700.00 Sale price LE 2,700.00 Regular price Sale Sold out Unit pric"
   },
   {
@@ -145,12 +157,14 @@
     "category": "dropship_subtle",
     "expectedVerdict": "dropship",
     "status": "ok",
-    "actualVerdict": "legit",
-    "confidence": 0.85,
-    "presenceTier": "silent",
-    "verdictMatch": false,
+    "actualVerdict": "dropship",
+    "confidence": 0.82,
+    "presenceTier": "flame",
+    "verdictMatch": true,
     "title": "THE YOGI - Organic Cotton Yoga Mat",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "woven cotton yoga mat",
     "markdownExcerpt": "THE YOGI - Organic Cotton Yoga Mat &ndash; Balanced Bayou Skip to content Best Sellers Apothecary Supplements Skincare Pantry Essential Oils Baby &amp; Home Louisiana Proud Louisiana Proud From the Boot The Bayou Journal The Bayou Journal News Recipes About Us FAQ Facebook Pinterest Instagram TikTok Search Best Sellers Apothecary Supplements Skincare Pantry Essential Oils Baby &amp; Home Louisiana"
   },
   {
@@ -165,6 +179,8 @@
     "verdictMatch": true,
     "title": "Self Stirring Coffee Cup Mugs Double Insulated Coffee Mug 400 ML Automatic Elect",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "Self Stirring Coffee Cup Mugs Double Insulated Coffee Mug 400 ML Autom &ndash; Coffee Pot Shop Skip to content Submit Close search Home Catalog Submit Search Cart Home Catalog Previous slide Next slide Self Stirring Coffee Cup Mugs Double Insulated Coffee Mug 400 ML Automatic Electric Coffee Cups Smart Mugs Mixing Coffee Cup Regular price $13.98 Sale price $13.98 Sale Color Black Green Red Yellow "
   },
   {
@@ -172,28 +188,16 @@
     "url": "https://self-stirring-mugg.myshopify.com/products/self-stirring-mugs",
     "category": "dropship_obvious",
     "expectedVerdict": "dropship",
-    "status": "ok",
-    "actualVerdict": "dropship",
-    "confidence": 0.99,
-    "presenceTier": "flame",
-    "verdictMatch": true,
-    "title": "Self Stirring Mugs",
-    "provider": "crawlbase",
-    "markdownExcerpt": "Self Stirring Mugs &ndash; Self Stırrıng Mugg Skip to content Search Cart ( 0 ) Check Out Menu Home Catalog All Mugs Coffe Stirring Cold Stirring Facebook Twitter Pinterest Instagram Snapchat Google Plus Tumblr YouTube Vimeo Fancy Home › Self Stirring Mugs Sale Sale Sale Sale Sale Self Stirring Mugs Sale price $25.99 Regular price $42.99 Tax included. Black - $25.99 USD Green - Sold Out Red - Sold"
+    "status": "verdict_failed",
+    "error": "Google AI API error: all 1 key(s) exhausted. Last error: Google AI API error (gemini-3.7-flash): [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent: [503 ] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
   },
   {
     "id": "val-ds-016",
     "url": "https://rokastore1.myshopify.com/products/6-colors-400ml-self-stirring-mug-automatic-electric-blenders-stainless-steel-coffee-makers-milk-tea-milk-mixing-drinking-cups",
     "category": "dropship_obvious",
     "expectedVerdict": "dropship",
-    "status": "ok",
-    "actualVerdict": "dropship",
-    "confidence": 0.95,
-    "presenceTier": "flame",
-    "verdictMatch": true,
-    "title": "Self Stirring Mug",
-    "provider": "crawlbase",
-    "markdownExcerpt": "Self Stirring Mug &ndash; Roka Store Announce something here Cart 0 Search Announce something here Menu Cart 0 Search Roka Store Home &rsaquo; Self Stirring Mug Roka Store Self Stirring Mug Regular price $19.90 Sale price $57.90 Unit price / per red - $19.90 USD green - $19.90 USD sky blue - $19.90 USD black - $19.90 USD deep blue - $19.90 USD yellow - $19.90 USD Quantity Add to Cart &nbsp; &nbsp;"
+    "status": "verdict_failed",
+    "error": "Google AI API error: all 1 key(s) exhausted. Last error: Google AI API error (gemini-3.7-flash): [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent: [503 ] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
   },
   {
     "id": "val-ds-017",
@@ -202,11 +206,13 @@
     "expectedVerdict": "dropship",
     "status": "ok",
     "actualVerdict": "dropship",
-    "confidence": 0.96,
+    "confidence": 0.72,
     "presenceTier": "flame",
     "verdictMatch": true,
     "title": "Automatic Wine Bottle Opener Kit",
     "provider": "crawlbase",
+    "verdictSource": "tier0-store-fingerprint",
+    "identityName": null,
     "markdownExcerpt": "Automatic Wine Bottle Opener Kit &ndash; Wet Bar Station Home Shop Shop Bartender Supplies Beverage Service Supplies Mixed Drinks Supplies Promotions Catalog Blog About Contact USD USD USD EUR GBP JPY CAD USD EUR GBP JPY CAD 0 Home Shop Shop Bartender Supplies Beverage Service Supplies Mixed Drinks Supplies Promotions Catalog Blog About Contact USD USD USD EUR GBP JPY CAD USD EUR GBP JPY CAD All C"
   },
   {
@@ -214,14 +220,8 @@
     "url": "https://onyx-breezy.myshopify.com/products/electric-wine-opener",
     "category": "dropship_subtle",
     "expectedVerdict": "dropship",
-    "status": "ok",
-    "actualVerdict": "dropship",
-    "confidence": 0.85,
-    "presenceTier": "flame",
-    "verdictMatch": true,
-    "title": "Electric Wine Opener",
-    "provider": "crawlbase",
-    "markdownExcerpt": "Electric Wine Opener - The Onyx &amp; Breezy Store Cart: 0 Log in or Create an account Home The O&B Logo Store The O&B Logo Store For Pet Lovers Warm & Cozy H.E.A.R.T. Collection For Pet Lovers Everyday Living Custom Jackets & Caps O&B Exclusive Jewelry Celebrity Signed Items Art For Your Pet For Your Pet Mystery Boxes Gift Certificates Home The O&B Logo Store - The O&B Logo Store For Pet Lovers -"
+    "status": "verdict_failed",
+    "error": "Google AI API error: all 1 key(s) exhausted. Last error: Google AI API error (gemini-3.7-flash): [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent: [503 ] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
   },
   {
     "id": "val-ds-019",
@@ -235,6 +235,8 @@
     "verdictMatch": true,
     "title": "LED Flash Selfie Ring Light",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "clip-on selfie ring light for phone",
     "markdownExcerpt": "LED Flash Selfie Ring Light &ndash; goget-tech.com Skip to content Pick a currency USD CAD INR GBP AUD EUR JPY Close menu Home Gadget Shop Car Accessories Electronics Accessories Smart Home Sports & Outdoor Track Your Order Facebook Pinterest Instagram Cart Close cart goget-tech.com Home Gadget Shop Car Accessories Electronics Accessories Smart Home Sports & Outdoor Track Your Order Pick a currenc"
   },
   {
@@ -244,11 +246,13 @@
     "expectedVerdict": "dropship",
     "status": "ok",
     "actualVerdict": "dropship",
-    "confidence": 0.96,
+    "confidence": 0.95,
     "presenceTier": "flame",
     "verdictMatch": true,
     "title": "Portable Selfie Ring Light - Enhances Selfie Photography for Smartphon | ArcAxiA",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "Portable Selfie Ring Light - Enhances Selfie Photography for Smartphon | ArcAxiA Cool Gift Ideas Store USD PHP Sign In | Sign Up 0 Cart / $0.00 \"> $0.00 It appears that your cart is currently empty! Continue Shopping --> Total: $0.00 Checkout View Cart Menu NEW ARRIVALS CLOTHING, SHOES & JEWELRY ELECTRONICS & COMPUTERS HOME, GARDEN & TOOLS SPORTS & OUTDOORS TOYS, KIDS & BABY NEW ARRIVALS CLOTHING,"
   },
   {
@@ -263,6 +267,8 @@
     "verdictMatch": true,
     "title": "LED Selfie Ring Light",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "LED Selfie Ring Light &ndash; Gadget Trends Skip to content Submit Close search Submit Shop Track Order About Us Contact Us SIGN IN Pick a currency --> USD INR GBP CAD AUD EUR JPY NZD Facebook Pinterest Instagram Free shipping this week! Chat now below! test --> expand/collapse Shop Track Order About Us Contact Us Search SIGN IN Pick a currency --> USD INR GBP CAD AUD EUR JPY NZD Cart Cart 0 $0.00"
   },
   {
@@ -277,6 +283,8 @@
     "verdictMatch": true,
     "title": "LED Selfie Ring Light",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "10-inch LED selfie ring light with 2m tripod stand",
     "markdownExcerpt": "LED Selfie Ring Light &ndash; Techsandhome Skip to content Pick a currency USD CAD INR GBP AUD EUR JPY Close menu Home Catalog Track Your Order Electronics & Accessories Smart Home Facebook Pinterest Instagram Cart Close cart Techsandhome Home Catalog Track Your Order Electronics & Accessories Smart Home Pick a currency USD CAD INR GBP AUD EUR JPY Search Site navigation Cart Search \"Close (esc)\" H"
   },
   {
@@ -284,14 +292,8 @@
     "url": "https://lumidiastore.myshopify.com/products/the-lumidia-ring-light-kit",
     "category": "dropship_subtle",
     "expectedVerdict": "dropship",
-    "status": "ok",
-    "actualVerdict": "dropship",
-    "confidence": 0.95,
-    "presenceTier": "flame",
-    "verdictMatch": true,
-    "title": "THE LUMIDIA RING LIGHT KIT",
-    "provider": "crawlbase",
-    "markdownExcerpt": "THE LUMIDIA RING LIGHT KIT &ndash; Lumidia Skip to content Pick a currency USD CAD INR GBP AUD EUR JPY Close menu Home Catalog Pick a currency USD CAD INR GBP AUD EUR JPY Home Catalog Site navigation Lumidia Cart Search \"Close (esc)\" Free Worldwide Shipping! THE LUMIDIA RING LIGHT KIT Regular price $199.99 Sale price $89.99 Save $110.00 Default Title - $89.99 USD Quantity 468 in stock Add to cart "
+    "status": "verdict_failed",
+    "error": "Google AI API error: all 1 key(s) exhausted. Last error: Google AI API error (gemini-3.7-flash): [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent: [503 ] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
   },
   {
     "id": "val-ds-024",
@@ -300,11 +302,13 @@
     "expectedVerdict": "dropship",
     "status": "ok",
     "actualVerdict": "dropship",
-    "confidence": 0.95,
+    "confidence": 0.96,
     "presenceTier": "flame",
     "verdictMatch": true,
     "title": "Car Aroma Diffuser",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "smart car air vent aroma diffuser",
     "markdownExcerpt": "Car Diffuser &ndash; My Store Skip to content My Store Home Catalog Contact Search My Store More Home Catalog Contact More Search Account Your cart is empty Have an account? Log in to check out faster. Continue shopping Cart 0 Your cart is empty Have an account? Log in to check out faster. Continue shopping Elevate your drive Featured product 1 / 6 1 2 3 4 5 6 Close Car Aroma Diffuser Car Aroma Di"
   },
   {
@@ -319,6 +323,8 @@
     "verdictMatch": false,
     "title": "Store unavailable",
     "provider": "firecrawl",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "←Shopify\n\n# This store is currently unavailable.\n\n# Did you mean ?\n\n## Are you the store owner?\n\nAre you having trouble getting into your store? Try the forgot your store feature. If you would like to reactivate your store contact Shopify support."
   },
   {
@@ -328,11 +334,13 @@
     "expectedVerdict": "dropship",
     "status": "ok",
     "actualVerdict": "dropship",
-    "confidence": 0.95,
+    "confidence": 0.98,
     "presenceTier": "flame",
     "verdictMatch": true,
     "title": "Beauty Health &amp; Wellness Store — Devices, Tools &amp; Skincare",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "alirev Beauty Health &amp; Wellness Store — Devices, Tools &amp; Skincare &ndash; Beauty Health and Wellness Skip to content Get 15% off your first order! Use code WELCOME15 at checkout Beauty Health and Wellness Home Hair Care Lip Care Lashes &amp; Eyes Skincare &amp; Beauty Skincare Devices All Products Search More Home Hair Care Lip Care Lashes & Eyes Skincare & Beauty Skincare Devices All Prod"
   },
   {
@@ -342,11 +350,13 @@
     "expectedVerdict": "dropship",
     "status": "ok",
     "actualVerdict": "dropship",
-    "confidence": 0.92,
+    "confidence": 0.94,
     "presenceTier": "flame",
     "verdictMatch": true,
     "title": "The Glow Fit Co",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "ultrasonic silicone facial cleanser",
     "markdownExcerpt": "The Glow Fit Co Skip to content Your cart is empty Continue shopping Have an account? Log in to check out faster. Your Cart – 0 Loading... Estimated total $0.00 USD Tax included. Shipping and discounts calculated at checkout. Update View Cart Check out You might like... FREE SHIPPING WORLDWIDE SHOP NOW 30 DAY FREE RETURNS SHOP NOW FREE SHIPPING WORLDWIDE SHOP NOW 30 DAY FREE RETURNS SHOP NOW FREE "
   },
   {
@@ -354,14 +364,8 @@
     "url": "https://elourabeautystore.myshopify.com/",
     "category": "dropship_subtle",
     "expectedVerdict": "dropship",
-    "status": "ok",
-    "actualVerdict": "dropship",
-    "confidence": 0.95,
-    "presenceTier": "flame",
-    "verdictMatch": true,
-    "title": "Blackhead Pore Vacuum Cleaner Nose Cleanser Blackheads Remover Blackhead Acne Re",
-    "provider": "crawlbase",
-    "markdownExcerpt": "Éloura Skip to content Éloura Home Catalog Contact Search Éloura More Home Catalog Contact More Search Account Cart 0 Shop now Signature pore cleanser A refined beauty instrument using microcrystalline suction technology, delivering thorough cleansing with controlled power and a comfortable recharge cycle. View details Crafted to transform everyday skincare into an intimate experience, our approac"
+    "status": "verdict_failed",
+    "error": "Google AI API error: all 1 key(s) exhausted. Last error: Google AI API error (gemini-3.7-flash): [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent: [503 ] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
   },
   {
     "id": "val-ds-030",
@@ -375,6 +379,8 @@
     "verdictMatch": false,
     "title": "The dooloop - Best Hands Free Dog Leash Poop Holder",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "hands-free dog poop bag leash holder clip",
     "markdownExcerpt": "The dooloop - Best Hands Free Dog Leash Poop Holder Skip to content Pause slideshow Play slideshow Because we care about you, your dog, the planet, and our communities. Free Shipping on all orders of $15 or more! Site navigation Search Go fetch! The dooloop Go fetch! Account 0 Cart Site navigation Close Search Go fetch! Cancel Home Buy Now Testimonials Where To Buy Learn More About FAQ&#39;s The B"
   },
   {
@@ -383,12 +389,14 @@
     "category": "dropship_subtle",
     "expectedVerdict": "dropship",
     "status": "ok",
-    "actualVerdict": "collection_page",
-    "confidence": 0.9,
-    "presenceTier": "silent",
-    "verdictMatch": false,
+    "actualVerdict": "dropship",
+    "confidence": 0.92,
+    "presenceTier": "flame",
+    "verdictMatch": true,
     "title": "CalmPaw",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "no-pull dog harness vest",
     "markdownExcerpt": "CalmPaw Skip to content Calmer walks. Happier dogs. Thoughtful essentials from CalmPaw. Home Catalog Contact About Us Log in CalmPaw Home Catalog Contact About Us Search Log in Cart Item added to your cart View cart Check out Continue shopping Comfortable, practical walking essentials designed for safer, calmer adventures with your dog. Better walks begin with CalmPaw Shop all CalmPaw favourites E"
   },
   {
@@ -397,12 +405,14 @@
     "category": "dropship_subtle",
     "expectedVerdict": "dropship",
     "status": "ok",
-    "actualVerdict": "collection_page",
-    "confidence": 0.88,
-    "presenceTier": "silent",
-    "verdictMatch": false,
+    "actualVerdict": "dropship",
+    "confidence": 0.92,
+    "presenceTier": "flame",
+    "verdictMatch": true,
     "title": "Pompous Pooch",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "dog rope leash and collar set with poop bag holder",
     "markdownExcerpt": "Pompous Pooch Skip to content Welcome to our store Pompous Pooch Home Catalog Contact PVC Harness Set Collection Rope Collar &amp; Leash Set Leather Harness &amp; Leash Set PVC Collar &amp; Leash Set Shipping Policy USD Region and language Search Country/Region No results found Austria EUR € Belgium EUR € Bulgaria EUR € Canada CAD $ Croatia EUR € Cyprus EUR € Czechia CZK Kč Denmark DKK kr. Estonia"
   },
   {
@@ -417,6 +427,8 @@
     "verdictMatch": true,
     "title": "Best For Your Pets-Cat-Dog-Cat Toys-Dog Toys-Pet Bed-Pet Store",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "generic pet supplies and accessories",
     "markdownExcerpt": "Best For Your Pets-Cat-Dog-Cat Toys-Dog Toys-Pet Bed-Pet Store &ndash; Tet Pet Skip to content Search Home Catalog Pet Clothing Pet Accessories Cat Accessories Dog Accessories Pet Toys Cat Toys Dog Toys Pet Beds & Mats Site navigation Tet Pet Search Search Cart Menu Site navigation Home Catalog Pet Clothing Pet Accessories Pet Accessories All Cat Accessories Dog Accessories 1 Piece Pet Cats Glasse"
   },
   {
@@ -425,12 +437,14 @@
     "category": "dropship_obvious",
     "expectedVerdict": "dropship",
     "status": "ok",
-    "actualVerdict": "collection_page",
-    "confidence": 0.92,
-    "presenceTier": "silent",
-    "verdictMatch": false,
+    "actualVerdict": "dropship",
+    "confidence": 0.95,
+    "presenceTier": "flame",
+    "verdictMatch": true,
     "title": "A Cat Store",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "unknown pet product",
     "markdownExcerpt": "A Cat Store Skip to content Submit Close search Just added to your cart Qty: View cart ( ) Continue shopping Home Catalog ALL PRODUCTS Submit Search Cart 0 items Home Catalog ALL PRODUCTS A Cat Store Welcome Shop Now Featured collection Warm Cotton Cat Cave House Pet Bed Pet Dog House Lovely Soft Suitable Pet Dog Cushion Cat Bed House High Quality Products Warm Cotton Cat Cave House Pet Bed Pet Do"
   },
   {
@@ -445,6 +459,8 @@
     "verdictMatch": true,
     "title": "03CAT",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "unspecified cat pet supplies",
     "markdownExcerpt": "03CAT Close THANK YOU FOR YOUR VISIT If you are a new visiter SUBCRIBE to be the first to hear about our exclusive offers and latest arrivals Go Search Close menu Menu Search Currency USD CAD GBP EUR JPY 0 Cart Added to Cart You have items in your cart You have 1 item in your cart Total Check Out Continue Shopping 🏛️HOME🏛️ TOYS FEEDERS LITTERS/MATS BEDS/HAMMOCKS GROOMING CLOTHES &amp; ACCESSORIE"
   },
   {
@@ -459,6 +475,8 @@
     "verdictMatch": true,
     "title": "Cozy Paws",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "interactive 2-in-1 cat turntable toy with feather teaser",
     "markdownExcerpt": "Cozy Paws Skip to content Cozy Paws Home Catalog Contact About Us Return Policy CAD / EN Region and language Search Country/Region No results found Australia AUD $ Austria EUR € Belgium EUR € Bulgaria EUR € Canada CAD $ Croatia EUR € Cyprus EUR € Czechia CZK Kč Denmark DKK kr. Estonia EUR € Finland EUR € France EUR € Germany EUR € Greece EUR € Hungary HUF Ft Ireland EUR € Italy EUR € Latvia EUR € "
   },
   {
@@ -468,11 +486,13 @@
     "expectedVerdict": "dropship",
     "status": "ok",
     "actualVerdict": "dropship",
-    "confidence": 0.95,
+    "confidence": 0.92,
     "presenceTier": "flame",
     "verdictMatch": true,
     "title": "3-in-1 Cat And Dog Pet House Basin-shaped Cave Soft Bed",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "convertible foldable plush cat cave bed",
     "markdownExcerpt": "Petnexis-store Skip to content Close menu Home CATALOG CONTACT US ALL COLLECTIONS ABOUT US Log in Cart Close cart Subtotal $0.00 Shipping, taxes, and discount codes calculated at checkout. Check out Your cart is currently empty. Pause slideshow Play slideshow Free shipping For orders over 100£ Welcome to **PetNexis** – Where happy pets begin! Petnexis-store Home CATALOG CONTACT US ALL COLLECTIONS "
   },
   {
@@ -480,14 +500,8 @@
     "url": "https://pethings-store.myshopify.com/",
     "category": "dropship_obvious",
     "expectedVerdict": "dropship",
-    "status": "ok",
-    "actualVerdict": "collection_page",
-    "confidence": 0.94,
-    "presenceTier": "silent",
-    "verdictMatch": false,
-    "title": "PETHINGS",
-    "provider": "crawlbase",
-    "markdownExcerpt": "PETHINGS Skip to content Welcome to our store PETHINGS Home Catalog Contact Search PETHINGS More Home Catalog Contact More Search Account Cart 0 Happy Pets. Happier Homes. Thoughtfully chosen products that make every day better for you and your furry family. Products View all Sold out 24-Pack Puppy & Dog Chew Toys with Storage Box – Interactive Rope & Squeaky Toy Set for Small & Medium Dogs 24-Pac"
+    "status": "verdict_failed",
+    "error": "Google AI API error: all 1 key(s) exhausted. Last error: Google AI API error (gemini-3.7-flash): [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent: [503 ] This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
   },
   {
     "id": "val-ds-039",
@@ -501,6 +515,8 @@
     "verdictMatch": false,
     "title": "Store unavailable",
     "provider": "firecrawl",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "←Shopify\n\n# This store is currently unavailable.\n\n# Did you mean ?\n\n## Are you the store owner?\n\nAre you having trouble getting into your store? Try the forgot your store feature. If you would like to reactivate your store contact Shopify support."
   },
   {
@@ -515,6 +531,8 @@
     "verdictMatch": false,
     "title": "Store unavailable",
     "provider": "firecrawl",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "←Shopify\n\n# This store is currently unavailable.\n\n# Did you mean ?\n\n## Are you the store owner?\n\nAre you having trouble getting into your store? Try the forgot your store feature. If you would like to reactivate your store contact Shopify support."
   },
   {
@@ -524,11 +542,13 @@
     "expectedVerdict": "dropship",
     "status": "ok",
     "actualVerdict": "dropship",
-    "confidence": 0.95,
+    "confidence": 0.98,
     "presenceTier": "flame",
     "verdictMatch": true,
     "title": "LED Galaxy Projector ✨ — Turn Your Room Into a Universe",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "LED star galaxy projector night light",
     "markdownExcerpt": "lyfe_gadget Skip to content lyfe_gadget Home Catalogo Contatti USD Region and language Search Country/Region No results found Austria EUR € Belgium EUR € Bulgaria EUR € Croatia EUR € Cyprus EUR € Czechia EUR € Denmark EUR € Estonia EUR € Finland EUR € France EUR € Germany EUR € Greece EUR € Hungary EUR € Ireland EUR € Italy EUR € Latvia EUR € Lithuania EUR € Luxembourg EUR € Malta EUR € Netherland"
   },
   {
@@ -543,7 +563,9 @@
     "verdictMatch": true,
     "title": "Car Phone holderz",
     "provider": "crawlbase",
-    "markdownExcerpt": "Car Phone holderz Skip to content Someone purchased a Wireless Charger for Car Phone Holder Someone purchased a Gravity Car Holder For Phone Someone purchased a Magnetic Phone Holder Someone purchased a 360 Car Phone Holder Someone purchased a Wireless Car Charger Holder Submit Close search Submit Home Shop Contact SIGN IN Pick a currency --> USD INR GBP CAD AUD EUR JPY Facebook Pinterest Instagra"
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "universal car phone holder mount",
+    "markdownExcerpt": "Car Phone holderz Skip to content Someone purchased a Windshield Dashboard Car Phone Holder Someone purchased a Magnetic Car Phone Holder Someone purchased a Adjustable Phone Car Holder Someone purchased a Car Phone Holder Someone purchased a Wireless Car Charger Holder Someone purchased a Gravity Car Holder Someone purchased a Wireless Car Charger For iPhone Holder Someone purchased a Wireless Ch"
   },
   {
     "id": "val-ds-045",
@@ -557,6 +579,8 @@
     "verdictMatch": true,
     "title": "Essential Goods",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "car air vent phone holder mount",
     "markdownExcerpt": "Essential Goods Skip to content Shop our latest arrivals! Welcome to our store Essential Goods Home Catalog Contact Search Essential Goods More Home Catalog Contact More Search Account Your cart is empty Have an account? Log in to check out faster. Continue shopping Cart 0 Your cart is empty Have an account? Log in to check out faster. Continue shopping Products Car Phone Holder Car Air Vent Clip "
   },
   {
@@ -571,6 +595,8 @@
     "verdictMatch": true,
     "title": "ProHolder™ - Most Rated Auto Grip Car Phone Mount",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "gravity linkage air vent car phone holder",
     "markdownExcerpt": "ProHolder - #1 Car Rated Phone Holder. &ndash; ProHolder - Most rated phone holder for your car! Skip to content Submit Close search 50% OFF REGULAR PRICES TODAY! Home SHOP Support Contact Us Shipping Returns Policy Track Your Order About Us FAQ Submit Search Log in Cart Home SHOP Support Support Menu Support Contact Us Shipping Returns Policy Track Your Order About Us FAQ PROHOLDER One hand adjus"
   },
   {
@@ -585,6 +611,8 @@
     "verdictMatch": false,
     "title": "Best Online Store for Dogs Apparel, Accessories, Supplies and more",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "generic pet supplies store placeholder",
     "markdownExcerpt": "Best Online Store for Dogs Apparel, Accessories, Supplies and more &ndash; bestdogssupplies 1SYC8M60QAEJ 25% OFF for $50 and Above Cart 0 Search 1SYC8M60QAEJ 25% OFF for $50 and Above Menu Cart 0 Home Accessories Leashes Collars Beds Search Home Accessories Leashes Collars Beds Image slide Image slide Image slide Image slide Featured collection Example Product Title $19.99 Example Product Title $1"
   },
   {
@@ -599,6 +627,8 @@
     "verdictMatch": true,
     "title": "Pawsome Snack Vault — Airtight Pet Food Canister",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "cartoon airtight food storage container with handle and pour spout",
     "markdownExcerpt": "JOYFUL PAWS SOLUTIONS &ndash; Joyful Paws Solutions Skip to content Close menu Home Catalog Contact Log in Cart Close cart Subtotal $0.00 Shipping, taxes, and discount codes calculated at checkout. Check out Your cart is currently empty. Search Site navigation Home Joyful Paws Solutions Catalog Contact Log in Search Cart Search \"Close (esc)\" View more Pause slideshow Play slideshow Welcome to Joyf"
   },
   {
@@ -613,6 +643,8 @@
     "verdictMatch": false,
     "title": "7-In-1 Multifunctional Slicer, Food Processor and Chopper",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "multifunctional vegetable mandoline slicer set",
     "markdownExcerpt": "7-In-1 Multifunctional Slicer, Food Processor and Chopper | Royalford Skip to content Previous FREE NEXT DAY SHIPPING + 2-YEAR WARRANTY KLARNA &amp; CLEARPAY AVAILABLE AT CHECKOUT Next Navigation Geepas | For you. For life. Newsletter Track order Account 0 Basket KITCHENWARE & APPLIANCES Kitchen Essentials Kettles Toasters Kettle & Toaster Sets Kettle, Toaster & Microwave Sets Microwaves Coffee Ma"
   },
   {
@@ -627,6 +659,8 @@
     "verdictMatch": true,
     "title": "cool kitchen devices",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "cool kitchen devices Skip to content Just added to your cart Qty: View cart ( ) Continue shopping Submit Close search cool kitchen devices Home Catalog Search Cart 0 items Home Catalog KITCHEN ASSISTANTS Featured collection Vegetables Spiral Knife Potato Carrot Cucumber Salad Chopper Easy Spiral Screw Slicer Cutter Spiralizer Kitchen Tools Vegetables Spiral Knife Potato Carrot Cucumber Salad Chopp"
   },
   {
@@ -635,12 +669,14 @@
     "category": "dropship_obvious",
     "expectedVerdict": "dropship",
     "status": "ok",
-    "actualVerdict": "dropship",
-    "confidence": 0.49,
+    "actualVerdict": "collection_page",
+    "confidence": 0.88,
     "presenceTier": "silent",
-    "verdictMatch": true,
+    "verdictMatch": false,
     "title": "A store",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "unidentified home gym fitness equipment",
     "markdownExcerpt": "A store Skip to content BUY 2, GET 1 FREE ON SELECTED PRODUCTS BUY 2, GET 1 FREE ON SELECTED PRODUCTS Menu All categories ------ Pull-Up Bars (HOME GYM ESSENTIAL) SMART JUMP ROPE (DIGITAL FITNESS GADGET) VIBRATION PLATE MACHINE All categories Cancel Customer account main menu Orders Profile SHOP HERE Login View cart Home Catalog Contact Track your order Adjustable Ab Trainer Machine (CORE MACHINE)"
   },
   {
@@ -649,12 +685,14 @@
     "category": "dropship_obvious",
     "expectedVerdict": "dropship",
     "status": "ok",
-    "actualVerdict": "collection_page",
-    "confidence": 0.92,
+    "actualVerdict": "dropship",
+    "confidence": 0.49,
     "presenceTier": "silent",
-    "verdictMatch": false,
+    "verdictMatch": true,
     "title": "Your GYM My GYM",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "latex resistance loop bands",
     "markdownExcerpt": "Your GYM My GYM Skip to content Just added to your cart Qty: View cart ( ) Continue shopping Submit Close search Home Catalog All Products Search Cart 0 items Home Catalog All Products SHOP Featured collection Yoga Rubber Resistance Bands Indoor Outdoor Fitness Equipment 0.4mm-1.2mm Pilates Sport Training Workout Elastic Bands Yoga Rubber Resistance Bands Indoor Outdoor Fitness Equipment 0.4mm-1.2"
   },
   {
@@ -664,11 +702,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.99,
+    "confidence": 0.98,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Nike Air Force 1 '07 Men's Shoes",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "all white low top casual sneakers",
     "markdownExcerpt": "Nike Air Force 1 &#x27;07 Men&#x27;s Shoes. Nike.com Skip to main content Accessibility at Nike Find a Store Help Help Order Status Shipping &amp; Delivery Returns Order Cancellation Size Charts Contact Us Membership Promotions &amp; Discounts Product Advice Send Us Feedback Join Us Sign In Men New &amp; Featured New Arrivals Best Sellers Latest Drops Back to School Shop SNKRS Launch Calendar Shop"
   },
   {
@@ -678,11 +718,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.99,
+    "confidence": 0.98,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Nike Air Force 1 '07 Men's Shoes",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "men's low-top casual skateboard sneakers",
     "markdownExcerpt": "Air Force 1 Men&#x27;s Shoes. Nike.com Skip to main content Accessibility at Nike Find a Store Help Help Order Status Shipping &amp; Delivery Returns Order Cancellation Size Charts Contact Us Membership Promotions &amp; Discounts Product Advice Send Us Feedback Join Us Sign In Men New &amp; Featured New Arrivals Best Sellers Latest Drops Back to School Shop SNKRS Launch Calendar Shop All Sale Shoe"
   },
   {
@@ -692,11 +734,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "collection_page",
-    "confidence": 0.92,
+    "confidence": 0.95,
     "presenceTier": "silent",
     "verdictMatch": false,
     "title": "Allbirds Men&#39;s Shoes | Shop Sustainable Footwear for Men",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "men's wool mesh casual sneakers",
     "markdownExcerpt": "Allbirds: Sustainable Men’s Shoes, Wear-All-Day Comfort Free ground shipping on orders over $100 Due to increased demand, orders may take up to 30 days to ship. Skip to Content New Arrivals Shop All Men Women Men's New Arrivals Bestsellers LEATHER ALTERNATIVES Men's Shoes Shop All Sneakers Slip Ons Sandals Active All-Weather Customer Favorites Runner NZ Cruiser Tree Runner NZ Apparel & Accessories"
   },
   {
@@ -711,6 +755,8 @@
     "verdictMatch": false,
     "title": "Allbirds Women&#39;s Shoes | Shop Comfortable Footwear for Women",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "women lightweight walking sneakers",
     "markdownExcerpt": "Allbirds: Sustainable Women’s Shoes, Wear-All-Day Comfort Free ground shipping on orders over $100 Due to increased demand, orders may take up to 30 days to ship. Skip to Content New Arrivals Shop All Men Women Men's New Arrivals Bestsellers LEATHER ALTERNATIVES Men's Shoes Shop All Sneakers Slip Ons Sandals Active All-Weather Customer Favorites Runner NZ Cruiser Tree Runner NZ Apparel & Accessori"
   },
   {
@@ -720,11 +766,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.96,
+    "confidence": 0.98,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Original Mattress",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "memory foam mattress",
     "markdownExcerpt": "The Original Memory Foam Mattress Skip to content Find a store Save up to 35% sitewide Give 30% off, get 30% off when you refer a friend Refer a friend Casper Sleep Open navigation menu Open search Mattresses Shop all mattresses Take the quiz Compare mattresses Foams Layers of responsive, supportive, and breathable foam designed to relieve the day&#39;s pressure. The One Best Seller Comforting foa"
   },
   {
@@ -734,11 +782,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.98,
+    "confidence": 0.96,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Cloud One",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "memory foam mattress",
     "markdownExcerpt": "The Cloud One - Soft Memory Foam Mattress | Casper Skip to content Find a store Save up to 35% sitewide Give 30% off, get 30% off when you refer a friend Refer a friend Casper Sleep Open navigation menu Open search Mattresses Shop all mattresses Take the quiz Compare mattresses Foams Layers of responsive, supportive, and breathable foam designed to relieve the day&#39;s pressure. The One Best Sell"
   },
   {
@@ -748,11 +798,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.95,
+    "confidence": 0.98,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Dream",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "hybrid memory foam pocket spring mattress",
     "markdownExcerpt": "The Dream - Hybrid Memory Foam Mattress | Casper Skip to content Find a store Save up to 35% sitewide Give 30% off, get 30% off when you refer a friend Refer a friend Casper Sleep Open navigation menu Open search Mattresses Shop all mattresses Take the quiz Compare mattresses Foams Layers of responsive, supportive, and breathable foam designed to relieve the day&#39;s pressure. The One Best Seller"
   },
   {
@@ -762,11 +814,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.98,
+    "confidence": 0.96,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Snow",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "cooling memory foam hybrid mattress",
     "markdownExcerpt": "The Snow - Cooling Memory Foam Hybrid Mattress | Casper Skip to content Find a store Save up to 35% sitewide Give 30% off, get 30% off when you refer a friend Refer a friend Casper Sleep Open navigation menu Open search Mattresses Shop all mattresses Take the quiz Compare mattresses Foams Layers of responsive, supportive, and breathable foam designed to relieve the day&#39;s pressure. The One Best"
   },
   {
@@ -781,6 +835,8 @@
     "verdictMatch": true,
     "title": "Diorshow 24h Buildable Volume Mascara",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "volumizing eyelash mascara",
     "markdownExcerpt": "Diorshow Mascara - DIOR | Sephora Search Shop Store &amp; Delivery Choose your store &amp; location Services &amp; Events Sign In for FREE Shipping 🚚 Home Shop Offers Gallery My Store DIOR &nbsp; Diorshow 24h Buildable Volume Mascara 935 935 | Ask a question | Ask a question | 140.9K Highly rated by customers for: Clump Free , Length , No Flaking $35.00 or 4 payments of $8.75 with or or Choosing "
   },
   {
@@ -795,7 +851,9 @@
     "verdictMatch": true,
     "title": "Size Up Volumizing Mascara",
     "provider": "crawlbase",
-    "markdownExcerpt": "Size Up Mascara - SEPHORA COLLECTION | Sephora Search Shop Store &amp; Delivery Choose your store &amp; location Services &amp; Events Sign In for FREE Shipping 🚚 Home Shop Offers Gallery My Store SEPHORA COLLECTION &nbsp; Size Up Volumizing Mascara 1.5K 1.5K | Ask a question | Ask a question | 112.6K Highly rated by customers for: No Clumping , Separation , Volume See all 10 $21.00 or 4 payments"
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "volumizing eyelash mascara",
+    "markdownExcerpt": "Size Up Mascara - SEPHORA COLLECTION | Sephora Search Shop Store &amp; Delivery Choose your store &amp; location Services &amp; Events Sign In for FREE Shipping 🚚 Home Shop Offers Gallery My Store SEPHORA COLLECTION &nbsp; Size Up Volumizing Mascara 1.5K 1.5K | Ask a question | Ask a question | 112.6K Highly rated by customers for: No Clumping , Separation , Volume $16.00 or 4 payments of $4.00 w"
   },
   {
     "id": "val-legit-014",
@@ -809,6 +867,8 @@
     "verdictMatch": true,
     "title": "Limitless Lash Mascara - Clean Lengthening Mascara",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "lengthening mascara with silicone comb brush",
     "markdownExcerpt": "Limitless Lash Lengthening Mascara - ILIA | Sephora Shop Ilia’s Limitless Lash Mascara - Clean Lengthening Mascara at Sephora. This award-winning mascara lengthens, lifts, and separates and is safe for sensitive eyes. \"> Shop Ilia’s Limitless Lash Mascara - Clean Lengthening Mascara at Sephora. This award-winning mascara lengthens, lifts, and separates and is safe for sensitive eyes. \"> Shop Ilia’"
   },
   {
@@ -821,9 +881,11 @@
     "confidence": 0.98,
     "presenceTier": "silent",
     "verdictMatch": true,
-    "title": "Rambler® 20 oz Tumbler",
-    "provider": "crawlbase",
-    "markdownExcerpt": "YETI Rambler 20 oz Tumbler with MagSlider Lid Skip to main content Skip to footer content ranger YETI Rescues Resale Find a Store Customer Support Corporate Sales USA / EN AU / EN CA / EN CA / FR EU / EN FR / FR DE / DE IE / EN IT / IT JP / JA NL / NL NZ / EN ES / ES GB / EN USA / ES Customize Customize Shop All Corporate Corporate Sales By Product Shop All Drinkware Officially Licensed Team Gear "
+    "title": "YETI Rambler 20 oz Tumbler with MagSlider Lid",
+    "provider": "firecrawl",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "double wall vacuum insulated stainless steel travel tumbler with sliding lid",
+    "markdownExcerpt": ".............\n\n# Rambler® 20 oz Tumbler\n\nWishlist\n\nWITH COLOR-MATCHED MAGSLIDER™ LID\n\n$40.00\n\n4.7\n\n(35163)\n\n1. Drinkware\n2. Tumblers\n\nNEW\n\n# Rambler® 20 oz Tumbler\n\nWishlist\n\nWITH COLOR-MATCHED MAGSLIDER™ LID\n\n$40.00\n\n4.7\n\n(35163)\n\nItem No.\n21071509313\n\n###### Seasonal Colors\n\nUpland Bird Olive\n\nSwatchSwatchSwatchSwatchSwatchSwatchSwatchSwatchSwatchSwatchSwatchSwatchSwatchSwatchSwatchSwatchSwatchS"
   },
   {
     "id": "val-legit-016",
@@ -832,11 +894,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.98,
+    "confidence": 0.99,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Rambler® 30 oz Tumbler",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "double wall vacuum insulated stainless steel tumbler with slider lid",
     "markdownExcerpt": "YETI Rambler 30 oz Tumbler With MagSlider Lid Skip to main content Skip to footer content ranger YETI Rescues Resale Find a Store Customer Support Corporate Sales USA / EN AU / EN CA / EN CA / FR EU / EN FR / FR DE / DE IE / EN IT / IT JP / JA NL / NL NZ / EN ES / ES GB / EN USA / ES Customize Customize Shop All Corporate Corporate Sales By Product Shop All Drinkware Officially Licensed Team Gear "
   },
   {
@@ -846,12 +910,14 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.98,
+    "confidence": 0.95,
     "presenceTier": "silent",
     "verdictMatch": true,
-    "title": "40 oz Wide Mouth: 40 oz Insulated Water Bottle | Hydro Flask",
-    "provider": "firecrawl",
-    "markdownExcerpt": "Product Page: 40 oz Wide Mouth: 40 oz Insulated Water Bottle\n\n# 40 oz Wide Mouth\n\nProduct Gallery\n\nSale\n\nLarge wide mouth water bottle for easy drinking.\n\nLarge wide mouth water bottle for easy drinking.\n\nReviews2628Reviews\nHelp others by writing a review\n\nAs low as Current Price $37.50\n\nAs low as Current Price\n\nAs low as Current Price $37.50\n\nOld price You’ll get\n\nOld price $49.95You’ll get 25% o"
+    "title": "40 oz Wide Mouth",
+    "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "vacuum insulated wide mouth water bottle",
+    "markdownExcerpt": "40 oz Wide Mouth: 40 oz Insulated Water Bottle | Hydro Flask Skip to Main Content Skip to Search Skip to Footer Skip to Customer Chat Skip to Accessibility Widget Skip to Product Details JavaScript seems to be disabled in your browser. For the best experience on our site, be sure to turn on Javascript in your browser. First Look: Our Newest Colors have Arrived. Shop Now Free shipping on orders $49"
   },
   {
     "id": "val-legit-018",
@@ -865,6 +931,8 @@
     "verdictMatch": true,
     "title": "32 oz Wide Mouth Bottle",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "wide mouth vacuum insulated stainless steel water bottle",
     "markdownExcerpt": "32 oz Wide Mouth: 32 oz Insulated Water Bottle | Hydro Flask Skip to Main Content Skip to Search Skip to Footer Skip to Customer Chat Skip to Accessibility Widget Skip to Product Details JavaScript seems to be disabled in your browser. For the best experience on our site, be sure to turn on Javascript in your browser. First Look: Our Newest Colors have Arrived. Shop Now Free shipping on orders $49"
   },
   {
@@ -874,11 +942,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.98,
+    "confidence": 0.95,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "The Bigger Carry-On in Coast Blue",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "hardshell carry-on spinner suitcase",
     "markdownExcerpt": "Shop The Bigger Carry-On suitcase in Coast Blue | Away: Built for modern travel Skip to content Our best-selling Flex luggage is ready for takeoff. Shop now Build your set: Save up to $100 when you bundle. Your closet on wheels is back. Shop the restock. NEW: Topside just landed in Cherry Red. Shop now Help Select store Store Austin Boston: Newbury Chicago Dallas Houston LA: Venice Beach LA: West "
   },
   {
@@ -888,11 +958,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.95,
+    "confidence": 0.98,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "The Carry-On in Cherry Red",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "hardside carry-on spinner suitcase",
     "markdownExcerpt": "Hard Shell Carry-On Suitcase: Cherry Red | Away Skip to content Our best-selling Flex luggage is ready for takeoff. Shop now Build your set: Save up to $100 when you bundle. Your closet on wheels is back. Shop the restock. NEW: Topside just landed in Cherry Red. Shop now Help Select store Store Austin Boston: Newbury Chicago Dallas Houston LA: Venice Beach LA: West Hollywood London NYC : Williamsb"
   },
   {
@@ -907,6 +979,8 @@
     "verdictMatch": true,
     "title": "The Carry-On Flex in Jet Black",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "expandable hardshell carry-on suitcase",
     "markdownExcerpt": "The Carry-On Flex in Jet Black | Away Skip to content Our best-selling Flex luggage is ready for takeoff. Shop now Build your set: Save up to $100 when you bundle. Your closet on wheels is back. Shop the restock. NEW: Topside just landed in Cherry Red. Shop now Help Select store Store Austin Boston: Newbury Chicago Dallas Houston LA: Venice Beach LA: West Hollywood London NYC : Williamsburg NYC: N"
   },
   {
@@ -916,11 +990,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.98,
+    "confidence": 0.95,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Women's All Sport Ankle Socks",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "Women&#x27;s All Sport Ankle Socks - Bombas Women Men Kids Sport Thank You Help Women&#x27;s All Sport Ankle Socks Limited : Dusty Mauve Dusty Mauve White Fawn Fawn Whisper white navy pink shadow Core : white charcoal black $15 Save 10 % on 4 + Singles sliding selector Single 4-Pack 8-Pack 12-Pack Size Guide Size : M S US 4-7½ M US 8-10½ L US 11-13 Add to Bag One Purchased = One Donated ™ Free Shi"
   },
   {
@@ -935,6 +1011,8 @@
     "verdictMatch": true,
     "title": "Men's All Sport Ankle Socks",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "men's athletic ankle socks with heel tab",
     "markdownExcerpt": "Men&#x27;s All Sport Ankle Socks - Bombas Women Men Kids Sport Thank You Help Men&#x27;s All Sport Ankle Socks Limited : Midnight Forest Midnight Forest White Canopy Harbor Grey Core : charcoal white black $15 Save 10 % on 4 + Singles sliding selector Single 4-Pack 8-Pack 12-Pack Size Guide Size : L M US 6-9 L US 9½-13 XL US 13½-16 Add to Bag One Purchased = One Donated ™ Free Shipping Over $75 + "
   },
   {
@@ -944,11 +1022,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.96,
+    "confidence": 0.98,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Theragun Prime Plus",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "triangle handle percussion massage gun",
     "markdownExcerpt": "Theragun Prime Plus | Heated Percussion Massage to Maximize Performance and Recovery | Therabody US Skip to content Your Bag You’re getting FREE shipping! Your bag is empty. Not sure where to start? Shop our best-selling categories Massage Guns Skincare Devices Sleep &amp; Massage Masks Therabody Product Finder Take our short quiz to find the perfect device for your unique needs. Take the quiz Loa"
   },
   {
@@ -958,11 +1038,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.98,
+    "confidence": 0.96,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Theragun Mini Plus",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "mini triangle percussive massage gun",
     "markdownExcerpt": "Theragun Mini Plus | Heated Travel Massage Gun | Therabody US Skip to content Your Bag You’re getting FREE shipping! Your bag is empty. Not sure where to start? Shop our best-selling categories Massage Guns Skincare Devices Sleep &amp; Massage Masks Therabody Product Finder Take our short quiz to find the perfect device for your unique needs. Take the quiz Loading... Subtotal $0 Shipping Free Tax "
   },
   {
@@ -972,11 +1054,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.96,
+    "confidence": 0.98,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Theragun PRO",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "triangular handle percussion massage gun",
     "markdownExcerpt": "Theragun PRO | Professional-Grade Percussion Massage for Deep Relief | Therabody US Skip to content Your Bag You’re getting FREE shipping! Your bag is empty. Not sure where to start? Shop our best-selling categories Massage Guns Skincare Devices Sleep &amp; Massage Masks Therabody Product Finder Take our short quiz to find the perfect device for your unique needs. Take the quiz Loading... Subtotal"
   },
   {
@@ -986,11 +1070,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.99,
+    "confidence": 0.98,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Classic Clog",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "breathable EVA foam clogs",
     "markdownExcerpt": "Classic Clog - Crocs Skip to main content Skip to color selection Skip to product details Accessibility Statement 15% off when you sign up You left something in your cart Go to Cart Free shipping on orders $34.99+ and Free Returns on all orders! Best Sellers Classic Clog Classic Lined Clog Classic Crocs Sandal Original. Versatile. Comfortable. It’s the iconic clog that started a comfort revolution"
   },
   {
@@ -1005,6 +1091,8 @@
     "verdictMatch": true,
     "title": "Classic Work Clog",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "non-slip EVA chef work clogs with adjustable strap",
     "markdownExcerpt": "Classic Work Clog - Crocs Skip to main content Skip to color selection Skip to product details Accessibility Statement 15% off when you sign up You left something in your cart Go to Cart Free shipping on orders $34.99+ and Free Returns on all orders! Best Sellers Classic Clog Classic Lined Clog Classic Crocs Sandal When you’re on your feet working for long hours, the Classic Work Clog gives you th"
   },
   {
@@ -1019,6 +1107,8 @@
     "verdictMatch": true,
     "title": "Kånken",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "rectangular canvas daypack with top tote handles",
     "markdownExcerpt": "Classic K&#xE5;nken Backpack - Fj&#xE4;llr&#xE4;ven We accept: Full name Please enter recipient full name Recipient full name length has to be less than 100 characters long Email Error: Please enter recipient email Error: You have to enter a valid e-mail address Optional message Send date Error: Date should be between today and 12/31/2030 Save Cancel Free Shipping On All Orders Over $90 Back to Sk"
   },
   {
@@ -1033,6 +1123,8 @@
     "verdictMatch": true,
     "title": "Kånken Mini",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "mini square casual backpack",
     "markdownExcerpt": "K&#xE5;nken Mini Backpack - Fj&#xE4;llr&#xE4;ven We accept: Full name Please enter recipient full name Recipient full name length has to be less than 100 characters long Email Error: Please enter recipient email Error: You have to enter a valid e-mail address Optional message Send date Error: Date should be between today and 12/31/2030 Save Cancel Free Shipping On All Orders Over $90 Back to Skip "
   },
   {
@@ -1041,13 +1133,15 @@
     "category": "legit_brand",
     "expectedVerdict": "legit",
     "status": "ok",
-    "actualVerdict": "legit",
-    "confidence": 0.98,
+    "actualVerdict": "not_a_product",
+    "confidence": 0.95,
     "presenceTier": "silent",
-    "verdictMatch": true,
-    "title": "Solo Stove® — Fire Pits, Pizza Ovens & Outdoor Gear",
-    "provider": "firecrawl",
-    "markdownExcerpt": "Enable Accessibility\n\nSkip to Content\n\nLabor Day Sale: 10% Off Fire Pits, Pizza Ovens, Accessories & More! Shop now.\n\nBuild your dream backyard this summer. Shop our latest innovations.\n\nIntroducing our most advanced Smokeless Fire Pits ever—the Summit Series.\n\nFREE Shipping On Every Order Over $199. Shop Now.\n\nLabor Day Sale: 10% Off Fire Pits, Pizza Ovens, Accessories & More! Shop now.\n\nBuild yo"
+    "verdictMatch": false,
+    "title": "Solo Stove® — Fire Pits, Pizza Ovens &amp; Outdoor Gear",
+    "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "smokeless stainless steel fire pit",
+    "markdownExcerpt": "Solo Stove® — Fire Pits, Pizza Ovens &amp; Outdoor Gear Solo Stove Enable Accessibility Skip to Content Labor Day Sale: 10% Off Fire Pits, Pizza Ovens, Accessories &amp; More! Shop now. Build your dream backyard this summer. Shop our latest innovations. Introducing our most advanced Smokeless Fire Pits ever—the Summit Series. FREE Shipping On Every Order Over $199. Shop Now. Labor Day Sale: 10% Of"
   },
   {
     "id": "val-legit-032",
@@ -1056,11 +1150,13 @@
     "expectedVerdict": "legit",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.95,
+    "confidence": 0.96,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Canyon 30\" Fire Pit + Stand Bundle",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "smokeless wood burning fire pit with stand",
     "markdownExcerpt": "Canyon Fire Pit Bundle — Largest Solo Stove | Solo Stove Enable Accessibility Skip to Content Labor Day Sale: 10% Off Fire Pits, Pizza Ovens, Accessories &amp; More! Shop now. Build your dream backyard this summer. Shop our latest innovations. Introducing our most advanced Smokeless Fire Pits ever—the Summit Series. FREE Shipping On Every Order Over $199. Shop Now. Labor Day Sale: 10% Off Fire Pit"
   },
   {
@@ -1076,6 +1172,8 @@
     "verdictMatch": true,
     "title": "Liforme | High Performance Yoga Mats &amp; Equipment",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "non-slip alignment yoga mat",
     "markdownExcerpt": "Liforme | High Performance Yoga Mats &amp; Equipment Skip to content Fast & Free Shipping Available* 4.9 Average Review Rating 100% Satisfaction: Money-Back Guarantee!* Fast & Free Shipping Available* We offer Free standard shipping to 100+ countries Worldwide. For more details on threshold and shipping costs, visit our shipping & returns page. *minimum order value may apply for free shipping 4.9 "
   },
   {
@@ -1090,6 +1188,8 @@
     "verdictMatch": true,
     "title": "Chocolate chip cookie - Wikipedia",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "chocolate chip cookie",
     "markdownExcerpt": "Chocolate chip cookie - Wikipedia Jump to content Main menu Main menu move to sidebar hide Navigation Main page Contents Current events Random article About Wikipedia Contact us Contribute Help Learn to edit Community portal Recent changes Upload file Special pages Search Search Appearance Donate Create account Log in Personal tools Donate Create account Log in Contents move to sidebar hide (Top) "
   },
   {
@@ -1104,6 +1204,8 @@
     "verdictMatch": true,
     "title": "Best Chocolate Chip Cookies (Popular Recipe!) - Sally&#039;s Baking",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "chocolate chip cookies",
     "markdownExcerpt": "Best Chocolate Chip Cookies (Popular Recipe!) - Sally&#039;s Baking Skip to content Sally's Baking 101 Cookbook Order Today! Sally&#039;s Baking All Recipes Baking Tips Ingredient Community Sally&#8217;s Shop Videos Search All Recipes Baking Tips Browse By Ingredient Community Sally&#8217;s Shop Videos Sally&#8217;s Baking Challenge Type Submenu Bread Breakfast Brownies &amp; Bars Cakes Cheesecake"
   },
   {
@@ -1118,6 +1220,8 @@
     "verdictMatch": true,
     "title": "Hydro Flask - Wikipedia",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "vacuum insulated stainless steel water bottle",
     "markdownExcerpt": "Hydro Flask - Wikipedia Jump to content Main menu Main menu move to sidebar hide Navigation Main page Contents Current events Random article About Wikipedia Contact us Contribute Help Learn to edit Community portal Recent changes Upload file Special pages Search Search Appearance Donate Create account Log in Personal tools Donate Create account Log in Contents move to sidebar hide (Top) 1 History "
   },
   {
@@ -1127,11 +1231,13 @@
     "expectedVerdict": "not_a_product",
     "status": "ok",
     "actualVerdict": "not_a_product",
-    "confidence": 0.99,
+    "confidence": 0.98,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Bombas - Wikipedia",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "cushioned athletic socks with arch support",
     "markdownExcerpt": "Bombas - Wikipedia Jump to content Main menu Main menu move to sidebar hide Navigation Main page Contents Current events Random article About Wikipedia Contact us Contribute Help Learn to edit Community portal Recent changes Upload file Special pages Search Search Appearance Donate Create account Log in Personal tools Donate Create account Log in Contents move to sidebar hide (Top) 1 History 2 See"
   },
   {
@@ -1141,11 +1247,13 @@
     "expectedVerdict": "not_a_product",
     "status": "ok",
     "actualVerdict": "not_a_product",
-    "confidence": 0.98,
+    "confidence": 0.99,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Fjällräven Kånken - Wikipedia",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "square canvas daypack backpack",
     "markdownExcerpt": "Fjällräven Kånken - Wikipedia Jump to content Main menu Main menu move to sidebar hide Navigation Main page Contents Current events Random article About Wikipedia Contact us Contribute Help Learn to edit Community portal Recent changes Upload file Special pages Search Search Appearance Donate Create account Log in Personal tools Donate Create account Log in Contents move to sidebar hide (Top) 1 Hi"
   },
   {
@@ -1160,6 +1268,8 @@
     "verdictMatch": true,
     "title": "The New York Times Clutters Up Its Homepage With Links From Elsewhere (In Beta) ",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": null,
     "markdownExcerpt": "The New York Times Clutters Up Its Homepage With Links From Elsewhere (In Beta) | TechCrunch TechCrunch Desktop Logo TechCrunch Mobile Logo Latest Startups Venture Apple Security AI Apps Disrupt 2026 Events Podcasts Newsletters Search Submit Site Search Toggle Mega Menu Toggle Topics Latest AI Amazon Apps Biotech &amp; Health Climate Cloud Computing Commerce Crypto Enterprise EVs Fintech Fundraisi"
   },
   {
@@ -1170,11 +1280,13 @@
     "notes": "actually a collection/browse page on a real retailer - expect collection_page verdict; expectedVerdict left as legit-adjacent since taxonomy has no collection_page category value, judged manually against presenceTier=silent",
     "status": "ok",
     "actualVerdict": "legit",
-    "confidence": 0.98,
+    "confidence": 0.99,
     "presenceTier": "silent",
     "verdictMatch": true,
     "title": "Air Force 1 Shoes. Nike.com",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "low-top casual board sneakers",
     "markdownExcerpt": "Air Force 1 Shoes. Nike.com Skip to main content Accessibility at Nike Find a Store Help Help Order Status Shipping &amp; Delivery Returns Order Cancellation Size Charts Contact Us Membership Promotions &amp; Discounts Product Advice Send Us Feedback Join Us Sign In Men New &amp; Featured New Arrivals Best Sellers Latest Drops Back to School Shop SNKRS Launch Calendar Shop All Sale Shoes All Shoes"
   },
   {
@@ -1190,6 +1302,8 @@
     "verdictMatch": false,
     "title": "Women's Leggings | lululemon",
     "provider": "firecrawl",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "women high waist athletic yoga leggings",
     "markdownExcerpt": "New tennis gear. That’s the commotion. Shop Now\n\n# Women's Leggings\n\nWomen's Leggings 119 products\n\n- \\\\\n\\\\\nAlign\\\\\n\\\\\nStretch into signature buttery softness.\n- \\\\\n\\\\\nFast and Free\\\\\n\\\\\nRemoves distractions as you run.\n- \\\\\n\\\\\nWunder Train\\\\\n\\\\\nSupport as you focus on strength.\n- \\\\\n\\\\\nUnrestricted Power\\\\\n\\\\\nIncredible stretch for intense workouts.\n- \\\\\n\\\\\nGlow Up\\\\\n\\\\\nSupport through every rep."
   },
   {
@@ -1205,6 +1319,8 @@
     "verdictMatch": true,
     "title": "POÄNG Series Arm &amp; Rocking Chairs",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "cantilever bentwood armchair",
     "markdownExcerpt": "POÄNG Series Arm &amp; Rocking Chairs - IKEA Skip to main content Accessibility EN US English Enter ZIP code Select store Products Rooms Deals Design &amp; ideas Services Clear the search input field Search Search Hej! Log in or sign up Favorites Shopping bag Skip to product list Series POÄNG series Shop college essentials for every budget POÄNG series Staying popular is hard. Our POÄNG modern arm"
   },
   {
@@ -1220,6 +1336,8 @@
     "verdictMatch": true,
     "title": "Shop all Dyson vacuum cleaners | Dyson® Official Website",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "cordless stick vacuum cleaner",
     "markdownExcerpt": "Shop all Dyson vacuum cleaners | Dyson® Official Website Skip navigation Accessibility Statement Thanks. We&#39;ve saved your preferences. You can update your contact preferences at any time in the Keep in touch section of Your Dyson. If you have a Your Dyson account, you can log in below to manage your contact options. Change your contact preferences. Change your contact preferences. Dyson Certif"
   },
   {
@@ -1235,6 +1353,8 @@
     "verdictMatch": false,
     "title": "Men’s Prescription Eyeglasses Online | Warby Parker",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "optical glasses frames",
     "markdownExcerpt": "Men’s Prescription Eyeglasses Online | Warby Parker | Warby Parker Skip to main content Premium eyewear, starting at $95 25% off your first contacts order – for a limited time Eyeglasses Sunglasses Contacts Eye exams Insurance Accessories Style quiz Intelligent Eyewear Sign in Eyeglasses Sunglasses Contacts Style quiz Filters list close button Home Eyeglasses Men&#x27;s Eyeglasses Men&#x27;s Eyegl"
   },
   {
@@ -1244,12 +1364,14 @@
     "expectedVerdict": "dropship",
     "notes": "collection page on a dropship-pattern store",
     "status": "ok",
-    "actualVerdict": "collection_page",
-    "confidence": 0.95,
-    "presenceTier": "silent",
-    "verdictMatch": false,
+    "actualVerdict": "dropship",
+    "confidence": 0.92,
+    "presenceTier": "flame",
+    "verdictMatch": true,
     "title": "Car Holders",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "car phone holder",
     "markdownExcerpt": "Car Holders &ndash; bestforyourphone Skip to content Submit Close search Home Car Holders Bycle Holders Sport Holders Ring Stands Desk Stands Submit Search Cart Home Car Holders Bycle Holders Sport Holders Ring Stands Desk Stands Collection: Car Holders Sort by Featured Most relevant Best selling Alphabetically, A-Z Alphabetically, Z-A Price, low to high Price, high to low Date, old to new Date, n"
   },
   {
@@ -1260,11 +1382,13 @@
     "notes": "collection page on a dropship-pattern store",
     "status": "ok",
     "actualVerdict": "dropship",
-    "confidence": 0.95,
+    "confidence": 0.92,
     "presenceTier": "flame",
     "verdictMatch": true,
     "title": "Cat Beds",
     "provider": "crawlbase",
+    "verdictSource": "gemini-3.7-flash",
+    "identityName": "plush warm pet cat bed",
     "markdownExcerpt": "Cat Beds &ndash; Cuddle Kitty Skip to content Submit Close search Home Cat Beds Cat Toys Cat Scratch Cat Clothes Cat Climbing Tree Tower Submit Search Cart expand/collapse Home Cat Beds Cat Toys Cat Scratch Cat Clothes Cat Climbing Tree Tower Cat Beds Filter Filter 4 products Sort Sort Best Selling Alphabetically, A-Z Alphabetically, Z-A Price, low to high Price, high to low Date, new to old Date,"
   }
 ]
