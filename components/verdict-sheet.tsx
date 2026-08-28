@@ -1,6 +1,7 @@
 "use client";
 
 import { Paper, PaperLabel, PaperRule } from "@/components/ui/paper";
+import { MarkupBar } from "@/components/ui/markup-bar";
 import { Stamp } from "@/components/ui/stamp";
 import type { PresenceTier } from "@/lib/analyze/presence-tier";
 import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
@@ -31,9 +32,29 @@ interface VerdictSheetProps {
 }
 
 function markupMultiplier(prediction: DropshipPrediction): string | null {
-  const pct = prediction.estimatedMarkupPercent;
-  if (pct === null || !Number.isFinite(pct) || pct <= 0) return null;
-  const x = 1 + pct / 100;
+  // Prefer the ratio of the two USD estimates — the same source MarkupBar
+  // draws its fill from — over the model's independently-estimated
+  // estimatedMarkupPercent. The model fills in all three fields from the
+  // same prompt with no arithmetic constraint between them; deriving both
+  // the headline figure and the bar from one source guarantees the giant
+  // "×N" text, the stamp, and the to-scale bar underneath it can never show
+  // three different ratios for the same verdict.
+  const { estimatedStorePriceUsd: store, estimatedSupplierPriceUsd: supplier } = prediction;
+  let x: number;
+  if (
+    store !== null &&
+    supplier !== null &&
+    Number.isFinite(store) &&
+    Number.isFinite(supplier) &&
+    supplier > 0 &&
+    store > 0
+  ) {
+    x = store / supplier;
+  } else {
+    const pct = prediction.estimatedMarkupPercent;
+    if (pct === null || !Number.isFinite(pct) || pct <= 0) return null;
+    x = 1 + pct / 100;
+  }
   // Below ~1.5× the number is not the story and a huge "×1.2" overstates it.
   if (x < 1.5) return null;
   return `×${x.toFixed(1)}`;
@@ -123,6 +144,17 @@ export function VerdictSheet({
         <p className="max-w-prose text-sm leading-relaxed text-paper-muted">
           {prediction.reasoning}
         </p>
+
+        {multiplier &&
+        prediction.estimatedStorePriceUsd !== null &&
+        prediction.estimatedSupplierPriceUsd !== null ? (
+          <MarkupBar
+            supplierPriceUsd={prediction.estimatedSupplierPriceUsd}
+            storePriceUsd={prediction.estimatedStorePriceUsd}
+            multiplier={multiplier}
+            tier={tier}
+          />
+        ) : null}
 
         {prediction.reasoningSignals.length > 0 ? (
           <>

@@ -419,6 +419,15 @@
   50% { opacity: 0.45; }
 }
 
+/* The markup bar's fill — DESIGN.md §4.6. `motion-safe:` gates this animation
+   entirely, so under reduced motion the static scaleX(--cost-share) transform
+   applies with no keyframe at all: the final state, immediately, not a faster
+   version of the draw. */
+@keyframes bar-draw {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(var(--cost-share)); }
+}
+
 @layer utilities {
   .animate-live {
     animation: live-pulse 1.8s ease-in-out infinite;
