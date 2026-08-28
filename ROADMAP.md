@@ -156,9 +156,124 @@ end-to-end against local pipeline, first shareable card.
 **Exit criteria:** median supplier-match latency < 500ms, supplier accuracy
 ≥ 90%, organic search is the #1 acquisition channel.
 
+### Phase 2.5 — Open The Door — "Nobody's found us yet"
+Added 2026-08-28. The honest diagnosis: zero-traffic (30 total scans ever,
+all internal) is a **discovery problem**, not an accuracy or monetization
+problem. This phase exists to fix that before Phase 3's revenue ambitions,
+and sequences deliberately — each item is a prerequisite for the one after
+it, not a menu.
+
+1. **Finish the design-system debt that predates this phase.** `DESIGN.md`
+   already scopes and has not yet shipped: the landing-page rebuild (§5.1 —
+   `app/page.tsx`/`search-hub.tsx` still run the gradient/glass/bento
+   template the brand's own thesis argues against), the OG share-card finish
+   (§5.6 — the only zero-CAC channel that currently exists, still static),
+   and the `analysis-results.tsx` → Ledger migration (§4.4/Phase 6 — still
+   six gradient clip-text figures). **Ships first.** A referral loop seeded
+   before the landing page can convert a referred visitor wastes the growth
+   mechanism on a first impression that's already underperforming.
+2. **Growth loop v1 — referral + feedback bonus scans**, on top of a free
+   daily scan cap. Mechanics:
+   - Free tier: 3 scans/day, enforced as a **soft, session+IP fair-use
+     limit** — explicitly not marketed as a security boundary, since there
+     is no real account system yet (`lib/api/session-attribution.ts`'s
+     `sessionId` is forgeable by design). Shown only when hit: one
+     plain-text line in `SearchHub`'s idle state, same register as the
+     `silent` verdict copy — no counter chip, no persistent badge (a "2/3
+     scans left" pill is a decorative element seen on every load, which
+     `DESIGN.md`'s own frequency→decision gate forbids). Gated on
+     `phase === "idle"` in the state machine, never on `presenceTier`, so
+     there is no tier-check to forget and no path for a limit banner to
+     render beside or inside a shown verdict.
+   - Referral: invite a friend, both get +2 scans when the friend completes
+     their first scan, capped +10/day. Built on the existing
+     `components/share-button.tsx` (`?ref=<code>` param), not a new
+     surface. **Prerequisite before shipping the reward, not after**: with
+     only a forgeable session ID, self-referral (fresh session per fake
+     "friend") is a 5-line script — verified during planning that this
+     works today. Ship with a lightweight abuse dedupe (hashed IP+UA
+     fingerprint, rolling window) from day one; the mechanic is worthless as
+     a K-factor signal if it can't distinguish real referrals from farming.
+   - Feedback bonus: +1 scan (capped +3/day) for submitting genuine 👍/👎
+     match feedback, reusing the existing `MatchFeedback` component.
+     **Prerequisite before shipping**: verified `recordVerifiedMatch()`
+     (`lib/cache/verified-map.ts`) writes a `user_feedback`-sourced mapping
+     to the Gold Path with NO corroboration check today — a single 👍
+     already overrides everything, reward or not. Attaching a reward to
+     that click without a gate turns "get a free scan" into "poison a
+     cache every future visitor trusts for 180 days" as the cheapest path.
+     Fix before shipping the reward: a `user_feedback` write with no
+     independent corroboration (repeat feedback on the same scan, or an
+     `auto_high_confidence` mapping already agreeing) drops to a
+     lower-trust tier that still needs one more signal before it can evict
+     a stronger existing mapping — the reward scan still pays out
+     immediately regardless (rewarding genuine engagement, not the write).
+   - Explicitly **rejected**: "earn scans by completing an affiliate-linked
+     purchase." Makes free-tier currency a function of dropship-redirect
+     frequency — a slow incentive gradient toward showing/emphasizing more
+     redirects to fund the free tier, adjacent to the exact mechanism
+     `standards/trust/affiliate-neutrality` exists to prevent. Also
+     currently unverifiable (no Admitad postback wired; "did they order"
+     would be inferred from a fakeable client-side click).
+3. **Run the 100-hand-labeled-URL validation** (`agent-os/product/context.md`
+   open question #1 — ~$1, four hours, never executed). Not new, but now
+   load-bearing: live-model verdict accuracy measured at 92.3%
+   (`npm run eval:model`, 13 real fixtures) is a different, smaller-sample
+   number than the offline `--skip-ai` eval's 100% (which replays cached AI
+   responses and re-tests the clamps, never the live model). Before Phase
+   2.5 item 4 (subscription) can honestly launch, this is the number that
+   needs a real sample size behind it — a false accusation on a paying
+   customer's first scan is a worse trust event than the same failure on a
+   free user, purely because money is now attached.
+4. **Seed initial distribution.** Referral has a cold-start problem no
+   mechanic design fixes: zero existing users means nobody to refer from.
+   One bounded, cheap manual push (a relevant community post, a small
+   targeted placement) to get the first ~50 real users — not a paid
+   acquisition channel commitment, a seed.
+
+**Exit criteria:** landing + OG card + analysis-results shipped in Ledger;
+referral K-factor and free-tier cap-hit rate both measured for the first
+time; 100-URL validation complete with a documented shown-verdict precision
+number outside the synthetic corpus.
+
 ### Phase 3 — The Flywheel — "Scans into enterprise value"
-Merchant Transparency Index API (BNPL/issuer design partner), premium
-consumer tier, geo expansion, public "Busted 100" leaderboard.
+
+**Busted Pro** — added 2026-08-28, gated on a concrete trigger, not an
+open-ended "eventually": begins once Phase 2.5's referral loop shows
+K-factor > 0.15, OR 500 real scans accumulate, whichever comes first. For a
+solo founder, "build real accounts" is exactly the kind of unglamorous
+dependency that stalls indefinitely without a dated condition forcing it —
+this is that condition.
+
+- **$3.99/mo or $29.99/yr.** 50 scans/day ceiling (a fair-use abuse bound,
+  not a usage target — realistic engaged usage is 10-20 scans/month),
+  priority processing, a personal savings dashboard (surfaces the existing
+  `totalSavingsUsd` on the `User` model). **Never**: anything that changes
+  a verdict, a ranking, or which supplier is shown — Pro buys capacity and
+  speed, never truth, and is marketed that way explicitly as a trust
+  reinforcement, not a legal footnote.
+- **Unit economics**, grounded in `scripts/eval/run-fixtures.ts`'s measured
+  cost model: a cold scan costs $0.0064-0.007 all-in (scrape + text verdict
+  + image stages when triggered); a Gold Path cache hit is $0. Worst-case
+  exposure at 50/day sustained is ~$0.35/day; realistic usage costs
+  $0.07-0.14/month against $3.99 revenue — 96%+ gross margin at the usage
+  pattern that actually occurs. This excludes fixed hosting costs, not yet
+  modeled.
+- **Requires real accounts** (out of scope for 2.5) — cannot bill without
+  reliable identity across sessions. This is the actual reason Pro is
+  sequenced after, not a stalling tactic: building Stripe on a forgeable
+  session ID means paying customers are the ones least able to keep their
+  own entitlement.
+- **UI**: appears in exactly two places, never a third — the free-tier cap
+  line (§2.5 item 2) as a plain-text link, and one row in the rebuilt
+  landing ledger, styled identically to a scan row, not elevated. No pricing
+  table, no sticky bar, no exit-intent modal, no post-scan interstitial —
+  on a one-price-point product these are enterprise-SaaS theater.
+
+Merchant Transparency Index API (BNPL/issuer design partner), geo expansion,
+public "Busted 100" leaderboard remain Phase 3, unchanged, further out —
+the leaderboard specifically still carries the severity flagged in
+`standards/trust/public-accusation` and is not reopened by this update.
 
 **Exit criteria:** revenue three-legged (affiliate / data / premium), no leg
 > 60%.
