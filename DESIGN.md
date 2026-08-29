@@ -5,12 +5,13 @@
 > states *why*, because a rationale you can argue with is worth more than a
 > mockup you can only copy.
 >
-> **Status:** phases 1–3 have SHIPPED (tokens, film grain, blob removal,
+> **Status:** phases 1–5 have SHIPPED (tokens, film grain, blob removal,
 > `components/ui/paper.tsx`, `components/ui/stamp.tsx`, tier-driven
-> `components/verdict-sheet.tsx`, and the motion detail pass). This document
-> supersedes the previous "The Teardown" draft. It **keeps the shipped material
-> system** and **cancels the unbuilt tear-to-reveal animation.** §10 accounts
-> for the rework honestly.
+> `components/verdict-sheet.tsx`, the motion detail pass, the markup bar, and
+> the landing ledger rebuild — see §10.2 for exactly what's done vs. open
+> within Phase 4). This document supersedes the previous "The Teardown"
+> draft. It **keeps the shipped material system** and **cancels the unbuilt
+> tear-to-reveal animation.** §10 accounts for the rework honestly.
 >
 > Companion docs: `CLAUDE.md` (§Design Language — keep the token table in sync),
 > `.claude/lessons.md`, `ROADMAP.md`.
@@ -1619,21 +1620,28 @@ Ordered so each ships independently and is individually revertible. **Do not
 start a phase before the previous one is visually verified in a browser, in both
 `dir=ltr` and `dir=rtl`.**
 
-**Phase 4 — The bar, and the sheet it lives on** ← *highest product value*
-- `components/ui/markup-bar.tsx` (§4.6). Isolated first in
-  `app/dev-monitor/design/page.tsx`, which already exists for exactly this.
-- Insert into `verdict-sheet.tsx`; apply the §2.3 tier carriers.
-- Stamp landing animation (§5.2 timing table).
-- Count-up, synchronised to `bar-draw`, `tabular-nums`, fixed width.
-- `prefers-reduced-motion` path **in the same commit**.
-- Fix `PaperLabel` for RTL (§4.4).
-- Verify tier rendering against `lib/analyze/presence-tier.ts`: render verbatim,
-  never re-derive from `confidence`.
+**Phase 4 — The bar, and the sheet it lives on** ← *highest product value* —
+**core shipped 2026-08-28, count-up + stamp-timing still open**
+- ✅ `components/ui/markup-bar.tsx` (§4.6), inserted into `verdict-sheet.tsx`
+  on both flame (solid fill) and amber (ghost fill) tiers.
+- ✅ `motion-safe:` gates the `bar-draw` keyframe entirely, so
+  `prefers-reduced-motion` gets the static final state with no separate code
+  path needed.
+- ✅ Fixed `PaperLabel` for RTL (§4.4).
+- ✅ Verified against `lib/analyze/presence-tier.ts` — rendered verbatim.
+- ☐ **Not done**: the count-up synchronised to `bar-draw` (§5.2's "one clock,
+  not two staggered ones" requirement) and the stamp landing animation
+  timing table. The bar renders correctly but statically; the choreographed
+  entry sequence in §5.2 is still open.
+- Isolated preview still in `app/dev-monitor/design/page.tsx`.
 
-**Phase 5 — Landing rebuild** (§5.1)
-- Replace the bento with the continuous ledger sheet.
-- Delete the gradient headlines, stats pill, `shine-top`, per-card `blur-3xl`.
-- Apply the §4.4 type scale to the hero, both scripts.
+**Phase 5 — Landing rebuild** (§5.1) — **shipped 2026-08-29**
+- ✅ Replaced the bento with `components/landing-ledger.tsx` (continuous
+  paper sheet, ruled rows).
+- ✅ Deleted the gradient headline, stats pill, `shine-top` on the search
+  card, per-card `blur-3xl` bento.
+- ✅ Applied the §4.4 Display type scale to the hero (English). Hebrew
+  script scale not separately verified.
 
 **Phase 6 — Remaining surfaces**
 - Chain-of-custody pipeline log (§5.5).
@@ -1731,8 +1739,10 @@ the spec and the code agree as of this document.
 | `live-pulse` trough 0.2 → 0.45 | `app/globals.css` | At 0.2 the dot all but leaves the page each cycle and drags peripheral vision back |
 | Palette table resynced to `globals.css` | `CLAUDE.md` | It still documented Paper as **bone** `oklch(0.94 0.012 85)` — the value §4.2 rejected. The file loaded into every session was teaching the wrong colour |
 
-**Not yet built:** the markup bar (§4.6), the entry sequence (§7.10), the landing
-rebuild (§5.1), and everything else in §10.2.
+**Shipped since this was written:** the markup bar (§4.6, 2026-08-28) and the
+landing rebuild (§5.1, 2026-08-29) — see §10.2 for what's done vs. still open
+within each. **Not yet built:** the entry sequence (§7.10) and everything
+else in §10.2 (Phase 6, Phase 7).
 
 ---
 

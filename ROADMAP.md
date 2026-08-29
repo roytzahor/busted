@@ -164,14 +164,18 @@ and sequences deliberately — each item is a prerequisite for the one after
 it, not a menu.
 
 1. **Finish the design-system debt that predates this phase.** `DESIGN.md`
-   already scopes and has not yet shipped: the landing-page rebuild (§5.1 —
-   `app/page.tsx`/`search-hub.tsx` still run the gradient/glass/bento
-   template the brand's own thesis argues against), the OG share-card finish
-   (§5.6 — the only zero-CAC channel that currently exists, still static),
-   and the `analysis-results.tsx` → Ledger migration (§4.4/Phase 6 — still
-   six gradient clip-text figures). **Ships first.** A referral loop seeded
-   before the landing page can convert a referred visitor wastes the growth
-   mechanism on a first impression that's already underperforming.
+   already scopes this. **Ships first** — a referral loop seeded before the
+   landing page can convert a referred visitor wastes the growth mechanism
+   on a first impression that's already underperforming.
+   - **Landing-page rebuild (§5.1) — done 2026-08-28.** `search-hub.tsx`'s
+     gradient clip-text headline, stats pill, `shine-top`, and "how it
+     works" bento (blur-3xl glows + watermark numerals) are gone. New
+     `components/landing-ledger.tsx` replaces the trending-now card grid
+     with the continuous paper ledger.
+   - **OG share-card finish (§5.6)** — the only zero-CAC channel that
+     currently exists, still static. Not started.
+   - **`analysis-results.tsx` → Ledger migration (§4.4/Phase 6)** — still
+     six gradient clip-text figures. Not started.
 2. **Growth loop v1 — referral + feedback bonus scans**, on top of a free
    daily scan cap. Mechanics:
    - Free tier: 3 scans/day, enforced as a **soft, session+IP fair-use
