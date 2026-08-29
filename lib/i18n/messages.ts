@@ -37,10 +37,6 @@ export type MessageKey =
   | "hero.hint.supplier"
   | "hero.tryOne"
   | "hero.howItWorks"
-  // Stats pills
-  | "stats.avgScan"
-  | "stats.detection"
-  | "stats.cache"
   // Trending
   | "trending.title"
   | "trending.subtitle"
@@ -93,10 +89,6 @@ const en: MessageDict = {
     "This is a supplier marketplace link. Paste the retail store URL (Shopify, etc.) where you saw a markup to detect dropshipping.",
   "hero.tryOne": "Try one",
   "hero.howItWorks": "How it works",
-
-  "stats.avgScan": "Avg scan",
-  "stats.detection": "Detection",
-  "stats.cache": "Cache",
 
   "trending.title": "Trending now",
   "trending.subtitle": "Recently scanned · live from the last {hours} hours",
@@ -151,10 +143,6 @@ const he: MessageDict = {
     "זהו קישור לחנות ספקים. הדביקו URL של חנות קמעונאית (Shopify וכו') בה ראיתם את המחיר המנופח.",
   "hero.tryOne": "נסו אחד",
   "hero.howItWorks": "איך זה עובד",
-
-  "stats.avgScan": "סריקה ממוצעת",
-  "stats.detection": "זיהוי",
-  "stats.cache": "מטמון",
 
   "trending.title": "פופולרי עכשיו",
   "trending.subtitle": "נסרק לאחרונה · עדכון חי מ-{hours} השעות האחרונות",

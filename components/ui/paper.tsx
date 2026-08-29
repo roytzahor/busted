@@ -59,7 +59,13 @@ function PaperLabel({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="paper-label"
       className={cn(
+        // Geist Mono has no Hebrew coverage (silently falls back to system
+        // mono, breaking the match with every other label on the sheet), and
+        // 0.14em tracking destroys Hebrew word cohesion (no inter-word
+        // capital cue to hold letters together once pushed apart).
+        // DESIGN.md §4.4.
         "flex items-baseline justify-between gap-3 font-mono text-[10px] tracking-[0.14em] text-paper-muted uppercase",
+        "rtl:font-sans rtl:text-[11px] rtl:tracking-[0.06em] rtl:normal-case",
         className,
       )}
       {...props}
