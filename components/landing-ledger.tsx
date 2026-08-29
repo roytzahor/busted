@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Paper, PaperLabel, PaperRule } from "@/components/ui/paper";
 import { useT } from "@/components/locale-provider";
+import { formatMultiplier } from "@/lib/analyze/markup-multiplier";
 import { cn } from "@/lib/utils";
 
 /**
@@ -46,9 +47,7 @@ function timeAgo(iso: string, now: number = Date.now()): string {
 /** Store price / supplier price — the same ratio MarkupBar draws from. */
 function multiplierFor(item: LedgerItem): string | null {
   if (item.supplierPriceUsd <= 0 || item.storePriceUsd <= 0) return null;
-  const x = item.storePriceUsd / item.supplierPriceUsd;
-  if (x < 1.5) return null;
-  return `×${x.toFixed(1)}`;
+  return formatMultiplier(item.storePriceUsd / item.supplierPriceUsd);
 }
 
 interface LandingLedgerProps {

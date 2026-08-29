@@ -4,6 +4,7 @@ import { Paper, PaperLabel, PaperRule } from "@/components/ui/paper";
 import { MarkupBar } from "@/components/ui/markup-bar";
 import { Stamp } from "@/components/ui/stamp";
 import type { PresenceTier } from "@/lib/analyze/presence-tier";
+import { formatMultiplier } from "@/lib/analyze/markup-multiplier";
 import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
 import { cn } from "@/lib/utils";
 
@@ -40,7 +41,6 @@ function markupMultiplier(prediction: DropshipPrediction): string | null {
   // "×N" text, the stamp, and the to-scale bar underneath it can never show
   // three different ratios for the same verdict.
   const { estimatedStorePriceUsd: store, estimatedSupplierPriceUsd: supplier } = prediction;
-  let x: number;
   if (
     store !== null &&
     supplier !== null &&
@@ -49,15 +49,11 @@ function markupMultiplier(prediction: DropshipPrediction): string | null {
     supplier > 0 &&
     store > 0
   ) {
-    x = store / supplier;
-  } else {
-    const pct = prediction.estimatedMarkupPercent;
-    if (pct === null || !Number.isFinite(pct) || pct <= 0) return null;
-    x = 1 + pct / 100;
+    return formatMultiplier(store / supplier);
   }
-  // Below ~1.5× the number is not the story and a huge "×1.2" overstates it.
-  if (x < 1.5) return null;
-  return `×${x.toFixed(1)}`;
+  const pct = prediction.estimatedMarkupPercent;
+  if (pct === null || !Number.isFinite(pct) || pct <= 0) return null;
+  return formatMultiplier(1 + pct / 100);
 }
 
 export function VerdictSheet({
