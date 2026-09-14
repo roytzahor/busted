@@ -16,11 +16,13 @@ agent-os/
     context/          # token economy, caveman register, delegation, single-source
     trust/            # the presence contract and its public consequences
     supplier/         # match thresholds and failing closed
-    design/           # tokens, contrast method, motion
-    eval/             # which gates to run, and what they don't prove
+    design/           # tokens, contrast method, motion, legacy surfaces
+    eval/             # which gates to run, what they don't prove, the corpus
     scraping/         # provider chain, error surfacing
     extension/        # render verbatim, fail closed
-  product/context.md  # thesis, phases, open strategic questions
+  product/
+    context.md        # thesis, phases, open strategic questions
+    key-files.md      # the file map — orientation, not an invariant
   tools/catalog.md    # what's installed and when to reach for it
 ```
 
@@ -51,6 +53,8 @@ them directly.
 | affiliate links or CTAs | `trust/affiliate-neutrality` |
 | `extension/` | `extension/render-verbatim` |
 | scrapers or error paths | `scraping/provider-chain` |
+| the eval corpus or fixtures | `eval/fixtures`, `eval/gates` |
+| CSS, tokens, motion, surfaces | `design/tokens`, `design/motion`, `design/surfaces` |
 | spending context, or writing a subagent prompt | `context/token-economy`, `context/delegation` |
 | editing `CLAUDE.md` or any standard | `context/single-source`, `context/caveman` |
 | any nontrivial change | `change-discipline`, `code-navigation` |

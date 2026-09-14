@@ -22,9 +22,13 @@ context:
 design:
   motion:
     description: The single house easing curve, the animate-in ease-out trap, and reduced-motion rules
+  surfaces:
+    description: Glass and bento are legacy surfaces being retired — patterns to convert, not to reach for
   tokens:
-    description: Room vs paper tokens, how to measure contrast correctly, font token wiring, and what never returns
+    description: Room vs paper tokens, the colour table, how to measure contrast correctly, font token wiring, and what never returns
 eval:
+  fixtures:
+    description: Corpus layout, why truth.json is authored not captured, and which fixes the replay cannot measure
   gates:
     description: Which commands to run before claiming something works, and the three things the eval does not prove
 extension:
