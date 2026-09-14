@@ -13,6 +13,7 @@ agent-os/
     index.yml         # folder → file → one-line description
     *.md              # "root" folder — cross-cutting workflow
     ai/               # verdict schema, clamps, cache back-compat
+    context/          # token economy, caveman register, delegation, single-source
     trust/            # the presence contract and its public consequences
     supplier/         # match thresholds and failing closed
     design/           # tokens, contrast method, motion
@@ -50,6 +51,8 @@ them directly.
 | affiliate links or CTAs | `trust/affiliate-neutrality` |
 | `extension/` | `extension/render-verbatim` |
 | scrapers or error paths | `scraping/provider-chain` |
+| spending context, or writing a subagent prompt | `context/token-economy`, `context/delegation` |
+| editing `CLAUDE.md` or any standard | `context/single-source`, `context/caveman` |
 | any nontrivial change | `change-discipline`, `code-navigation` |
 
 ## Adding a standard
@@ -58,3 +61,13 @@ Write it, then run `/agent-os:index-standards` so `inject-standards` can find
 it. Keep each file to invariants with reasons — a standard that only restates
 what the code obviously does is noise, and a rule with no rationale gets
 relaxed by the next person who finds it inconvenient.
+
+That last point is why `context/caveman` forbids compressing these files: the
+reasons are the load-bearing part. Compress prompts, never rationale.
+
+## Where a fact belongs
+
+`CLAUDE.md` is loaded into every session; `standards/` is pulled in on demand.
+So `CLAUDE.md` **routes** and standards **state** — a fact duplicated into the
+always-on file is billed to every session that never needed it.
+`context/single-source` has the rule and the list of deliberate mirrors.

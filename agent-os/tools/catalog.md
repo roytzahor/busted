@@ -12,6 +12,9 @@ What is installed, what it is for, and when to reach for it. Not injectable via
 | **graft** (`graft ask`) | "what is X", "how does X work" | `graft/` is a gitignored regenerable cache |
 | **graphify** | wiki generation on demand only | **Deprecated here** — call edges measurably wrong |
 
+Cost ordering and the rule for how far up the ladder to climb:
+`standards/context/token-economy`.
+
 ## Skills
 
 | Skill | Use when |

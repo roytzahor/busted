@@ -10,6 +10,15 @@ ai:
     description: applyClamps() enforces the humility rules in code; prompt rules and clamps must move together
   verdict-field-zeroing:
     description: Which fields each terminal verdict must clear, and why browse-mode tokens must not leak into the product path
+context:
+  caveman:
+    description: The compressed register for transient agent-facing text, and the places compression destroys what is stored
+  delegation:
+    description: A subagent starts cold — when it pays for itself, what its prompt must carry, how to handle its report
+  single-source:
+    description: One fact, one owner — CLAUDE.md routes and standards state; which mirrors are deliberate
+  token-economy:
+    description: The retrieval cost ladder, climb only as far as the question needs, and what must never be optimized away
 design:
   motion:
     description: The single house easing curve, the animate-in ease-out trap, and reduced-motion rules
