@@ -12,6 +12,15 @@ What is installed, what it is for, and when to reach for it. Not injectable via
 | **graft** (`graft ask`) | "what is X", "how does X work" | `graft/` is a gitignored regenerable cache |
 | **graphify** | wiki generation on demand only | **Deprecated here** — call edges measurably wrong |
 
+Cost ordering and the rule for how far up the ladder to climb:
+`standards/context/token-economy`.
+
+A `PreToolUse` hook in `.claude/settings.json` nudges toward the graph on
+grep-family Bash commands. It used to mandate **graphify** — the tool this repo
+documents as wrong — and a second hook fired on every source and `.md` read.
+Both were removed or rewritten on 2026-09-14. If you add a hook that injects
+context, count what it costs per firing and how often it fires.
+
 ## Skills
 
 | Skill | Use when |

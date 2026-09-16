@@ -24,14 +24,26 @@ large external change (branch switch with a huge diff, dependency bump).
 - `detect_changes()` — map the working diff to its blast radius; run it before
   touching `DropshipPrediction`, `computeMatchConfidence`,
   `MATCH_CONFIDENCE_MIN`, or the analyze route
+- `get_architecture(aspects=["clusters"])` — orientation on unfamiliar areas
+- `graft skeleton <file>` — signatures-only view of one file's API surface
+
+`.env`, `node_modules`, `.next` and `graphify-out/` are excluded from the index
+by design.
 
 ## Coverage is best-effort, never proof
 
 Call `check_index_coverage` on the paths behind any negative or exhaustive claim
 ("nothing calls X", "this is dead code"). `index_status` flags
-`lib/index/embeddings.ts` and `scripts/index/cluster-products.ts` as
-`parse_partial` — grep those directly rather than trusting a graph miss.
-Absence from the flagged list is not a guarantee either.
+`lib/index/embeddings.ts` (L131, L142) and `scripts/index/cluster-products.ts`
+(L93) as `parse_partial` — constructs in those ranges may be missing, so grep
+them directly rather than trusting a graph miss. Absence from the flagged list
+is not a guarantee either.
+
+## The CLI needs the project flag
+
+`codebase-memory-mcp cli <tool>` requires
+`--project Users-tzahore-github-busted` or it errors "project not found" — the
+MCP surface infers it, the CLI does not. Prefer flags over raw JSON args.
 
 ## graphify is deprecated here
 
