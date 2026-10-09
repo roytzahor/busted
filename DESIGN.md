@@ -1646,8 +1646,17 @@ start a phase before the previous one is visually verified in a browser, in both
 **Phase 6 — Remaining surfaces**
 - Chain-of-custody pipeline log (§5.5).
 - Scan permalink + OG card (§5.6).
-- `components/analysis-results.tsx`: kill the six gradient clip-text figures,
-  move the store/supplier comparison onto paper, apply §8's DOM-order rule.
+- ✅ `components/analysis-results.tsx` — **shipped 2026-10-09 (spec 0004)**:
+  - gradient figures, glow, shine and blur removed, and the sticky buy bar
+    with them
+  - DOM order is VerdictSheet → offer → listing → uncertainty → disclosed
+    CTA (§8.1)
+  - the supplier card goes on paper only for a confirmed match (§4.1
+    corollary)
+  - the bar and stamp figure are drawn from observed prices only;
+    estimates print `≈` (§8.4)
+  - verified in Chromium at 390/1280 px, LTR and RTL
+    (`agent-os/specs/0004-ledger-offer-sheet/visuals/`)
 - Store pages, extension popup token alignment.
 - **Last step:** delete `.glass`, `.glass-md`, `.glow-*`, `.shine-top` from
   `globals.css` once nothing references them.
