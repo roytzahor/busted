@@ -43,3 +43,11 @@ updated: 2026-10-09
 
   All restored and passing.
 - 2026-10-09 — `npm run eval:price` after T10 (rank-based gate) → new 10/12 vs old 6/12; wrong 1 → 0; false 5 → 2; PASS
+- 2026-10-09 — T11, on a clean detached worktree at the commit (no 0004 work in the tree):
+  - clean `tsc` exit 0
+  - `npm test` 310/310 (24 files)
+  - `sdd:check` 0 errors
+  - `eval:price` PASS (10/12 vs 6/12)
+  - `eval --skip-ai --enforce-cost`: verdict 52/52, supplier 52/52, shown precision 26/26, 0 Tier-0 false fires. Identical to baseline: the Tier-0 estimate change moved no verdict.
+  - `npm run build` exit 0
+  - `perf:budget` within budget
