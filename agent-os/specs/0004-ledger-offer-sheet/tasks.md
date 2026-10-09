@@ -56,3 +56,10 @@ updated: 2026-10-09
   - sheet < offer < link in all 16
   - bar on confirmed (solid), likely (ghost) and amber (ghost); none on closest
   - `visuals/` holds all shapes at 390 in both directions, plus the confirmed shape at 1280 in both directions
+- 2026-10-09 — final gates on a clean detached worktree at the head commit:
+  - clean `tsc` exit 0; lint exit 0
+  - `npm test` 324/324 (25 files)
+  - `sdd:check` 0 errors
+  - `eval:price` PASS (10/12 vs 6/12)
+  - `eval --skip-ai --enforce-cost`: verdict 52/52, supplier 52/52, shown precision 26/26, 0 false fires (identical to baseline; UI-only change)
+  - `npm run build` exit 0; `perf:budget` within budget
