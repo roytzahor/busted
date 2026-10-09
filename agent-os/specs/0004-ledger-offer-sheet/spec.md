@@ -1,7 +1,7 @@
 ---
 id: "0004"
 title: "The offer reads as The Ledger: verdict and evidence on paper first, observed prices on the bar, the money link last"
-status: in-progress
+status: verified
 risk: high
 owner: "CEO agent"
 created: 2026-10-09
@@ -45,9 +45,10 @@ Three trust rules are broken outright:
 - A matched scan at flame or amber reads, in DOM order:
   1. the verdict sheet (paper) with the bar drawn from observed prices
   2. the evidence
-  3. the uncertainty prose, if any
-  4. the supplier listing
+  3. the supplier listing
+  4. the uncertainty prose about that listing, if any
   5. the disclosure and the CTA, last
+  6. after the offer: the match-feedback control
 - Figures from observed prices print plainly. Figures from estimates carry `≈`
   and never draw the bar.
 - No retired surface remains on the result screen.
@@ -56,8 +57,14 @@ Three trust rules are broken outright:
 
 - Changing any honesty rule from spec 0002. The view model
   (`buildOfferView`) is the contract, and this spec only changes how it looks.
-  0002's tests keep passing. The one exception is the assertion that pinned
-  the sticky bar this spec removes (two sponsored links become one).
+  0002's tests keep passing, with three deliberate edits:
+  - the assertion that pinned the sticky bar this spec removes now expects
+    one sponsored link instead of two
+  - its fixture gains a `dropshipPrediction`, because the CTA now requires
+    a stated verdict and the mapper always supplies one
+  - the bare `/4\.8/` regex, meant to catch an invented "4.8★" rating, is
+    narrowed to rating context, because it now also matched the legitimate
+    observed `≈×4.8` multiplier
 - The choreographed entry sequence (count-up synchronised to `bar-draw`,
   stamp landing) — DESIGN §5.2's timing table. The static final state ships
   first. Motion is a follow-up, revertible on its own.
@@ -70,13 +77,21 @@ Three trust rules are broken outright:
 
 - **REQ-1** — When a matched scan is flame or amber, the result shall render
   the verdict sheet before any supplier listing or link, and the affiliate
-  link shall be the last interactive element of the offer in DOM order.
+  link shall be the last interactive element of the offer region in DOM order
+  (match feedback renders after the region). If the comparison carries no
+  verdict to state, no affiliate link shall render: the money link never
+  appears without its reasoning.
 - **REQ-2** — The system shall render no sticky or fixed-position affiliate
   CTA on a result.
 - **REQ-3** — When both the store price and the matched supplier price are
   observed, and the match is not best-effort, the sheet's multiplier and bar
-  shall be computed from those two prices. The multiplier shall print without
-  `≈`.
+  shall be computed from those two prices, and never replaced by an estimate.
+  Below 1.5× (or no markup at all), no figure and no bar render.
+  - For a **confirmed** (`same`) match: the figure prints plainly, the bar
+    takes the tier's fill, and the flame stamp carries the figure.
+  - For a **likely** match: the figure carries `≈`, the bar is the ghost
+    (asserted position, unasserted mass, as `amber`), and the stamp carries no
+    figure. Hedged identity, hedged measurement.
 - **REQ-4** — When only model estimates exist, the multiplier shall carry `≈`,
   the bar shall not render (as the bar's own rule requires), and the stamp
   shall read plain `BUSTED` with no figure.
@@ -88,6 +103,9 @@ Three trust rules are broken outright:
   path, unchanged, so the sheet can state the verdict and its evidence.
 - **REQ-8** — The supplier card shall render on paper only for a confirmed
   (`same`) match. A `likely` or `closest` match renders on a plain room surface.
+- **REQ-9** — A "different function" image verdict
+  (`imageMatchSameFunction === false`) shall always render as prose, whatever
+  the match quality and whether or not the model gave reasoning (§8.3).
 
 ## Acceptance criteria
 
@@ -108,12 +126,20 @@ Given flame and amber comparisons, when rendered, then the markup contains no
 Covers: REQ-2, REQ-5, REQ-6
 Verify: test __tests__/ledger-offer.test.tsx
 
-### AC-3 — observed prices draw the bar, plainly
+### AC-3 — observed prices draw the bar, hedged when the match is
 
-Given a flame comparison with store $59.99 and a matched supplier at $12.50,
-when rendered, then the multiplier reads `×4.8` with no `≈`, and the bar's
-label says the supplier price is 21% of retail. This holds even when the
-model's estimates say otherwise (store 99, supplier 5).
+Given a confirmed flame comparison with store $59.99 and a matched supplier at
+$12.50, when rendered, then the multiplier reads `×4.8` with no `≈`, the bar's
+label says the supplier price is 21% of retail, and the stamp reads
+`BUSTED ×4.8`. This holds even when the model's estimates say otherwise
+(store 99, supplier 5).
+
+Given the same prices on a `likely` match, then the figure reads `≈×4.8`,
+the bar is the ghost fill, and the stamp reads `BUSTED`.
+
+Given observed prices below 1.5× (store $10, supplier $8), or a supplier not
+cheaper, then no figure, no `≈` estimate and no bar render. Observed prices
+are never overridden by the model.
 Covers: REQ-3, REQ-7
 Verify: test __tests__/ledger-offer.test.tsx
 
@@ -133,6 +159,16 @@ Verify: test __tests__/ledger-offer.test.tsx
 Given a `same` match, the supplier card renders inside a `data-slot="paper"`
 element. Given a `likely` or `closest` match, it does not.
 Covers: REQ-8
+Verify: test __tests__/ledger-offer.test.tsx
+
+### AC-8 — no reasoning, no money link; uncertainty never styled away
+
+Given a flame comparison with no `dropshipPrediction`, when rendered, then no
+sponsored anchor renders. Given a `high` match with
+`imageMatchSameFunction === false` and no image reasoning, then "Different
+function" prose renders. Match feedback renders after the CTA, outside the
+offer region.
+Covers: REQ-1, REQ-9
 Verify: test __tests__/ledger-offer.test.tsx
 
 ### AC-5 — the mapper carries the verdict

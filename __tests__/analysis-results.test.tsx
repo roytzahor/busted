@@ -5,6 +5,26 @@ import { BrowseAnalysisResults } from "@/components/browse-analysis-results";
 import type { BrowseAnalysisResult } from "@/lib/analyze/map-response";
 import { AFFILIATE_DISCLOSURE, AFFILIATE_DISCLOSURE_SHORT } from "@/lib/brand";
 import type { ProductComparisonResult } from "@/lib/mock-data";
+import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
+
+// Spec 0004: the offer states its verdict before any money link, and the
+// mapper always passes the prediction through — so fixtures carry one.
+const PREDICTION: DropshipPrediction = {
+  verdict: "dropship",
+  isLikelyDropship: true,
+  confidence: 0.86,
+  productCategory: "home decor",
+  reasoning: "Generic listing with supplier photos.",
+  reasoningSignals: ["photos match a supplier listing"],
+  missingSignals: [],
+  redFlags: [],
+  aliexpressKeywords: [],
+  styleTokens: [],
+  materialPriors: [],
+  estimatedStorePriceUsd: null,
+  estimatedSupplierPriceUsd: null,
+  estimatedMarkupPercent: null,
+};
 
 function comparison(overrides: Partial<ProductComparisonResult> = {}): ProductComparisonResult {
   return {
@@ -12,6 +32,7 @@ function comparison(overrides: Partial<ProductComparisonResult> = {}): ProductCo
     scanId: "scan_1",
     cache: "MISS",
     presenceTier: "flame",
+    dropshipPrediction: PREDICTION,
     storeProduct: {
       title: "Galaxy Projector Lamp",
       priceUsd: 59.99,
@@ -124,7 +145,9 @@ describe("AnalysisResults — accusation wording follows the tier", () => {
 
   it("never prints invented trust metrics", () => {
     const html = render(comparison());
-    expect(html).not.toMatch(/4\.8|1k\+|orders sold|day shipping/);
+    // Rating context, not a bare "4.8": the offer now also prints the observed
+    // multiplier (≈×4.8 for $59.99 vs $12.50), which is a measurement.
+    expect(html).not.toMatch(/4\.8\s*(★|rating)|1(\.0)?k\+|orders sold|day shipping|days to ship/);
   });
 
   // @spec 0002/AC-4

@@ -10,7 +10,9 @@ updated: 2026-10-09
 1. **Mapper** — `map-response.ts` passes `dropshipPrediction` into the
    comparison on the `full` path. `ProductComparisonResult` gains an optional
    `dropshipPrediction` field.
-2. **VerdictSheet** gains an optional `observed: { storeUsd, supplierUsd }`.
+2. **VerdictSheet** gains an optional
+   `observed: { storeUsd, supplierUsd, confirmed }`. This was amended after
+   the audit; `confirmed` hedges a likely match.
    - With `observed`, the multiplier and the bar come from those two prices,
      and the stamp reads `BUSTED ×N`.
    - Without it, the multiplier comes from the model estimates and is printed
@@ -63,7 +65,7 @@ updated: 2026-10-09
 | `components/verdict-sheet.tsx` | `observed` prices; `≈` on estimates; bar and figured stamp only when observed |
 | `components/analysis-results.tsx` | rebuilt as the Ledger offer |
 | `app/dev-monitor/design/page.tsx` | offer previews for screenshots |
-| `components/match-feedback.tsx`, `components/share-button.tsx` | drop `backdrop-blur-sm`: they render inside the offer, and the AC-2 test found the glass there |
+| `components/match-feedback.tsx`, `components/share-button.tsx` | drop `backdrop-blur-sm`: they render inside the offer, and the AC-2 test found the glass there. `right-2` → `end-2` for RTL |
 | `__tests__/ledger-offer.test.tsx` | new |
 | `__tests__/map-response.test.ts` | AC-5 |
 | `__tests__/analysis-results.test.tsx` | sticky-bar assertion → exactly one CTA |

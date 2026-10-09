@@ -39,7 +39,7 @@ it("never renders the CTA without a concrete price delta", () => { … });
 | [0001](0001-sdd-framework/spec.md) | shipped | medium | Specs are the source of truth, and CI checks them |
 | [0002](0002-honest-offer/spec.md) | shipped | high | Honest alternative offer: no invented numbers, no unearned claims, disclosure at every CTA |
 | [0003](0003-store-price-evidence/spec.md) | shipped | high | Store price from the page's structured data, measured against hand-labelled truth |
-| [0004](0004-ledger-offer-sheet/spec.md) | in-progress | high | The offer reads as The Ledger: verdict and evidence first, observed prices on the bar, the money link last |
+| [0004](0004-ledger-offer-sheet/spec.md) | verified | high | The offer reads as The Ledger: verdict and evidence first, observed prices on the bar, the money link last |
 | [0005](0005-verdict-input-on-evidence/spec.md) | draft — blocked on live-eval credentials | high | The verdict prompt and the matcher read evidence, not guesses |
 
 Keep this table in step with the folders — `/sdd:status` reads the folders,

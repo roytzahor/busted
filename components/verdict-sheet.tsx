@@ -30,11 +30,13 @@ interface VerdictSheetProps {
   tier: PresenceTier;
   storeName: string;
   /**
-   * Prices we actually observed: the resolved store price and a matched,
-   * same-product supplier listing (spec 0004). When present they — not the
-   * model's estimates — draw the multiplier, the bar and the stamp.
+   * Prices we actually observed: the resolved store price and the matched
+   * listing's price (spec 0004). When present they — never the model's
+   * estimates — decide the multiplier, the bar and the stamp. `confirmed` is
+   * whether the listing is known to be the same product: a likely match gets
+   * a hedged figure (≈), the ghost bar and no figure on the stamp.
    */
-  observed?: { storeUsd: number; supplierUsd: number };
+  observed?: { storeUsd: number; supplierUsd: number; confirmed: boolean };
   className?: string;
 }
 
@@ -110,12 +112,22 @@ export function VerdictSheet({
   // Observed prices are a measurement; estimates are not (DESIGN §8.4,
   // markup-bar.tsx: "never draw a measurement from an estimate"). So an
   // estimate prints with "≈", draws no bar, and earns no figure on the stamp.
-  const observedMultiplier =
-    observed && observed.supplierUsd > 0 && observed.storeUsd > 0
-      ? formatMultiplier(observed.storeUsd / observed.supplierUsd)
+  // When observed prices exist they are the answer even when the answer is
+  // "no figure" (under 1.5×, or not cheaper at all) — falling back to the
+  // model's estimate there would print "≈×8.7" beside "20% cheaper".
+  const hasObserved = observed !== undefined && observed.supplierUsd > 0 && observed.storeUsd > 0;
+  const observedMultiplier = hasObserved
+    ? formatMultiplier(observed.storeUsd / observed.supplierUsd)
+    : null;
+  const confirmed = hasObserved && observed.confirmed;
+  const estimatedMultiplier = hasObserved ? null : markupMultiplier(prediction);
+  const multiplierText = observedMultiplier
+    ? confirmed
+      ? observedMultiplier
+      : `≈${observedMultiplier}`
+    : estimatedMultiplier
+      ? `≈${estimatedMultiplier}`
       : null;
-  const estimatedMultiplier = observedMultiplier ? null : markupMultiplier(prediction);
-  const multiplierText = observedMultiplier ?? (estimatedMultiplier ? `≈${estimatedMultiplier}` : null);
 
   return (
     <section
@@ -158,12 +170,14 @@ export function VerdictSheet({
           {prediction.reasoning}
         </p>
 
-        {observed && observedMultiplier ? (
+        {hasObserved && observedMultiplier ? (
           <MarkupBar
             supplierPriceUsd={observed.supplierUsd}
             storePriceUsd={observed.storeUsd}
-            multiplier={observedMultiplier}
-            tier={tier}
+            multiplier={multiplierText ?? observedMultiplier}
+            // A likely match asserts the position, not the mass — the same
+            // ghost fill amber uses (DESIGN §2.2: the bar is tier-derived).
+            tier={confirmed ? tier : "amber"}
           />
         ) : null}
 
@@ -176,7 +190,7 @@ export function VerdictSheet({
               </p>
               <ul className="space-y-1 text-sm leading-relaxed">
                 {prediction.reasoningSignals.map((signal) => (
-                  <li key={signal} className="flex items-start gap-2">
+                  <li key={signal} dir="auto" className="flex items-start gap-2">
                     <span
                       aria-hidden="true"
                       className="mt-[0.55em] size-1 shrink-0 bg-paper-ink/50"
@@ -202,7 +216,7 @@ export function VerdictSheet({
               </p>
               <ul className="space-y-1 text-sm leading-relaxed text-paper-muted">
                 {prediction.missingSignals.map((signal) => (
-                  <li key={signal} className="flex items-start gap-2">
+                  <li key={signal} dir="auto" className="flex items-start gap-2">
                     <span
                       aria-hidden="true"
                       className="mt-[0.55em] size-1 shrink-0 bg-paper-ink/30"
@@ -218,7 +232,7 @@ export function VerdictSheet({
 
       {flame ? (
         <Stamp className="absolute -bottom-4 end-[-12px]">
-          {observedMultiplier ? `BUSTED ${observedMultiplier}` : "BUSTED"}
+          {confirmed && observedMultiplier ? `BUSTED ${observedMultiplier}` : "BUSTED"}
         </Stamp>
       ) : null}
     </section>

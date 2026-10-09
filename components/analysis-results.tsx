@@ -83,15 +83,20 @@ function LedgerOffer({ result, offer }: { result: ProductComparisonResult; offer
     typeof result.matchConfidence === "number" ? Math.round(result.matchConfidence * 100) : null;
   const supplierPriceText = supplierPriceUsd !== null ? formatMoney(supplierPriceUsd) : null;
 
-  // The bar is a measurement, so it is drawn only from prices we observed for
-  // the same product: a claimable saving implies both (spec 0004, REQ-3).
+  // Observed prices decide the sheet's figure whenever both are known for a
+  // listing that is at least a likely match — including when the answer is
+  // "no figure" (not cheaper). Hedged when the identity is (spec 0004, REQ-3).
+  // A closest match is a different product, so its price measures nothing.
   const observed =
-    hasSaving && storePriceUsd !== null && supplierPriceUsd !== null
-      ? { storeUsd: storePriceUsd, supplierUsd: supplierPriceUsd }
+    storePriceUsd !== null && supplierPriceUsd !== null && !isClosest
+      ? { storeUsd: storePriceUsd, supplierUsd: supplierPriceUsd, confirmed: isSame }
       : undefined;
+  // The money link never appears without its reasoning (§8.1).
+  const ctaHref = result.dropshipPrediction ? offer.ctaHref : null;
+  const differentFunction = result.imageMatchSameFunction === false;
 
   const trackClick = () =>
-    offer.ctaHref ? trackAffiliateClick({ scanId: result.scanId, targetUrl: offer.ctaHref }) : undefined;
+    ctaHref ? trackAffiliateClick({ scanId: result.scanId, targetUrl: ctaHref }) : undefined;
 
   // Offer line. Accusation ("overcharging") only at flame with a real saving;
   // amber speaks of signals (spec 0002, REQ-4/REQ-6).
@@ -202,8 +207,10 @@ function LedgerOffer({ result, offer }: { result: ProductComparisonResult; offer
 
         {/* Uncertainty is prose in the reading column — never a chip, never
             collapsed (§8.3). */}
-        {isUncertainMatch ? (
+        {isUncertainMatch || differentFunction ? (
           <div role="status" dir="auto" className="space-y-1.5 border-s-2 border-accent/60 ps-3 text-sm">
+            {isUncertainMatch ? (
+              <>
             <p className="font-semibold">
               {isClosest
                 ? "Closest match we could find — verify before buying."
@@ -219,14 +226,17 @@ function LedgerOffer({ result, offer }: { result: ProductComparisonResult; offer
                 </>
               )}
             </p>
+              </>
+            ) : null}
             {result.imageMatchReasoning ? (
               <p className="text-xs text-muted-foreground">
                 <span className="font-semibold text-foreground">Image AI saw:</span> {result.imageMatchReasoning}
-                {result.imageMatchSameFunction === false ? (
-                  <span className="mt-1 block text-destructive">
-                    Different function detected — this may do the same job differently.
-                  </span>
-                ) : null}
+              </p>
+            ) : null}
+            {/* Never conditional on reasoning or match quality (§8.3). */}
+            {differentFunction ? (
+              <p className="text-xs text-destructive">
+                Different function detected — this may do the same job differently.
               </p>
             ) : null}
             {result.matchReasons && result.matchReasons.length > 0 ? (
@@ -241,7 +251,7 @@ function LedgerOffer({ result, offer }: { result: ProductComparisonResult; offer
 
         {/* The money link — last, plain, disclosed in its own container. */}
         <div data-affiliate-cta="" className="space-y-3 border-t border-border pt-4">
-          {offer.ctaHref ? (
+          {ctaHref ? (
             <p dir="auto" className="text-xs text-muted-foreground">{AFFILIATE_DISCLOSURE}</p>
           ) : null}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -257,14 +267,14 @@ function LedgerOffer({ result, offer }: { result: ProductComparisonResult; offer
               imageUrl={storeProduct.imageUrl}
               className="w-full sm:w-auto"
             />
-            {offer.ctaHref ? (
+            {ctaHref ? (
               <Button
                 asChild
                 size="lg"
                 className="h-11 w-full bg-success text-success-foreground transition-[background-color,scale] hover:bg-success/90 active:scale-[0.97] sm:w-auto"
               >
                 <a
-                  href={offer.ctaHref}
+                  href={ctaHref}
                   target="_blank"
                   rel="noopener noreferrer sponsored"
                   onClick={trackClick}
@@ -278,10 +288,15 @@ function LedgerOffer({ result, offer }: { result: ProductComparisonResult; offer
           </div>
         </div>
 
-        {result.scanId ? (
-          <MatchFeedback scanId={result.scanId} variant={isClosest ? "best-effort" : "confident"} />
-        ) : null}
       </div>
+
+      {/* After the offer region, so the money link is the region's last
+          interactive element (spec 0004, REQ-1). */}
+      {result.scanId ? (
+        <div data-match-feedback="" className="w-full max-w-xl">
+          <MatchFeedback scanId={result.scanId} variant={isClosest ? "best-effort" : "confident"} />
+        </div>
+      ) : null}
     </section>
   );
 }

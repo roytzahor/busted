@@ -255,7 +255,7 @@ export function MatchFeedbackInline({
         type="button"
         onClick={() => setOpen(false)}
         aria-label="Close feedback"
-        className="absolute right-2 top-2 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+        className="absolute end-2 top-2 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
       >
         <X className="size-4" aria-hidden="true" />
       </button>

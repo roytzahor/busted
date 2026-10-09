@@ -57,8 +57,13 @@ function comparison(overrides: Partial<ProductComparisonResult> = {}): ProductCo
 const render = (c: ProductComparisonResult) => renderToStaticMarkup(<AnalysisResults result={c} />);
 const sponsored = (html: string) =>
   [...html.matchAll(/<a\b[^>]*>/g)].filter((m) => /rel="[^"]*\bsponsored\b/.test(m[0])).map((m) => m.index!);
+// Variant prefixes are stripped ("sm:fixed" → "fixed", "hover:glow-success" →
+// "glow-success"): a retired surface behind a breakpoint is still retired.
 const classTokens = (html: string) =>
-  [...html.matchAll(/class="([^"]*)"/g)].flatMap((m) => m[1].split(/\s+/)).filter(Boolean);
+  [...html.matchAll(/class="([^"]*)"/g)]
+    .flatMap((m) => m[1].split(/\s+/))
+    .filter(Boolean)
+    .map((t) => t.split(":").pop()!);
 
 describe("Ledger offer — reading order is the trust argument", () => {
   // @spec 0004/AC-1
@@ -78,9 +83,16 @@ describe("Ledger offer — reading order is the trust argument", () => {
 
 describe("Ledger offer — no sticky CTA, no retired surfaces", () => {
   // @spec 0004/AC-2
-  it("uses none of the anti-goal surfaces at flame or amber", () => {
-    for (const tier of ["flame", "amber"] as const) {
-      const tokens = classTokens(render(comparison({ presenceTier: tier })));
+  it("uses none of the anti-goal surfaces, in any shape of the offer", () => {
+    const shapes: [string, ProductComparisonResult][] = [
+      ["flame likely", comparison()],
+      ["amber likely", comparison({ presenceTier: "amber" })],
+      ["flame confirmed", comparison({ verified: true })],
+      ["flame closest", comparison({ bestEffortOnly: true })],
+      ["flame no CTA", comparison({ supplierProduct: { ...comparison().supplierProduct, affiliateUrl: undefined } })],
+    ];
+    for (const [tier, c] of shapes) {
+      const tokens = classTokens(render(c));
       const banned = tokens.filter(
         (t) =>
           t === "fixed" ||
@@ -98,17 +110,49 @@ describe("Ledger offer — no sticky CTA, no retired surfaces", () => {
       expect(banned, `${tier}: ${banned.join(", ")}`).toEqual([]);
     }
   });
+
+  // @spec 0004/AC-2
+  it("never sets the CTA in a larger type role than the verdict line", () => {
+    const html = render(comparison({ verified: true }));
+    const cta = [...html.matchAll(/<a\b[^>]*rel="[^"]*sponsored[^"]*"[^>]*>/g)][0][0];
+    expect(cta).not.toMatch(/\btext-(lg|xl|2xl|3xl|4xl|5xl|6xl)\b/);
+  });
 });
 
 describe("Ledger offer — observed prices draw the bar", () => {
   // @spec 0004/AC-3
-  it("draws the multiplier and bar from the observed prices, plainly, ignoring the model's estimates", () => {
-    const html = render(comparison());
+  it("draws the multiplier and bar from the observed prices, plainly, for a confirmed match", () => {
+    const html = render(comparison({ verified: true }));
     expect(html).toContain("×4.8");
     expect(html).not.toContain("≈×");
     expect(html).toContain("Supplier price is 21% of the retail price.");
     expect(html).not.toContain("×19.8"); // what the estimates (99 / 5) would have said
     expect(html).toMatch(/BUSTED(\s|<!-- -->)*×4\.8/);
+  });
+
+  // @spec 0004/AC-3
+  it("hedges a likely match: ≈ figure, ghost bar, no figure on the stamp", () => {
+    const html = render(comparison());
+    expect(html).toContain("≈×4.8");
+    expect(html).toContain("Supplier price is 21% of the retail price.");
+    expect(html).toContain("bg-paper-ink/30"); // the ghost fill
+    expect(html).toMatch(/>BUSTED</);
+    expect(html).not.toMatch(/BUSTED(\s|<!-- -->)*≈?×/);
+  });
+
+  // @spec 0004/AC-3
+  it("never lets the model's estimate replace observed prices — under 1.5× or not cheaper, no figure at all", () => {
+    for (const priceUsd of [8, 12]) {
+      const html = render(
+        comparison({
+          verified: true,
+          storeProduct: { ...comparison().storeProduct, priceUsd: 10 },
+          supplierProduct: { ...comparison().supplierProduct, priceUsd },
+        }),
+      );
+      expect(html, `supplier ${priceUsd}`).not.toMatch(/≈?×\d/);
+      expect(html, `supplier ${priceUsd}`).not.toContain('role="img"');
+    }
   });
 });
 
@@ -154,5 +198,29 @@ describe("Ledger offer — only a confirmed match gets paper", () => {
   it("keeps a likely or closest match off paper", () => {
     expect(supplierCardOnPaper(render(comparison()))).toBe(false);
     expect(supplierCardOnPaper(render(comparison({ bestEffortOnly: true })))).toBe(false);
+  });
+});
+
+describe("Ledger offer — no reasoning, no money link; uncertainty never styled away", () => {
+  // @spec 0004/AC-8
+  it("withholds the affiliate link when there is no verdict to state", () => {
+    const html = render(comparison({ dropshipPrediction: undefined }));
+    expect(sponsored(html)).toHaveLength(0);
+    expect(html).toContain("Star Projector Night Light"); // the listing itself still shows
+  });
+
+  // @spec 0004/AC-8
+  it("always says when the image AI saw a different function, even on a high match with no reasoning", () => {
+    const html = render(comparison({ verified: true, imageMatchSameFunction: false, imageMatchReasoning: undefined }));
+    expect(html).toMatch(/Different function detected/);
+  });
+
+  // @spec 0004/AC-8
+  it("renders match feedback after the money link, as a sibling of the offer region", () => {
+    const html = render(comparison());
+    const link = sponsored(html)[0];
+    const feedback = html.indexOf("data-match-feedback");
+    expect(link).toBeGreaterThan(0);
+    expect(feedback).toBeGreaterThan(link);
   });
 });
