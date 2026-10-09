@@ -44,6 +44,12 @@ export interface CachedScrapeData {
    *  before currency-aware extraction have only the USD value. */
   detectedStorePriceNative?: number | null;
   detectedStorePriceCurrency?: CurrencyCode | null;
+  /** Structured (og:price / JSON-LD) price — spec 0003. Optional: rows cached
+   *  before it have none, and resolve to the AI estimate or unknown. */
+  structuredStorePriceUsd?: number | null;
+  structuredStorePriceNative?: number | null;
+  structuredStorePriceCurrency?: CurrencyCode | null;
+  structuredStorePriceSource?: "meta" | "jsonld" | null;
   storeName: string;
   markdownLength: number;
   markdownPreview: string;
@@ -110,6 +116,18 @@ export function parseCachedScrapeData(
       : {}),
     ...(isCurrencyCode(record.detectedStorePriceCurrency)
       ? { detectedStorePriceCurrency: record.detectedStorePriceCurrency }
+      : {}),
+    ...(typeof record.structuredStorePriceUsd === "number" && record.structuredStorePriceUsd > 0
+      ? { structuredStorePriceUsd: record.structuredStorePriceUsd }
+      : {}),
+    ...(typeof record.structuredStorePriceNative === "number"
+      ? { structuredStorePriceNative: record.structuredStorePriceNative }
+      : {}),
+    ...(isCurrencyCode(record.structuredStorePriceCurrency)
+      ? { structuredStorePriceCurrency: record.structuredStorePriceCurrency }
+      : {}),
+    ...(record.structuredStorePriceSource === "meta" || record.structuredStorePriceSource === "jsonld"
+      ? { structuredStorePriceSource: record.structuredStorePriceSource }
       : {}),
     storeName: typeof record.storeName === "string" ? record.storeName : "Store",
     markdownLength:

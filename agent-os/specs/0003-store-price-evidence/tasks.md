@@ -1,0 +1,26 @@
+---
+spec: "0003"
+updated: 2026-10-09
+---
+
+# 0003 — Tasks
+
+- [x] T1 (AC-5) — hand-label `expectedStorePrice` on the real fixtures from the captured pages; vivify unlabelled with its reason
+- [x] T2 (AC-4, AC-6) — `lib/eval/price-score.ts` + `scripts/eval/price-eval.ts`; run to get the numbers that decide the order
+- [x] T3 — amend spec REQ-4/REQ-5 from the numbers (regex out of the claim; verdict and matcher inputs untouched) before coding the resolver
+- [x] T4 (AC-1, AC-2) — `lib/scraping/extract-structured-price.ts`
+- [x] T5 (AC-3) — `lib/analyze/store-price.ts`, the one resolver, plus the kill switch
+- [x] T6 (AC-3) — scraper service records the structured price; cache fields with defensive parse; route, permalink and trending resolve through the one rule
+- [x] T7 (AC-1…AC-5) — tests, plus mutation checks (written after T4/T5, so mutation, not a red-first run, is the proof they bite)
+- [x] T8 (AC-6) — `npm run eval:price` script + CI step
+- [x] T9 (AC-7) — gates; record below
+
+## Verification log
+
+- 2026-10-09 — survey of the 15 fixtures with HTML: Product JSON-LD on 4, GTIN on 0, a placeholder brand "My Store" on calmo, and og:price on 3 of the 10 Shopify pages. agas-tamar regex = $30 (the refund-policy cancellation fee) vs JSON-LD 3121.92 ILS.
+- 2026-10-09 — `npm run eval:price` with the first-draft order (structured → AI → regex): new 7/12 vs old 6/12. 0 wrong prices, but 5 false prices on homepages (3 of them from the regex fallback). This drove the T3 amendment.
+- 2026-10-09 — `npm run eval:price` with the shipped order (structured → AI): **new 10/12 vs old 6/12, wrong prices 1 → 0, false prices 5 → 2** (davincified and smartjewelry, both from the AI estimate). By source: structured 12/12, regex 6/12, AI 9/12. PASS. (AC-6)
+- 2026-10-09 — mutation checks: re-adding the regex fallback fails "never falls back to the regex"; making JSON-LD win over meta fails "prefers meta over JSON-LD". Both restored and passing.
+- 2026-10-09 — `npx vitest run` extract-structured-price + store-price + price-eval → 16/16 passed
+- 2026-10-09 — clean `tsc` exit 0; lint clean on touched files; `npm test` → 301/301 (21 files); `npm run build` exit 0; `npm run perf:budget` within budget
+- 2026-10-09 — `eval --skip-ai` → verdict 52/52, supplier 52/52, shown precision 26/26, 0 false fires: identical to baseline (AC-7)

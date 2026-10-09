@@ -14,6 +14,7 @@ import {
   isSupplierMarketplaceUrl,
 } from "@/lib/scraping/detect-source";
 import { mapAnalyzeResponseToComparison, type AnalyzeClientResult } from "@/lib/analyze/map-response";
+import { resolveStorePriceUsd } from "@/lib/analyze/store-price";
 import {
   parseAliExpressData,
   type AnalyzeResponse,
@@ -31,14 +32,17 @@ interface LoadedScan {
   comparison: AnalyzeClientResult | null;
 }
 
+/** Same rule as the analyze route — one owner, lib/analyze/store-price.ts (spec 0003). */
 function resolveStorePrice(
   ai: ReturnType<typeof parseCachedAiPrediction>,
   scrape: ReturnType<typeof parseCachedScrapeData>,
 ): number {
   return (
-    ai?.prediction?.estimatedStorePriceUsd ??
-    scrape?.detectedStorePriceUsd ??
-    0
+    resolveStorePriceUsd({
+      structuredUsd: scrape?.structuredStorePriceUsd,
+      aiEstimateUsd: ai?.prediction?.estimatedStorePriceUsd,
+      regexUsd: scrape?.detectedStorePriceUsd,
+    }) ?? 0
   );
 }
 

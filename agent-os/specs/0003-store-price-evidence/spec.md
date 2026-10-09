@@ -1,7 +1,7 @@
 ---
 id: "0003"
 title: "Store price comes from the page's structured data before regex or the model's guess, measured against hand-labelled truth"
-status: draft
+status: verified
 risk: high
 owner: "CEO agent"
 created: 2026-10-09
@@ -63,6 +63,13 @@ available source, and nothing measures how often it is wrong:
   brand ("My Store") in the corpus, so it is not worth building yet.
 - Rewriting stored fixture prices. `run-fixtures.ts` keeps replaying them, and
   this spec measures the extractor directly, per lessons 2026-07-25.
+- **The verdict path and the matcher.** The verdict prompt receives
+  `detectedStorePriceUsd`. It has a few-shot example built on agas-tamar's
+  wrong "$30", and rule 15 reads a null price as a dropship signal. Feeding it
+  the structured price is a prompt-input change that needs `npm run eval:model`
+  (live, with credentials). The matcher's price term has the same problem with
+  a stored-price replay. Both stay on the regex price here. Moving them is the
+  next spec, with its live measurement.
 
 ## Requirements
 
@@ -76,19 +83,22 @@ available source, and nothing measures how often it is wrong:
   currency is not one we can convert.
 - **REQ-3** — If structured extraction meets malformed or hostile HTML, then it
   shall return `null` and never throw.
-- **REQ-4** — When a structured price exists, the scraped store price shall be
-  the structured price, recorded with source `structured`. Otherwise it shall be
-  the regex price, with source `markdown`.
-- **REQ-5** — The resolved store price shall be: the structured price when
-  present, else the AI estimate, else the regex price. A cached scrape without
-  a source field shall resolve exactly as before.
+- **REQ-4** — When a structured price exists, the scrape shall record it
+  alongside the regex price (amount, currency, USD, and source `meta` or
+  `jsonld`). The regex `detectedStorePriceUsd`, which the verdict prompt and
+  the matcher consume, shall be unchanged, so the verdict path does not move.
+- **REQ-5** — The store price the product **shows and claims** shall be the
+  structured price when present, else the AI estimate, else unknown. The regex
+  price no longer feeds a claim. Cached scrapes without structured fields
+  resolve to the AI estimate or unknown.
 - **REQ-6** — The system shall provide `npm run eval:price`. It reports, per
   source (structured, regex, AI estimate, old resolution, new resolution),
   correct prices, wrong prices, and false prices on no-price pages against the
   truth, offline, with no API spend. It fails when the new resolution scores
   below the old one.
 - **REQ-7** — Setting `STRUCTURED_PRICE_ENABLED=false` shall restore the old
-  behaviour at runtime: regex only, AI estimate first.
+  behaviour at runtime: no structured extraction, and the AI estimate, else
+  the regex price.
 
 ## Acceptance criteria
 
@@ -109,12 +119,15 @@ then the result is `null` and no exception escapes.
 Covers: REQ-3
 Verify: test __tests__/extract-structured-price.test.ts
 
-### AC-3 — the resolution order, and back-compat
+### AC-3 — the resolution order, and the switch
 
-Given `{ source: "structured", detectedUsd: 848, aiUsd: 30 }`, the resolved
-price is 848. Given `{ source: "markdown", detectedUsd: 30, aiUsd: 44 }` it is
-44 (the old order). Given no source field (older cache), it resolves as before.
-Given the kill switch off, a structured source is treated like markdown.
+Given `{ structured: 843.76, ai: 30, regex: 30 }`, the resolved price is
+843.76. Given `{ structured: null, ai: 44.55, regex: 44.59 }` it is 44.55.
+Given `{ structured: null, ai: null, regex: 53.78 }` it is unknown (`null`).
+That is a homepage's random product price, and it no longer becomes a claim.
+Given the kill switch off, the same inputs resolve to `ai ?? regex` (30, 44.55
+and 53.78). Given a cached scrape with no structured fields, the structured
+input is absent.
 Covers: REQ-4, REQ-5, REQ-7
 Verify: test __tests__/store-price.test.ts
 
@@ -159,11 +172,14 @@ Verify: eval npm run eval -- --skip-ai
   variant's current price. JSON-LD `lowestPrice` is the minimum across all
   offers, which can understate a variant product. Both beat regex: in the
   survey, structured sources were never wrong where present.
-- **Structured beats the AI estimate, but the AI beats regex.** On the one
-  page where regex found nothing (vivify), the AI estimate was plausible. On
-  agas-tamar the AI echoed the regex error. The page's own machine-readable
-  price is evidence; the model's number is an estimate. The eval checks the
-  order.
+- **Structured beats the AI estimate; regex no longer feeds a claim.** The
+  first draft ordered structured → AI → regex. The eval (2026-10-09) scored it
+  7/12, because the regex fallback put random product prices on 3 homepages
+  where the AI had correctly said "no price". Structured → AI scores 10/12 with
+  0 wrong prices. A missing price costs a savings claim; an invented one
+  fabricates it (article I). The AI estimate is no gold standard either: it is
+  fed the regex price and echoed agas-tamar's $30. That is why structured data
+  outranks it.
 - **2% tolerance** absorbs FX-snapshot drift and `.92`-style rounding
   (3121.92 vs ₪3,122) without accepting a wrong product's price.
 - **Vivify stays unlabelled.** Its capture shows ₪260 next to ₪250, ₪450–640

@@ -53,6 +53,7 @@ import {
 } from "@/lib/types/analyze";
 
 import { flashModel } from "@/lib/ai/models";
+import { resolveStorePriceUsd } from "@/lib/analyze/store-price";
 
 const MARKDOWN_PREVIEW_CHARS = 1_500;
 
@@ -241,14 +242,17 @@ function errorResponse(
   );
 }
 
+/** The shown/claimed store price for a cached scan — one rule, spec 0003. */
 function resolveStorePrice(
   aiPrediction: CachedAiPrediction["prediction"],
   scrape: CachedScrapeData,
 ): number {
   return (
-    aiPrediction?.estimatedStorePriceUsd ??
-    scrape.detectedStorePriceUsd ??
-    0
+    resolveStorePriceUsd({
+      structuredUsd: scrape.structuredStorePriceUsd,
+      aiEstimateUsd: aiPrediction?.estimatedStorePriceUsd,
+      regexUsd: scrape.detectedStorePriceUsd,
+    }) ?? 0
   );
 }
 
@@ -620,6 +624,14 @@ async function runAnalysisPipeline(
     ...(scrapeOut.detectedStorePriceCurrency
       ? { detectedStorePriceCurrency: scrapeOut.detectedStorePriceCurrency }
       : {}),
+    ...(scrapeOut.structuredStorePrice
+      ? {
+          structuredStorePriceUsd: scrapeOut.structuredStorePrice.amountUsd,
+          structuredStorePriceNative: scrapeOut.structuredStorePrice.amount,
+          structuredStorePriceCurrency: scrapeOut.structuredStorePrice.currency,
+          structuredStorePriceSource: scrapeOut.structuredStorePrice.source,
+        }
+      : {}),
     storeName,
     markdownLength: scrapeOut.markdown.length,
     markdownPreview: scrapeOut.markdown.slice(0, MARKDOWN_PREVIEW_CHARS),
@@ -987,8 +999,9 @@ async function runAnalysisPipeline(
   waterfall.mark("persist", "Scrape + AI prediction written to database.", "complete");
   pipelineSteps.push("Persisted scrape + AI to database");
 
-  const storePrice =
-    aiResult.prediction?.estimatedStorePriceUsd ?? storePriceUsd ?? 0;
+  // Shown/claimed price (spec 0003). `storePriceUsd` (regex) stays the
+  // matcher's and the verdict prompt's input above.
+  const storePrice = resolveStorePrice(aiResult.prediction, scrapeData);
 
   const successResponse: AnalyzeResponse = {
     status: "success",
