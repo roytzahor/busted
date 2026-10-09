@@ -41,7 +41,6 @@ it("never renders the CTA without a concrete price delta", () => { … });
 | [0003](0003-store-price-evidence/spec.md) | shipped | high | Store price from the page's structured data, measured against hand-labelled truth |
 | [0004](0004-ledger-offer-sheet/spec.md) | shipped | high | The offer reads as The Ledger: verdict and evidence first, observed prices on the bar, the money link last |
 | [0005](0005-verdict-input-on-evidence/spec.md) | draft — blocked on live-eval credentials | high | The verdict prompt and the matcher read evidence, not guesses |
-
 | [0006](0006-provider-fallback-and-model-choice/spec.md) | draft: blocked on credentials | high | A second AI provider as fallback; the primary model chosen by cost per correct verdict |
 | [0007](0007-design-direction-v2/spec.md) | draft: blocked on the owner's taste | medium | Find out what is wrong with the design, show alternatives, apply design skills |
 
