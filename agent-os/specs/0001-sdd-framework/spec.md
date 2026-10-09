@@ -1,7 +1,7 @@
 ---
 id: "0001"
 title: "Spec-driven development: specs are the source of truth, and CI checks them"
-status: verified
+status: shipped
 risk: medium
 owner: "CEO agent"
 created: 2026-10-09

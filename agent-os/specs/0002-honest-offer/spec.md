@@ -1,7 +1,7 @@
 ---
 id: "0002"
 title: "Honest alternative offer: no invented numbers, no unearned claims, disclosure at every CTA"
-status: verified
+status: shipped
 risk: high
 owner: "CEO agent"
 created: 2026-10-09

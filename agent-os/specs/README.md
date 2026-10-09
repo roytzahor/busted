@@ -36,8 +36,8 @@ it("never renders the CTA without a concrete price delta", () => { … });
 
 | Spec | Status | Risk | Behaviour |
 |---|---|---|---|
-| [0001](0001-sdd-framework/spec.md) | verified | medium | Specs are the source of truth, and CI checks them |
-| [0002](0002-honest-offer/spec.md) | verified | high | Honest alternative offer: no invented numbers, no unearned claims, disclosure at every CTA |
+| [0001](0001-sdd-framework/spec.md) | shipped | medium | Specs are the source of truth, and CI checks them |
+| [0002](0002-honest-offer/spec.md) | shipped | high | Honest alternative offer: no invented numbers, no unearned claims, disclosure at every CTA |
 | [0003](0003-store-price-evidence/spec.md) | verified | high | Store price from the page's structured data, measured against hand-labelled truth |
 
 Keep this table in step with the folders — `/sdd:status` reads the folders,
