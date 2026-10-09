@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { parseAliExpressData } from "@/lib/types/analyze";
 import { parseCachedAiPrediction, parseCachedScrapeData } from "@/lib/types/cache";
 import { claimableSavings } from "@/lib/analyze/offer-view";
-import { resolveStorePriceUsd } from "@/lib/analyze/store-price";
+import { resolveCachedStorePriceUsd } from "@/lib/analyze/store-price";
 
 /**
  * Trending Now feed — surfaces recently-scanned products with confirmed
@@ -86,11 +86,7 @@ export async function GET(request: Request): Promise<NextResponse<TrendingPayloa
     const supplier = parseAliExpressData(row.aliexpressData);
     if (!scrape || !supplier) continue;
 
-    const storePriceUsd = resolveStorePriceUsd({
-      structuredUsd: scrape.structuredStorePriceUsd,
-      aiEstimateUsd: ai?.prediction?.estimatedStorePriceUsd,
-      regexUsd: scrape.detectedStorePriceUsd,
-    });
+    const storePriceUsd = resolveCachedStorePriceUsd(ai?.prediction, scrape);
     const supplierPriceUsd = supplier.priceUsd;
     // A public grid of "save N%" is a claim about a named store: only scans
     // whose own tier speaks, only real deltas (spec 0002, REQ-10).

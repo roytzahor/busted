@@ -53,7 +53,7 @@ import {
 } from "@/lib/types/analyze";
 
 import { flashModel } from "@/lib/ai/models";
-import { resolveStorePriceUsd } from "@/lib/analyze/store-price";
+import { resolveCachedStorePriceUsd } from "@/lib/analyze/store-price";
 
 const MARKDOWN_PREVIEW_CHARS = 1_500;
 
@@ -242,19 +242,6 @@ function errorResponse(
   );
 }
 
-/** The shown/claimed store price for a cached scan — one rule, spec 0003. */
-function resolveStorePrice(
-  aiPrediction: CachedAiPrediction["prediction"],
-  scrape: CachedScrapeData,
-): number {
-  return (
-    resolveStorePriceUsd({
-      structuredUsd: scrape.structuredStorePriceUsd,
-      aiEstimateUsd: aiPrediction?.estimatedStorePriceUsd,
-      regexUsd: scrape.detectedStorePriceUsd,
-    }) ?? 0
-  );
-}
 
 interface BrowseSearchOutcome {
   candidates: AliExpressBrowseCandidate[];
@@ -347,7 +334,7 @@ async function runAnalysisPipeline(
         waterfall.mark("supplier", "Supplier restored from verified mapping.", "complete");
         waterfall.mark("persist", "Served from verified map — no live work.", "skipped");
 
-        const storePrice = resolveStorePrice(ai.prediction, scrape);
+        const storePrice = resolveCachedStorePriceUsd(ai.prediction, scrape) ?? 0;
         const verifiedResponse: AnalyzeResponse = {
           status: "success",
           cache: "HIT",
@@ -517,7 +504,7 @@ async function runAnalysisPipeline(
           waterfall.mark("persist", "Served from database — no live scrape", "skipped");
         }
 
-        const storePrice = resolveStorePrice(ai.prediction, scrape);
+        const storePrice = resolveCachedStorePriceUsd(ai.prediction, scrape) ?? 0;
 
         const hitResponse: AnalyzeResponse = {
           status: "success",
@@ -773,7 +760,12 @@ async function runAnalysisPipeline(
         ...(scrapeOut.attributes.translatedTitle
           ? { translatedTitle: scrapeOut.attributes.translatedTitle }
           : {}),
-        priceUsd: storePriceUsd ?? null,
+        // AI failed, so there is no estimate: the page's structured price
+        // or nothing — never the regex (spec 0003).
+        priceUsd: resolveCachedStorePriceUsd(null, {
+          structuredStorePriceUsd: scrapeOut.structuredStorePrice?.amountUsd ?? null,
+          detectedStorePriceUsd: storePriceUsd,
+        }),
         imageUrl: scrapeOut.attributes.mainImageUrl,
         storeName,
       },
@@ -1001,7 +993,7 @@ async function runAnalysisPipeline(
 
   // Shown/claimed price (spec 0003). `storePriceUsd` (regex) stays the
   // matcher's and the verdict prompt's input above.
-  const storePrice = resolveStorePrice(aiResult.prediction, scrapeData);
+  const storePrice = resolveCachedStorePriceUsd(aiResult.prediction, scrapeData) ?? 0;
 
   const successResponse: AnalyzeResponse = {
     status: "success",

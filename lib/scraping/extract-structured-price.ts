@@ -27,6 +27,9 @@ export interface StructuredPrice extends DetectedPrice {
 /** Above this we assume a parse error, not a product (same spirit as the
  *  matcher's absurd-price guard). */
 const MAX_PLAUSIBLE_AMOUNT = 1_000_000;
+/** Below one unit of any supported currency is a parse artefact ("0.01"
+ *  placeholders, a "1.299" read as dot-thousands), not a product price. */
+const MIN_PLAUSIBLE_AMOUNT = 1;
 
 /**
  * Parse a machine-formatted amount. Meta content is normally "165.00", but
@@ -48,12 +51,17 @@ export function parseStructuredAmount(raw: string | number | undefined | null): 
   } else if ((s.match(/\./g) ?? []).length > 1) {
     // "1.299.000" — dots as thousands separators.
     s = s.replace(/\./g, "");
+  } else if (/^\d{1,3}\.\d{3}$/.test(s)) {
+    // "1.299" is ₪1,299 on a dot-thousands locale and 1.299 on a decimal one.
+    // Machine-readable prices never need three decimals, so this is a
+    // formatted string we cannot disambiguate — refuse rather than be 1000× off.
+    return null;
   }
   return plausible(Number(s));
 }
 
 function plausible(n: number): number | null {
-  return Number.isFinite(n) && n > 0 && n < MAX_PLAUSIBLE_AMOUNT ? n : null;
+  return Number.isFinite(n) && n >= MIN_PLAUSIBLE_AMOUNT && n < MAX_PLAUSIBLE_AMOUNT ? n : null;
 }
 
 function toCurrency(raw: string | undefined): CurrencyCode | null {
@@ -70,7 +78,9 @@ function readAttr(tag: string, name: string): string | undefined {
 /** All `<meta>` tags keyed by property/name, first occurrence wins. */
 function metaTags(html: string): Map<string, string> {
   const out = new Map<string, string>();
-  for (const m of html.matchAll(/<meta\b[^>]*>/gi)) {
+  // `[^<>]*`, not `[^>]*`: an unclosed `<meta` must stop at the next tag, or a
+  // hostile page with 40k of them makes this quadratic (measured 4.2s).
+  for (const m of html.matchAll(/<meta\b[^<>]*>/gi)) {
     const tag = m[0];
     const key = (readAttr(tag, "property") ?? readAttr(tag, "name"))?.trim().toLowerCase();
     const content = readAttr(tag, "content");
@@ -94,9 +104,26 @@ function fromMeta(html: string): StructuredPrice | null {
   return null;
 }
 
+/** Product-typed JSON-LD nodes on the page, as `"@type": "Product"` or in a type array. */
+function countProductNodes(html: string): number {
+  return (html.match(/"@type"\s*:\s*(?:\[[^\]]*?)?"Product"/g) ?? []).length;
+}
+
 function fromJsonLd(html: string): StructuredPrice | null {
+  // More than one Product node means related products, a bundle or a
+  // variant group — and `extractJsonLd` takes the first, which a theme may
+  // put before the product on the page. A related item's price would then
+  // outrank the AI estimate with structured-data authority, so ambiguity
+  // falls through instead (meta tags, being page-level, have no such risk).
+  if (countProductNodes(html) > 1) return null;
   const ld = extractJsonLd(html);
   if (!ld) return null;
+  // `lowestPrice` is a minimum across offers; across two currencies it would
+  // compare shekels with dollars and label the result with the first.
+  const currencies = new Set(
+    ld.offers.filter((o) => typeof o.price === "number").map((o) => o.currency?.toUpperCase()),
+  );
+  if (currencies.size > 1) return null;
   const amount = parseStructuredAmount(ld.lowestPrice);
   const currency = toCurrency(ld.currency);
   return amount !== null && currency !== null ? build(amount, currency, "jsonld") : null;

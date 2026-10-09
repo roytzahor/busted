@@ -61,15 +61,56 @@ describe("parseStructuredAmount", () => {
     expect(parseStructuredAmount("1.299,00")).toBe(1299);
     expect(parseStructuredAmount("165,00")).toBe(165);
     expect(parseStructuredAmount("3,122")).toBe(3122);
-    expect(parseStructuredAmount("129.900")).toBe(129.9);
-    expect(parseStructuredAmount("1.299.000")).toBeNull(); // dots as thousands → 1,299,000: over the plausibility cap
+    // A single dot with three decimals is ambiguous (₪1,299 or 1.299) — refused,
+    // symmetric with "3,122" which is unambiguous comma-thousands.
+    expect(parseStructuredAmount("1.299")).toBeNull();
+    expect(parseStructuredAmount("129.900")).toBeNull();
+    expect(parseStructuredAmount("1.299.000")).toBeNull(); // dot-thousands → 1,299,000: over the cap
+    expect(parseStructuredAmount("0.01")).toBeNull(); // placeholder, not a price
+    expect(parseStructuredAmount("0.99")).toBeNull();
     expect(parseStructuredAmount(" 238 ")).toBe(238);
     expect(parseStructuredAmount("abc")).toBeNull();
     expect(parseStructuredAmount("-5")).toBeNull();
   });
 });
 
+describe("extractStructuredPrice — refuses ambiguity", () => {
+  // @spec 0003/AC-1
+  it("refuses JSON-LD with more than one Product node — a related item may come first", () => {
+    const html = page(
+      "",
+      ld({ "@type": "Product", name: "Related: Mini Lamp", offers: { "@type": "Offer", price: "10", priceCurrency: "USD" } }) +
+        ld({ "@type": "Product", name: "Galaxy Projector", offers: { "@type": "Offer", price: "59.99", priceCurrency: "USD" } }),
+    );
+    expect(extractStructuredPrice(html)).toBeNull();
+  });
+
+  // @spec 0003/AC-1
+  it("refuses offers priced in two currencies", () => {
+    const html = page(
+      "",
+      ld({
+        "@type": "Product",
+        name: "x",
+        offers: [
+          { "@type": "Offer", price: "238", priceCurrency: "ILS" },
+          { "@type": "Offer", price: "64", priceCurrency: "USD" },
+        ],
+      }),
+    );
+    expect(extractStructuredPrice(html)).toBeNull();
+  });
+});
+
 describe("extractStructuredPrice — never throws", () => {
+  // @spec 0003/AC-2
+  it("stays linear on 40k unclosed <meta tags", () => {
+    const hostile = "<meta property=og:price:amount ".repeat(40_000);
+    const t0 = performance.now();
+    expect(extractStructuredPrice(hostile)).toBeNull();
+    expect(performance.now() - t0).toBeLessThan(500);
+  });
+
   // @spec 0003/AC-2
   it("survives malformed JSON-LD, absurd numbers, and a megabyte of junk", () => {
     expect(extractStructuredPrice(page('<script type="application/ld+json">{"@type":"Product", "offers": {</script>'))).toBeNull();

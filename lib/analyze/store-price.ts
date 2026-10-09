@@ -51,3 +51,28 @@ export function resolveStorePriceUsd(
   }
   return positive(input.structuredUsd) ?? positive(input.aiEstimateUsd);
 }
+
+/**
+ * The same rule for a stored scan: the cached prediction's estimate plus the
+ * cached scrape's prices. Every surface that reads a scan back from the DB —
+ * cache HIT, verified hot path, permalink, trending, featured examples, the
+ * extension's quick-lookup, store pages — resolves here, so a revisit shows
+ * the same price as the first scan (spec 0003).
+ */
+export function resolveCachedStorePriceUsd(
+  prediction: { estimatedStorePriceUsd: number | null } | null | undefined,
+  scrape:
+    | { structuredStorePriceUsd?: number | null; detectedStorePriceUsd: number | null }
+    | null
+    | undefined,
+  structuredEnabled: boolean = isStructuredPriceEnabled(),
+): number | null {
+  return resolveStorePriceUsd(
+    {
+      structuredUsd: scrape?.structuredStorePriceUsd,
+      aiEstimateUsd: prediction?.estimatedStorePriceUsd,
+      regexUsd: scrape?.detectedStorePriceUsd,
+    },
+    structuredEnabled,
+  );
+}

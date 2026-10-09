@@ -12,8 +12,9 @@
  *   old         ai ?? regex            — pre-0003 rule (= kill switch off)
  *   new         structured ?? ai       — what ships (resolveStorePriceUsd)
  *
- * Exits 1 when `new` has fewer correct prices than `old`, or turns any
- * fixture `old` priced correctly into a wrong or false price.
+ * Exits 1 when `new` has fewer correct prices than `old`, or makes ANY
+ * fixture worse (correct > missed > wrong/false_price). `old` is the same
+ * resolver with the kill switch off — exactly the pre-0003 rule.
  */
 import { loadAllFixtures } from "@/lib/eval/fixture-store";
 import { emptyTally, scorePrice, type PriceOutcome, type PriceTally } from "@/lib/eval/price-score";
@@ -29,6 +30,8 @@ const regressions: string[] = [];
 const unlabelled: string[] = [];
 const rows: string[] = [];
 
+/** correct > missed (silence is safe) > wrong / false_price (a fabricated claim). */
+const RANK: Record<PriceOutcome, number> = { correct: 2, missed: 1, wrong: 0, false_price: 0 };
 const fmt = (n: number | null) => (n === null ? "—" : `$${n.toFixed(2)}`);
 const mark: Record<PriceOutcome, string> = { correct: "✓", wrong: "✗", false_price: "⚠", missed: "·" };
 
@@ -51,8 +54,10 @@ for (const f of loadAllFixtures()) {
     SOURCES.map((s) => [s, scorePrice(truth, values[s])]),
   ) as Record<Source, PriceOutcome>;
   for (const s of SOURCES) tallies[s][outcomes[s]]++;
-  if (outcomes.old === "correct" && outcomes.new !== "correct") {
-    regressions.push(`${f.id}: old ${fmt(old)} was correct, new ${fmt(next)} is ${outcomes.new}`);
+  // Any fixture that gets WORSE fails the gate, not only a correct one going
+  // bad: a missed price turning into a wrong one is a new fabricated claim.
+  if (RANK[outcomes.new] < RANK[outcomes.old]) {
+    regressions.push(`${f.id}: old ${fmt(old)} was ${outcomes.old}, new ${fmt(next)} is ${outcomes.new}`);
   }
   const truthText = truth === null ? "no single price" : `${truth.amount} ${truth.currency}`;
   rows.push(

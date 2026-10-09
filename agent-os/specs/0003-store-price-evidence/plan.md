@@ -39,7 +39,7 @@ updated: 2026-10-09
 | IV. Measured, not asserted | pass | `eval:price` before/after on hand-labelled truth: old 6/12 → new 10/12, 0 wrong prices. `eval --skip-ai` is a no-regression check only, since it replays stored prices and cached AI. Not measured: the verdict path and the matcher, which is why neither is touched |
 | V. Enhancements never break a scan | pass | the extractor returns null on any failure, with a test on malformed and huge input; the kill switch restores the old rule at runtime |
 | VI. Public accusation gated | pass | trending now resolves price through the same rule, still behind spec 0002's tier gate |
-| VII. One fact, one owner | pass | four copies of the price rule collapse into one module |
+| VII. One fact, one owner | pass | every stored-scan reader resolves through `resolveCachedStorePriceUsd()` (route HIT/verified/MISS/partial, permalink, trending, featured, quick-lookup, store pages). A static test fails on any new ad-hoc fallback |
 | VIII. Design is derived | n/a | no visual change |
 | IX. Smallest correct change | pass | reuses `extractJsonLd` and `convertToUsd`; the regex extractor is left alone |
 
@@ -54,7 +54,10 @@ updated: 2026-10-09
 | `lib/analyze/store-price.ts` | new — the one resolver and the kill switch |
 | `lib/services/scraper/index.ts` | record `structuredStorePrice` beside the regex price |
 | `lib/types/cache.ts` | optional structured fields with defensive parsing |
-| `app/api/analyze/route.ts`, `lib/cache/lookup-by-id.ts`, `app/api/stats/trending/route.ts` | resolve through the one rule |
+| `app/api/analyze/route.ts`, `lib/cache/lookup-by-id.ts`, `app/api/stats/trending/route.ts`, `app/api/examples/featured/route.ts`, `app/api/extension/quick-lookup/route.ts`, `lib/store/report.ts` | resolve through the one rule; public savings via `claimableSavings()` |
+| `lib/cache/persist-product.ts` | persist the structured fields (`toScrapeJson` exported for the round-trip test) |
+| `lib/tier0/store-fingerprint.ts` | stop writing the regex price, a 25% supplier guess and a 300% markup into the prediction |
+| `__tests__/store-price-wiring.test.ts`, `__tests__/scraper-structured-price.test.ts`, `__tests__/extract-structured-price-throw.test.ts` | persistence round-trip, single-owner static gate, Tier-0, scraper switch, guard |
 | `package.json`, `.github/workflows/eval.yml` | `eval:price` script and CI gate |
 | `__tests__/extract-structured-price.test.ts`, `store-price.test.ts`, `price-eval.test.ts` | new |
 

@@ -14,7 +14,7 @@ import {
   isSupplierMarketplaceUrl,
 } from "@/lib/scraping/detect-source";
 import { mapAnalyzeResponseToComparison, type AnalyzeClientResult } from "@/lib/analyze/map-response";
-import { resolveStorePriceUsd } from "@/lib/analyze/store-price";
+import { resolveCachedStorePriceUsd } from "@/lib/analyze/store-price";
 import {
   parseAliExpressData,
   type AnalyzeResponse,
@@ -32,19 +32,6 @@ interface LoadedScan {
   comparison: AnalyzeClientResult | null;
 }
 
-/** Same rule as the analyze route — one owner, lib/analyze/store-price.ts (spec 0003). */
-function resolveStorePrice(
-  ai: ReturnType<typeof parseCachedAiPrediction>,
-  scrape: ReturnType<typeof parseCachedScrapeData>,
-): number {
-  return (
-    resolveStorePriceUsd({
-      structuredUsd: scrape?.structuredStorePriceUsd,
-      aiEstimateUsd: ai?.prediction?.estimatedStorePriceUsd,
-      regexUsd: scrape?.detectedStorePriceUsd,
-    }) ?? 0
-  );
-}
 
 export async function loadScanById(id: string): Promise<LoadedScan | null> {
   if (!id || id.length > 64) return null; // cheap guard against junk
@@ -85,7 +72,7 @@ export async function loadScanById(id: string): Promise<LoadedScan | null> {
     lastScrapedAt: row.lastScrapedAt.toISOString(),
     storeProduct: {
       title: scrape.attributes.title,
-      priceUsd: resolveStorePrice(ai, scrape),
+      priceUsd: resolveCachedStorePriceUsd(ai?.prediction, scrape) ?? 0,
       imageUrl: scrape.attributes.mainImageUrl,
       storeName: scrape.storeName,
     },

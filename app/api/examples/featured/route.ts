@@ -2,7 +2,9 @@ import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseAliExpressData } from "@/lib/types/analyze";
-import { parseCachedAiPrediction } from "@/lib/types/cache";
+import { parseCachedAiPrediction, parseCachedScrapeData } from "@/lib/types/cache";
+import { claimableSavings } from "@/lib/analyze/offer-view";
+import { resolveCachedStorePriceUsd } from "@/lib/analyze/store-price";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,7 +15,8 @@ export const revalidate = 3600; // 1 hour
  *
  * Returns up to N (default 3) recent scans that have:
  *   - AliExpress data attached (so we know supplier search succeeded)
- *   - estimatedStorePriceUsd > estimatedSupplierPriceUsd (real savings)
+ *   - a claimable saving: tier speaks, resolved store price > matched
+ *     listing price (claimableSavings — specs 0002/0003)
  *   - last-scraped within 30 days (within cache TTL)
  *
  * The home page hits this on mount; if it errors we fall back to a tiny
@@ -57,11 +60,17 @@ export async function GET(): Promise<NextResponse<{ examples: FeaturedExample[] 
       const ali = parseAliExpressData(row.aliexpressData);
       if (!ai?.prediction || !ali) continue;
 
-      const storeUsd = ai.prediction.estimatedStorePriceUsd ?? 0;
-      const supplierUsd = ai.prediction.estimatedSupplierPriceUsd ?? ali.priceUsd;
-      if (storeUsd <= 0 || supplierUsd <= 0 || supplierUsd >= storeUsd) continue;
-
-      const savingsPct = Math.round(((storeUsd - supplierUsd) / storeUsd) * 100);
+      // A chip on the home page naming a store URL is a public claim: the
+      // resolved store price against the matched listing's real price, only
+      // for a scan whose own tier speaks (specs 0002/0003) — never the
+      // model's supplier estimate, never a legit store.
+      const claim = claimableSavings({
+        prediction: ai.prediction,
+        storePriceUsd: resolveCachedStorePriceUsd(ai.prediction, parseCachedScrapeData(row.scrapeData)),
+        supplierPriceUsd: ali.priceUsd,
+      });
+      if (!claim) continue;
+      const savingsPct = claim.savingsPercent;
       if (savingsPct < 30) continue; // not a wow-worthy example
 
       const cat = ai.prediction.productCategory?.trim() ?? "Product";
