@@ -22,6 +22,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
+    "sdd:check": "tsx scripts/sdd/check-specs.ts",
+    "sdd:new": "tsx scripts/sdd/new-spec.ts",
     "eval:harvest": "tsx --env-file=.env scripts/eval/harvest-feedback-fixtures.ts",
     "eval:retrieval": "tsx --env-file=.env scripts/eval/retrieval-eval.ts",
     "eval:match-headroom": "tsx scripts/eval/match-headroom.ts",

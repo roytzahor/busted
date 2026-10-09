@@ -42,6 +42,11 @@ root:
     description: How a change is made here — smallest correct diff, kill switches, comments, concurrency
   code-navigation:
     description: Query codebase-memory before grepping; which graph answers which question shape
+sdd:
+  constitution:
+    description: Nine articles every plan is checked against, each routed to the standard that owns it
+  workflow:
+    description: When a spec is required, the draft→shipped lifecycle and its gates, the AC Verify contract, @spec tags
 scraping:
   provider-chain:
     description: Dynamic scraper ordering, never leaking provider names to users, and errors staying silent
