@@ -1,5 +1,18 @@
 {
   "_comment": "The Read|Glob graphify hook was removed: it fired on every source and .md read and injected ~400 tokens instructing the agent to use graphify, which agent-os/standards/code-navigation.md documents as deprecated and measurably wrong on this repo. See .claude/lessons.md 2026-09-14.",
+  "_plugins_comment": "Project plugins, Anthropic's official marketplace only. frontend-design: UI craft for The Ledger work. pr-review-toolkit: silent-failure-hunter (enhancement stages must never throw OR silently swallow), pr-test-analyzer (are @spec-tagged tests real proof). Why each, and what was rejected: agent-os/tools/catalog.md.",
+  "extraKnownMarketplaces": {
+    "claude-plugins-official": {
+      "source": {
+        "source": "github",
+        "repo": "anthropics/claude-plugins-official"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true,
+    "pr-review-toolkit@claude-plugins-official": true
+  },
   "hooks": {
     "PreToolUse": [
       {
