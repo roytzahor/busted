@@ -7,5 +7,10 @@
     "notes": "Hug-baby necklace. Source costs ~2 NIS on AliExpress. Hebrew title — translate pre-pass should fire."
   },
   "notes": "Hug-baby necklace. Source costs ~2 NIS on AliExpress. Hebrew title — translate pre-pass should fire.",
-  "capturedAt": "2026-06-27T08:15:59.238Z"
+  "capturedAt": "2026-06-27T08:15:59.238Z",
+  "expectedStorePrice": {
+    "amount": 238,
+    "currency": "ILS"
+  },
+  "expectedStorePriceNote": "'מחיר רגיל 340 ₪ מחיר מבצע 238 ₪'; every variant listed at 238 ₪."
 }

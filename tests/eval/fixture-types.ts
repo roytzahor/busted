@@ -43,6 +43,17 @@ export interface FixtureTruth {
   confidenceMax?: number;
   expectedSupplier: ExpectedSupplier;
   expectedSavingsPercentBand?: [number, number];
+  /**
+   * Hand-labelled store price, read off the captured page by a person — never
+   * produced by running an extractor (spec 0003, eval/fixtures). `null` means
+   * the page has no single product price (homepage, collection). Absent means
+   * not yet labelled; real fixtures must then carry
+   * `expectedStorePriceUnlabelled` saying why.
+   */
+  expectedStorePrice?: { amount: number; currency: CurrencyCode } | null;
+  /** Where on the captured page the label was read — the evidence. */
+  expectedStorePriceNote?: string;
+  expectedStorePriceUnlabelled?: string;
   notes?: string;
   capturedAt?: string;
 }

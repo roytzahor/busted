@@ -19,7 +19,12 @@ npm run eval:list
 npm run eval:retrieval             # live embedding calls, NOT CI-gated
 npm run eval:match-headroom
 npm run eval:harvest               # feedback → draft fixture candidates
+npm run eval:price                 # store price vs hand-labelled truth — offline, CI-gated
 ```
+
+`eval:price` re-derives every price source from the captured page, which the
+replay cannot do. Any change to price extraction or to
+`resolveStorePriceUsd()` must show its before/after there (spec 0003).
 
 ## `tsc --noEmit` can lie
 

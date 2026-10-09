@@ -7,5 +7,7 @@
     "notes": "Sentimental photo jewelry. Classic dropship. Homepage — sparse-scrape fallback acceptable. RESOLVED 2026-08-26: same eval-tooling keyword bug as real-giftorder-wood-family (searched only the mistranslated single word \"encrypted\" instead of the AI's own aliexpressKeywords). Fixed the shared tooling; live re-capture merges both AI keywords (\"encrypted photo necklace\" + \"custom projection bracelet\") into 48 real candidates and finds a confident match: score 0.612, margin +0.212."
   },
   "notes": "Sentimental photo jewelry. Classic dropship. Homepage — sparse-scrape fallback acceptable.",
-  "capturedAt": "2026-06-27T08:18:53.554Z"
+  "capturedAt": "2026-06-27T08:18:53.554Z",
+  "expectedStorePrice": null,
+  "expectedStorePriceNote": "Homepage — several products at 199/249 ₪, no single product price."
 }

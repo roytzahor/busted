@@ -9,5 +9,6 @@
   "notes": "Original brand making candles at home. Must NOT be flagged as dropship. AliExpress may have similar silicone molds — disclaimer is the right product behavior.",
   "capturedAt": "2026-06-27T08:16:53.691Z",
   "confidenceMin": 0,
-  "confidenceMax": 0.7
+  "confidenceMax": 0.7,
+  "expectedStorePriceUnlabelled": "Ambiguous from the capture: no structured data; '260 ₪' sits beside related products at 250, 450–640 and 130 ₪. Guessing would make the label the thing under test — re-capture to label."
 }

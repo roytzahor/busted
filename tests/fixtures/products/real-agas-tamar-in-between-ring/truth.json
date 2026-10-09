@@ -9,5 +9,10 @@
   "notes": "agas&tamar — LEGIT jewelry brand with physical Tel Aviv store. CRITICAL: must NOT be classified as dropship. False-positive here is the worst failure.",
   "capturedAt": "2026-06-27T08:17:11.842Z",
   "confidenceMin": 0,
-  "confidenceMax": 0.6
+  "confidenceMax": 0.6,
+  "expectedStorePrice": {
+    "amount": 3122,
+    "currency": "ILS"
+  },
+  "expectedStorePriceNote": "Product block: 'טבעת In Between RW403 - RU ₪ 3,122'. The '$30' elsewhere on the page is the refund-policy cancellation fee."
 }
