@@ -30,8 +30,9 @@ Owner: `ai/verdict-clamps`, `ai/verdict-field-zeroing`.
 ## III. Nothing anyone pays for changes what a user sees
 
 Commission never enters ranking. Disclosure sits inside the CTA container, above
-the button. Every affiliate anchor is `rel="sponsored"`. No affiliate link
-without a concrete price delta.
+the button. Every affiliate anchor is `rel="sponsored"`. In the extension, no
+affiliate link without a concrete price delta. On the web, no link to a listing
+known not to be cheaper.
 Owner: `trust/affiliate-neutrality`.
 
 ## IV. Measured, not asserted
