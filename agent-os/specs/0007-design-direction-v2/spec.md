@@ -122,6 +122,10 @@ Verify: manual the follow-up spec's contrast table
   | designs-drift | community, privileged | **Reject.** A PostToolUse hook on every UI write for "121 brands": the per-firing cost lessons 2026-09-14 warns about, and it would lock a system that is under review |
   | Codesign, Rayden UI, euxlab | community | **Reject.** Print/video tooling, a different design system, enterprise research flow |
 
+  **Enabled by the owner on 2026-10-09:** `audit-suite` and `ux-ui-audit`
+  (both appear in the session's skill list). The Design plugin was offered in
+  the same card and does not appear, so the owner may not have accepted it.
+
   Already enabled in the repo: `frontend-design` (official marketplace).
   `impeccable` could not be installed at project scope from the cloud sandbox
   (its launcher downloads a binary); the owner can run `npx impeccable
