@@ -46,11 +46,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const ogParams = new URLSearchParams();
   ogParams.set("title", title.slice(0, 80));
-  if (savings !== null) ogParams.set("savings", String(savings));
-  if (cmp?.storeProduct.priceUsd) {
+  // Prices go on the card only alongside a real saving: the card strikes
+  // through the store price, which is a claim (spec 0002, REQ-4/REQ-10).
+  if (savings !== null && cmp) {
+    ogParams.set("savings", String(savings));
     ogParams.set("storeUsd", String(cmp.storeProduct.priceUsd));
-  }
-  if (cmp?.supplierProduct.priceUsd) {
     ogParams.set("aliUsd", String(cmp.supplierProduct.priceUsd));
   }
   if (cmp?.storeProduct.imageUrl) {
@@ -59,7 +59,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: headline,
-    description: `${title} — see the original supplier price and skip the markup.`,
+    description:
+      savings !== null
+        ? `${title} — the same product is listed for ${savings}% less elsewhere.`
+        : `${title} — scanned with ${BRAND_NAME}.`,
     openGraph: {
       title: headline,
       description: BRAND_TAGLINE,

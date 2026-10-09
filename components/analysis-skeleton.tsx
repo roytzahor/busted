@@ -54,7 +54,7 @@ export function AnalysisSkeleton({ step, progress }: AnalysisSkeletonProps) {
         <CardContent className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
             <SkeletonPanel label="Scanning store product" />
-            <SkeletonPanel label="Finding original supplier" delay />
+            <SkeletonPanel label="Looking for a cheaper source" delay />
           </div>
         </CardContent>
       </Card>

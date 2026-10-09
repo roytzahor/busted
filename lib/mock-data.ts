@@ -1,3 +1,5 @@
+import type { PresenceTier } from "@/lib/analyze/presence-tier";
+
 export interface StoreProduct {
   title: string;
   /** English translation when the original title was non-Latin script. */
@@ -11,10 +13,16 @@ export interface SupplierProduct {
   title: string;
   priceUsd: number;
   imageUrl: string;
-  orderCount: number;
-  sellerRating: number;
-  shippingDays: number;
-  affiliateUrl: string;
+  /**
+   * Trust metrics exactly as the supplier source reported them — absent when
+   * it did not (eBay/Amazon fallbacks never do). Never defaulted: an invented
+   * "4.8★" is a claim we cannot defend (spec 0002).
+   */
+  orderCount?: number;
+  sellerRating?: number;
+  shippingDays?: number;
+  /** Absent when no real destination exists — the CTA is then withheld. */
+  affiliateUrl?: string;
   /** Pre-selected variant label, e.g. "Black · 256 GB · US Warehouse". */
   variantLabel?: string;
   /** Total cost (variant price + shipping) when shipping cost is known. */
@@ -32,10 +40,17 @@ export interface ProductComparisonResult {
   /** Persisted ScannedProduct.id — drives /scan/[id] permalink + click tracking. */
   scanId?: string;
   cache: "HIT" | "MISS";
+  /** `priceUsd` 0 means the store price is unknown — it is never estimated. */
   storeProduct: StoreProduct;
   supplierProduct: SupplierProduct;
-  savingsUsd: number;
-  savingsPercent: number;
+  /** Null when no saving can be claimed — see computeSavings() in lib/analyze/offer-view.ts. */
+  savingsUsd: number | null;
+  savingsPercent: number | null;
+  /**
+   * Server-computed tier, passed through untouched. Absent reads as silent,
+   * and a silent scan renders no offer (spec 0002, trust/presence-tier-contract).
+   */
+  presenceTier?: PresenceTier;
   matchConfidence?: number;
   matchQuality?: SupplierMatchQuality;
   matchReasons?: string[];

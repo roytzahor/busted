@@ -7,6 +7,7 @@ import type {
 } from "@/lib/types/analyze";
 import type { AnalyzeDebugInfo } from "@/lib/types/debug";
 import type { PresenceTier } from "@/lib/analyze/presence-tier";
+import { computeSavings } from "@/lib/analyze/offer-view";
 
 export interface DropshipAnalysisResult {
   originalUrl: string;
@@ -142,14 +143,30 @@ export function mapAnalyzeResponseToComparison(
     };
   }
 
-  if (response.aliexpressData && response.supplierStatus === "complete") {
+  // Pass-through, never recomputed; absent reads as silent (see below).
+  const presenceTier: PresenceTier = response.presenceTier ?? "silent";
+
+  // A silent scan never becomes an offer (spec 0002, REQ-1/REQ-10). On a
+  // `legit` store an AliExpress "match" is most likely a knockoff; on a
+  // low-confidence one we have not earned the claim. The verdict-only view
+  // already has the silent presentation, and with no comparison object the
+  // share card, bulk paste and permalink OG have no savings to repeat.
+  if (
+    response.aliexpressData &&
+    response.supplierStatus === "complete" &&
+    presenceTier !== "silent"
+  ) {
     const supplier = response.aliexpressData;
-    const storePriceUsd =
-      storeProduct.priceUsd ?? supplier.originalPriceUsd ?? supplier.priceUsd * 4;
+    // Unknown stays unknown: no AliExpress crossed-out price, no multiple of
+    // the supplier price. StoreProduct's convention is 0 = unknown.
+    const storePriceUsd = storeProduct.priceUsd > 0 ? storeProduct.priceUsd : 0;
     const supplierPriceUsd = supplier.priceUsd;
-    const savingsUsd = Math.max(0, storePriceUsd - supplierPriceUsd);
-    const savingsPercent =
-      storePriceUsd > 0 ? Math.round((savingsUsd / storePriceUsd) * 100) : 0;
+    const { savingsUsd, savingsPercent } = computeSavings(
+      storePriceUsd,
+      supplierPriceUsd,
+      response.supplierBestEffortOnly,
+    );
+    const destination = supplier.affiliateUrl ?? response.aliexpressUrl ?? undefined;
 
     return {
       mode: "full",
@@ -157,6 +174,7 @@ export function mapAnalyzeResponseToComparison(
         originalUrl: response.originalUrl,
         scanId: response.scanId,
         cache: response.cache,
+        presenceTier,
         storeProduct: {
           ...storeProduct,
           priceUsd: storePriceUsd,
@@ -167,10 +185,11 @@ export function mapAnalyzeResponseToComparison(
           imageUrl:
             supplier.imageUrl ??
             "https://placehold.co/480x480/059669/ffffff/png?text=AliExpress",
-          orderCount: supplier.orderCount ?? 1000,
-          sellerRating: supplier.sellerRating ?? 4.8,
-          shippingDays: supplier.shippingDays ?? 14,
-          affiliateUrl: supplier.affiliateUrl ?? response.aliexpressUrl ?? "#",
+          // Reported or absent — never defaulted (spec 0002, REQ-2).
+          ...(supplier.orderCount !== undefined ? { orderCount: supplier.orderCount } : {}),
+          ...(supplier.sellerRating !== undefined ? { sellerRating: supplier.sellerRating } : {}),
+          ...(supplier.shippingDays !== undefined ? { shippingDays: supplier.shippingDays } : {}),
+          ...(destination ? { affiliateUrl: destination } : {}),
           ...(supplier.matchedVariant
             ? {
                 variantLabel: supplier.matchedVariant.label,
@@ -220,7 +239,7 @@ export function mapAnalyzeResponseToComparison(
       // Pass-through, never recomputed. An older response without the field
       // falls back to silent — the safe direction: we under-claim rather than
       // alarm on a scan whose tier we don't actually know.
-      presenceTier: response.presenceTier ?? "silent",
+      presenceTier,
     },
     browse: null,
     partial: null,

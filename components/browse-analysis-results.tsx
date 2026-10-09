@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useMoney } from "@/components/currency-provider";
 import { useT } from "@/components/locale-provider";
 import { ProductImage } from "@/components/product-image";
+import { AFFILIATE_DISCLOSURE_SHORT } from "@/lib/brand";
 import { trackAffiliateClick } from "@/lib/clicks";
 import type { BrowseAnalysisResult } from "@/lib/analyze/map-response";
 import { cn } from "@/lib/utils";
@@ -196,7 +197,7 @@ function BrowseCard({ candidate, scanId }: BrowseCardProps) {
       </div>
 
       {/* Body */}
-      <div className="flex flex-1 flex-col gap-3 p-4">
+      <div data-affiliate-cta="" className="flex flex-1 flex-col gap-3 p-4">
         <p dir="auto" className="line-clamp-2 text-sm font-semibold leading-snug">
           {candidate.title}
         </p>
@@ -215,10 +216,13 @@ function BrowseCard({ candidate, scanId }: BrowseCardProps) {
           </div>
         </div>
 
+        {/* Each card is its own CTA container, so it carries its own
+            disclosure before the link (trust/affiliate-neutrality, spec 0002). */}
+        <p className="mt-auto text-[10px] text-muted-foreground">{AFFILIATE_DISCLOSURE_SHORT}</p>
         <Button
           asChild
           size="sm"
-          className="mt-auto h-9 w-full bg-sky-500/90 text-white shadow-md shadow-sky-500/20 transition-[color,background-color,box-shadow,scale] hover:bg-sky-500 hover:shadow-lg hover:shadow-sky-500/30 active:scale-[0.97]"
+          className="h-9 w-full bg-sky-500/90 text-white shadow-md shadow-sky-500/20 transition-[color,background-color,box-shadow,scale] hover:bg-sky-500 hover:shadow-lg hover:shadow-sky-500/30 active:scale-[0.97]"
         >
           <a
             href={candidate.affiliateUrl}
