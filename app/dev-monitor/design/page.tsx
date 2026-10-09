@@ -1,6 +1,8 @@
 import { Paper, PaperFigure, PaperLabel, PaperRule } from "@/components/ui/paper";
 import { Stamp } from "@/components/ui/stamp";
 import { VerdictSheet } from "@/components/verdict-sheet";
+import { AnalysisResults } from "@/components/analysis-results";
+import type { ProductComparisonResult } from "@/lib/mock-data";
 import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
 import type { DropshipVerdict } from "@/lib/ai/dropship-verifier";
 import { notFound } from "next/navigation";
@@ -34,6 +36,39 @@ function fakePrediction(
   };
 }
 
+/** A matched offer for the Ledger previews (spec 0004). Prices are observed:
+ *  ₪238 on the store vs $7.42 on the listing, not the model's estimates. */
+function fakeOffer(over: Partial<ProductComparisonResult> = {}): ProductComparisonResult {
+  return {
+    originalUrl: "https://imri-jewelry.co.il/products/my-baby-necklace",
+    cache: "MISS",
+    presenceTier: "flame",
+    dropshipPrediction: fakePrediction("dropship", 0.88),
+    storeProduct: {
+      title: "My Baby Necklace — שרשרת עם שם הילד",
+      priceUsd: 64.32,
+      imageUrl: "https://placehold.co/480x480/2a2420/e8dcc4/png?text=Store",
+      storeName: "imri-jewelry.co.il",
+    },
+    supplierProduct: {
+      title: "Custom Name Necklace Stainless Steel Personalized Baby Name Pendant",
+      priceUsd: 7.42,
+      imageUrl: "https://placehold.co/480x480/2a2420/e8dcc4/png?text=Listing",
+      affiliateUrl: "https://s.click.aliexpress.com/e/preview",
+      orderCount: 2431,
+      sellerRating: 4.7,
+      shippingDays: 12,
+    },
+    savingsUsd: 56.9,
+    savingsPercent: 88,
+    matchQuality: "high",
+    matchConfidence: 0.86,
+    imageMatchScore: 0.83,
+    imageMatchSameFunction: true,
+    ...over,
+  };
+}
+
 export const metadata = {
   title: "Design Primitives — Busted Internal",
   robots: { index: false, follow: false },
@@ -50,13 +85,28 @@ export const metadata = {
  *
  * Dev-only, same gate as the rest of /dev-monitor.
  */
-export default function DesignPrimitivesPage() {
+export default async function DesignPrimitivesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ dir?: string; only?: string }>;
+}) {
   if (process.env.NODE_ENV === "production") {
     notFound();
   }
+  // `?dir=rtl` previews every primitive in RTL (DESIGN §10.2: verify both
+  // directions); `?only=offers` isolates the Ledger offer for screenshots.
+  const { dir, only } = await searchParams;
+
+  if (only === "offers") {
+    return (
+      <div dir={dir === "rtl" ? "rtl" : "ltr"} className="mx-auto max-w-3xl space-y-16 px-4 py-12 sm:px-6">
+        <OfferPreviews />
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-12 px-4 py-12 sm:px-6">
+    <div dir={dir === "rtl" ? "rtl" : "ltr"} className="mx-auto max-w-3xl space-y-12 px-4 py-12 sm:px-6">
       <header className="space-y-2">
         <p className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
           DESIGN.md · phase 2
@@ -197,6 +247,8 @@ export default function DesignPrimitivesPage() {
         </div>
       </section>
 
+      <OfferPreviews />
+
       <section className="space-y-3">
         <h2 className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
           Stamp alone · on the room
@@ -208,5 +260,34 @@ export default function DesignPrimitivesPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+/**
+ * The Ledger offer (spec 0004) in the four shapes that read differently:
+ * a confirmed match at flame (listing on paper), a likely match at flame
+ * (listing in the room, uncertainty as prose), amber (ghost bar, no stamp),
+ * and a best-effort closest match (no bar — a different product's price is
+ * not a measurement).
+ */
+function OfferPreviews() {
+  const shapes: [string, ProductComparisonResult][] = [
+    ["flame · confirmed same product", fakeOffer()],
+    ["flame · likely match (no image confirmation)", fakeOffer({ imageMatchScore: undefined, imageMatchSameFunction: undefined, matchQuality: "medium", matchConfidence: 0.58 })],
+    ["amber · likely match", fakeOffer({ presenceTier: "amber", dropshipPrediction: fakePrediction("dropship", 0.58), imageMatchScore: undefined, imageMatchSameFunction: undefined })],
+    ["flame · closest match (best-effort)", fakeOffer({ bestEffortOnly: true, matchQuality: "low", matchConfidence: 0.31, imageMatchScore: undefined, imageMatchSameFunction: undefined })],
+  ];
+  return (
+    <section className="space-y-16">
+      <h2 className="font-mono text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
+        Ledger offer · spec 0004
+      </h2>
+      {shapes.map(([label, offer]) => (
+        <div key={label} data-preview={label} className="space-y-3">
+          <p className="font-mono text-[10px] text-muted-foreground">{label}</p>
+          <AnalysisResults result={offer} />
+        </div>
+      ))}
+    </section>
   );
 }

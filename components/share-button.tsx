@@ -98,7 +98,7 @@ export function ShareButton(props: ShareButtonProps) {
       aria-label="Share this result"
       data-og-preview={buildOgPreviewUrl(props)}
       className={cn(
-        "h-9 gap-1.5 border-white/12 bg-white/[0.04] backdrop-blur-sm transition-[border-color,background-color,box-shadow,opacity,scale] hover:border-primary/30 hover:bg-primary/8",
+        "h-9 gap-1.5 border-white/12 bg-white/[0.04] transition-[border-color,background-color,box-shadow,opacity,scale] hover:border-primary/30 hover:bg-primary/8",
         className,
       )}
     >

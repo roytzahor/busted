@@ -103,7 +103,7 @@ export function MatchFeedback({
       <section
         aria-label="Feedback received"
         className={cn(
-          "rounded-2xl border border-success/20 bg-success/5 p-4 backdrop-blur-sm",
+          "rounded-2xl border border-success/20 bg-success/5 p-4",
           className,
         )}
       >
@@ -182,7 +182,7 @@ export function MatchFeedback({
     <section
       aria-label="Was this the right match?"
       className={cn(
-        "rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-sm",
+        "rounded-2xl border border-white/10 bg-white/[0.03] p-4",
         className,
       )}
     >
@@ -255,7 +255,7 @@ export function MatchFeedbackInline({
         type="button"
         onClick={() => setOpen(false)}
         aria-label="Close feedback"
-        className="absolute right-2 top-2 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
+        className="absolute end-2 top-2 inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground"
       >
         <X className="size-4" aria-hidden="true" />
       </button>

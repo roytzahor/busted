@@ -1,7 +1,7 @@
 ---
 id: "0003"
 title: "Store price comes from the page's structured data before regex or the model's guess, measured against hand-labelled truth"
-status: verified
+status: shipped
 risk: high
 owner: "CEO agent"
 created: 2026-10-09

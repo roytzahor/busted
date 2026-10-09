@@ -29,6 +29,14 @@ interface VerdictSheetProps {
   prediction: DropshipPrediction;
   tier: PresenceTier;
   storeName: string;
+  /**
+   * Prices we actually observed: the resolved store price and the matched
+   * listing's price (spec 0004). When present they — never the model's
+   * estimates — decide the multiplier, the bar and the stamp. `confirmed` is
+   * whether the listing is known to be the same product: a likely match gets
+   * a hedged figure (≈), the ghost bar and no figure on the stamp.
+   */
+  observed?: { storeUsd: number; supplierUsd: number; confirmed: boolean };
   className?: string;
 }
 
@@ -60,6 +68,7 @@ export function VerdictSheet({
   prediction,
   tier,
   storeName,
+  observed,
   className,
 }: VerdictSheetProps) {
   const verdict = prediction.verdict;
@@ -100,7 +109,25 @@ export function VerdictSheet({
 
   // ── Flame / Amber ────────────────────────────────────────────────────────
   const flame = tier === "flame";
-  const multiplier = markupMultiplier(prediction);
+  // Observed prices are a measurement; estimates are not (DESIGN §8.4,
+  // markup-bar.tsx: "never draw a measurement from an estimate"). So an
+  // estimate prints with "≈", draws no bar, and earns no figure on the stamp.
+  // When observed prices exist they are the answer even when the answer is
+  // "no figure" (under 1.5×, or not cheaper at all) — falling back to the
+  // model's estimate there would print "≈×8.7" beside "20% cheaper".
+  const hasObserved = observed !== undefined && observed.supplierUsd > 0 && observed.storeUsd > 0;
+  const observedMultiplier = hasObserved
+    ? formatMultiplier(observed.storeUsd / observed.supplierUsd)
+    : null;
+  const confirmed = hasObserved && observed.confirmed;
+  const estimatedMultiplier = hasObserved ? null : markupMultiplier(prediction);
+  const multiplierText = observedMultiplier
+    ? confirmed
+      ? observedMultiplier
+      : `≈${observedMultiplier}`
+    : estimatedMultiplier
+      ? `≈${estimatedMultiplier}`
+      : null;
 
   return (
     <section
@@ -122,33 +149,35 @@ export function VerdictSheet({
         {/* The multiplier is the argument, so it gets the size. Marked
             aria-hidden because the sr-only heading above already states the
             verdict — a screen reader should not hear "times 8.7" twice. */}
-        {flame && multiplier ? (
+        {flame && multiplierText ? (
           <p
             aria-hidden="true"
             className="font-mono text-6xl leading-none font-bold tracking-[-0.04em] sm:text-7xl"
           >
-            {multiplier}
+            {/* bdi: "×8.7" is neutral + weak characters, so an RTL page
+                renders it "8.7×" without an isolate. */}
+            <bdi dir="ltr">{multiplierText}</bdi>
           </p>
         ) : null}
 
-        <p className="text-lg font-semibold tracking-tight text-balance">
+        <p dir="auto" className="text-lg font-semibold tracking-tight text-balance">
           {flame
             ? "They're marking this up."
             : "This might be a dropship — we're not sure."}
         </p>
 
-        <p className="max-w-prose text-sm leading-relaxed text-paper-muted">
+        <p dir="auto" className="max-w-prose text-sm leading-relaxed text-paper-muted">
           {prediction.reasoning}
         </p>
 
-        {multiplier &&
-        prediction.estimatedStorePriceUsd !== null &&
-        prediction.estimatedSupplierPriceUsd !== null ? (
+        {hasObserved && observedMultiplier ? (
           <MarkupBar
-            supplierPriceUsd={prediction.estimatedSupplierPriceUsd}
-            storePriceUsd={prediction.estimatedStorePriceUsd}
-            multiplier={multiplier}
-            tier={tier}
+            supplierPriceUsd={observed.supplierUsd}
+            storePriceUsd={observed.storeUsd}
+            multiplier={multiplierText ?? observedMultiplier}
+            // A likely match asserts the position, not the mass — the same
+            // ghost fill amber uses (DESIGN §2.2: the bar is tier-derived).
+            tier={confirmed ? tier : "amber"}
           />
         ) : null}
 
@@ -161,7 +190,7 @@ export function VerdictSheet({
               </p>
               <ul className="space-y-1 text-sm leading-relaxed">
                 {prediction.reasoningSignals.map((signal) => (
-                  <li key={signal} className="flex items-start gap-2">
+                  <li key={signal} dir="auto" className="flex items-start gap-2">
                     <span
                       aria-hidden="true"
                       className="mt-[0.55em] size-1 shrink-0 bg-paper-ink/50"
@@ -187,7 +216,7 @@ export function VerdictSheet({
               </p>
               <ul className="space-y-1 text-sm leading-relaxed text-paper-muted">
                 {prediction.missingSignals.map((signal) => (
-                  <li key={signal} className="flex items-start gap-2">
+                  <li key={signal} dir="auto" className="flex items-start gap-2">
                     <span
                       aria-hidden="true"
                       className="mt-[0.55em] size-1 shrink-0 bg-paper-ink/30"
@@ -201,9 +230,9 @@ export function VerdictSheet({
         ) : null}
       </Paper>
 
-      {flame && multiplier ? (
+      {flame ? (
         <Stamp className="absolute -bottom-4 end-[-12px]">
-          BUSTED {multiplier}
+          {confirmed && observedMultiplier ? `BUSTED ${observedMultiplier}` : "BUSTED"}
         </Stamp>
       ) : null}
     </section>
