@@ -7,5 +7,7 @@
     "notes": "Charm-bracelet dropship site. Homepage — scrape may be sparse and yield not_a_product/insufficient_evidence; acceptable secondary outcomes. RESOLVED 2026-08-26: the old truncated-keyword ('tot') staleness was fixed first (eval capture/refresh tooling now tries the AI's own aliexpressKeywords first, see lib/eval/capture-keywords.ts), which surfaced a real, correct TOTWOO-branded candidate (productId 1005008957838178, \"TOTWOO Long Distance Touch Bracelets for Couples, Smart Light & Vibration...\") that still missed MATCH_CONFIDENCE_MIN by 0.022 — NOT because no equivalent exists, but because normalizeTokens() had no stemming, so the candidate's plural \"Bracelets\"/\"Couples\" never matched the scraped singular \"bracelet\"/\"couple\". Fixed with a lightweight singularize() step in lib/aliexpress/match-confidence.ts (see its doc comment for the exact rules and known limitations). Score is now 0.456, margin +0.056 — genuinely above MATCH_CONFIDENCE_MIN, verified via npm run eval:match-headroom before removing blockedOnFixtureData."
   },
   "notes": "Charm-bracelet dropship site. Homepage — scrape may be sparse and yield not_a_product/insufficient_evidence; acceptable secondary outcomes.",
-  "capturedAt": "2026-06-27T08:17:55.636Z"
+  "capturedAt": "2026-06-27T08:17:55.636Z",
+  "expectedStorePrice": null,
+  "expectedStorePriceNote": "Homepage — several products (539, 29.94, 584 ₪…), no single product price."
 }

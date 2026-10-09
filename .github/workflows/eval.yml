@@ -56,6 +56,13 @@ jobs:
       - name: Fixture replay (cached AI, cost-enforced)
         run: npm run eval -- --skip-ai --enforce-cost
 
+      # Store price vs hand-labelled truth (spec 0003). The replay above
+      # replays STORED prices, so it cannot see an extractor or resolution
+      # change; this re-derives every source from the captured page and fails
+      # when the shipped rule scores below the pre-0003 one.
+      - name: Store-price eval (offline, hand-labelled truth)
+        run: npm run eval:price
+
       # Frontend performance gate. The replay above guards AI cost; nothing
       # guarded shipped page weight, so it could drift up one PR at a time with
       # no signal. Bundle bytes are the deterministic input behind the LCP/INP

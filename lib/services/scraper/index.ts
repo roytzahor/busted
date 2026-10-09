@@ -13,6 +13,8 @@ import {
   extractStoreNameFromUrl,
 } from "@/lib/scraping/extract-price";
 import type { CurrencyCode } from "@/lib/currency";
+import { isStructuredPriceEnabled } from "@/lib/analyze/store-price";
+import { extractStructuredPrice, type StructuredPrice } from "@/lib/scraping/extract-structured-price";
 import { scrapeProductUrl } from "@/lib/scraping/router";
 import { ScraperError, type ScrapedProductAttributes, type ScrapeProvider } from "@/lib/scraping/types";
 
@@ -34,6 +36,14 @@ export interface ScraperOutput {
    *  diagnosable after the fact. */
   detectedStorePriceNative?: number | null;
   detectedStorePriceCurrency?: CurrencyCode | null;
+  /**
+   * The page's own machine-readable price (og:price / JSON-LD), recorded
+   * beside the regex price — spec 0003. Feeds only the price we show and
+   * claim (lib/analyze/store-price.ts); the verdict prompt and the matcher
+   * keep reading the regex `detectedStorePriceUsd` until a live eval clears
+   * moving them. Null when absent or when STRUCTURED_PRICE_ENABLED=false.
+   */
+  structuredStorePrice: StructuredPrice | null;
   storeName: string;
   provider: ScrapeProvider;
 }
@@ -46,6 +56,9 @@ export async function scrape(input: ScraperInput): Promise<Result<ScraperOutput>
       const result = await scrapeProductUrl(input.url);
       const detectedPrice = detectPriceInMarkdown(result.raw.markdown);
       const detectedStorePriceUsd = detectedPrice?.amountUsd ?? null;
+      const structuredStorePrice = isStructuredPriceEnabled()
+        ? extractStructuredPrice(result.raw.html)
+        : null;
       const storeName = extractStoreNameFromUrl(input.url);
 
       emit("scrape:done", `${result.raw.provider} returned ${result.raw.markdown.length.toLocaleString()} chars`, {
@@ -55,6 +68,8 @@ export async function scrape(input: ScraperInput): Promise<Result<ScraperOutput>
         detectedStorePriceUsd,
         detectedStorePriceNative: detectedPrice?.amount ?? null,
         detectedStorePriceCurrency: detectedPrice?.currency ?? null,
+        structuredStorePriceUsd: structuredStorePrice?.amountUsd ?? null,
+        structuredStorePriceSource: structuredStorePrice?.source ?? null,
         hasImage: result.attributes.mainImageUrl !== null,
       });
 
@@ -65,6 +80,7 @@ export async function scrape(input: ScraperInput): Promise<Result<ScraperOutput>
         detectedStorePriceUsd,
         detectedStorePriceNative: detectedPrice?.amount ?? null,
         detectedStorePriceCurrency: detectedPrice?.currency ?? null,
+        structuredStorePrice,
         storeName,
         provider: result.raw.provider,
       });

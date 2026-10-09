@@ -6,6 +6,8 @@ import { domainFromUrl } from "@/lib/learning/priors";
 import { computeDomainTier } from "@/lib/store/report";
 import { parseAliExpressData } from "@/lib/types/analyze";
 import { parseCachedAiPrediction, parseCachedScrapeData } from "@/lib/types/cache";
+import { claimableSavings } from "@/lib/analyze/offer-view";
+import { resolveCachedStorePriceUsd } from "@/lib/analyze/store-price";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -136,16 +138,14 @@ export async function GET(request: NextRequest): Promise<NextResponse<LookupResp
     // tier comes from the verdict; supplier prices are optional enrichment.
     if (!scrape || !ai) return domainFallback(raw);
 
-    const storePrice =
-      ai.prediction?.estimatedStorePriceUsd ??
-      scrape.detectedStorePriceUsd ??
-      null;
+    const storePrice = resolveCachedStorePriceUsd(ai.prediction, scrape);
     const aliPrice = ali?.priceUsd ?? null;
 
-    let savingsPercent = 0;
-    if (storePrice && aliPrice !== null && storePrice > aliPrice) {
-      savingsPercent = Math.round(((storePrice - aliPrice) / storePrice) * 100);
-    }
+    // The extension renders this verbatim, so it gets the same gate as every
+    // other surface: a tier that speaks and a real delta (specs 0002/0003).
+    const savingsPercent =
+      claimableSavings({ prediction: ai.prediction, storePriceUsd: storePrice, supplierPriceUsd: aliPrice })
+        ?.savingsPercent ?? 0;
 
     return found({
       found: true,

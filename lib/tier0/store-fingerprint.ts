@@ -152,10 +152,7 @@ function buildPrediction(
   signals: string[],
   confidence: number,
 ): DropshipPrediction {
-  const { attributes, storePriceUsd } = input;
-  // Rule-8 midpoint: supplier cost estimated at 25% of store price.
-  const estimatedSupplierPriceUsd =
-    storePriceUsd !== null ? Math.round(storePriceUsd * 0.25 * 100) / 100 : null;
+  const { attributes } = input;
   return {
     verdict: "dropship",
     isLikelyDropship: true,
@@ -172,10 +169,15 @@ function buildPrediction(
     aliexpressKeywords: [],
     styleTokens: [],
     materialPriors: [],
-    estimatedStorePriceUsd: storePriceUsd,
-    estimatedSupplierPriceUsd,
-    estimatedMarkupPercent:
-      storePriceUsd !== null && estimatedSupplierPriceUsd !== null ? 300 : null,
+    // Tier-0 never invents prices either (spec 0003). It used to copy the
+    // regex store price here and derive a supplier price at 25% of it with a
+    // flat 300% markup, so a regex misread (a policy fee read as the price)
+    // reached every savings claim disguised as a model estimate, and the
+    // verdict sheet printed a ×4.0 nobody measured. The regex price still
+    // feeds the product-page gate above; it just is not an estimate.
+    estimatedStorePriceUsd: null,
+    estimatedSupplierPriceUsd: null,
+    estimatedMarkupPercent: null,
   };
 }
 

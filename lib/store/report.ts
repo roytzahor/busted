@@ -23,6 +23,8 @@ import { domainFromUrl } from "@/lib/learning/priors";
 import { prisma } from "@/lib/prisma";
 import { parseAliExpressData } from "@/lib/types/analyze";
 import { parseCachedAiPrediction, parseCachedScrapeData } from "@/lib/types/cache";
+import { claimableSavings } from "@/lib/analyze/offer-view";
+import { resolveCachedStorePriceUsd } from "@/lib/analyze/store-price";
 
 export interface StoreScanSummary {
   scanId: string;
@@ -150,14 +152,14 @@ export async function loadStoreReport(domain: string): Promise<StoreReport | nul
     if (countsAsDropship(ai?.prediction)) dropshipCount += 1;
     else if (verdict === "legit" || verdict === "collection_page") legitCount += 1;
 
-    const storePrice =
-      ai?.prediction?.estimatedStorePriceUsd ?? scrape?.detectedStorePriceUsd ?? null;
+    const storePrice = resolveCachedStorePriceUsd(ai?.prediction, scrape);
     const supplierPrice = ali?.priceUsd ?? null;
-    let savingsPercent: number | null = null;
-    if (storePrice && supplierPrice !== null && storePrice > supplierPrice) {
-      savingsPercent = Math.round(((storePrice - supplierPrice) / storePrice) * 100);
-      savings.push(savingsPercent);
-    }
+    // A public page about a named store: only savings the scan's own tier
+    // would have shown its user (trust/public-accusation, specs 0002/0003).
+    const savingsPercent =
+      claimableSavings({ prediction: ai?.prediction, storePriceUsd: storePrice, supplierPriceUsd: supplierPrice })
+        ?.savingsPercent ?? null;
+    if (savingsPercent !== null) savings.push(savingsPercent);
 
     // Silent dropship -> report it as what the gate treats it as. Derived here
     // rather than in the page so the row and the aggregate cannot drift apart.

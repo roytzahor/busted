@@ -20,7 +20,7 @@ function toAliExpressJson(data: AliExpressProductData): Prisma.InputJsonObject {
   };
 }
 
-function toScrapeJson(data: CachedScrapeData): Prisma.InputJsonObject {
+export function toScrapeJson(data: CachedScrapeData): Prisma.InputJsonObject {
   return {
     provider: data.provider,
     attributes: {
@@ -36,6 +36,21 @@ function toScrapeJson(data: CachedScrapeData): Prisma.InputJsonObject {
       : {}),
     ...(data.detectedStorePriceCurrency
       ? { detectedStorePriceCurrency: data.detectedStorePriceCurrency }
+      : {}),
+    // Spec 0003: without these a cache HIT, permalink or trending row would
+    // resolve to the AI estimate while the first scan showed the structured
+    // price — the same product, two prices.
+    ...(typeof data.structuredStorePriceUsd === "number"
+      ? { structuredStorePriceUsd: data.structuredStorePriceUsd }
+      : {}),
+    ...(typeof data.structuredStorePriceNative === "number"
+      ? { structuredStorePriceNative: data.structuredStorePriceNative }
+      : {}),
+    ...(data.structuredStorePriceCurrency
+      ? { structuredStorePriceCurrency: data.structuredStorePriceCurrency }
+      : {}),
+    ...(data.structuredStorePriceSource
+      ? { structuredStorePriceSource: data.structuredStorePriceSource }
       : {}),
     storeName: data.storeName,
     markdownLength: data.markdownLength,

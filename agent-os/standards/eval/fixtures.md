@@ -54,3 +54,14 @@ shielded fixtures.
 
 Fixtures marked `blockedOnFixtureData` in `truth.json` are excluded from the
 pass/fail gate so genuine regressions still fail the build.
+
+## Every real fixture carries a price label
+
+`truth.json` `expectedStorePrice` is `{ amount, currency }` as printed on the
+product, or `null` for a page with no single product price. It is read off the
+captured page by a person, and `expectedStorePriceNote` quotes where.
+Running an extractor and pasting its output makes the label the thing under
+test. That is how a ₪3,122 ring stayed recorded as $30 (spec 0003). When the
+capture is genuinely ambiguous, write `expectedStorePriceUnlabelled` with the
+reason instead of guessing. `__tests__/price-eval.test.ts` fails a real fixture
+that has neither.

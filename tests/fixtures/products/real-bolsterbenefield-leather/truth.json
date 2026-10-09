@@ -7,5 +7,7 @@
     "notes": "Site shows only image galleries of leather+wood items, no real product detail pages. Expect not_a_product. Bonus if system surfaces 'no product detected, here are similar items'."
   },
   "notes": "Site shows only image galleries of leather+wood items, no real product detail pages. Expect not_a_product. Bonus if system surfaces 'no product detected, here are similar items'.",
-  "capturedAt": "2026-06-27T08:16:21.002Z"
+  "capturedAt": "2026-06-27T08:16:21.002Z",
+  "expectedStorePrice": null,
+  "expectedStorePriceNote": "Homepage — no price on the captured page."
 }

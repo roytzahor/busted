@@ -7,5 +7,10 @@
     "notes": "Wood family-of-lions gift. Classic dropship. Hebrew URL — translation pre-pass fires correctly. RESOLVED 2026-08-26: the eval capture tooling (scripts/eval/capture-fixture.ts, scripts/eval/refresh-fixture.ts) only ever searched AliExpress with extractSearchKeywords(title) and never the AI's own aliexpressKeywords, unlike production (find-supplier.ts), which tries AI keywords first AND merges every arm rather than stopping at the first hit. Fixed both scripts to share lib/eval/capture-keywords.ts, mirroring production's precedence and accumulation. Live re-capture with the fixed tooling merges all three arms (AI keywords \"personalized wooden family puzzle\" + \"custom wood lion puzzle\", plus the title-derived fallback) into 35 real candidates and finds a confident match: score 0.607, margin +0.207 above MATCH_CONFIDENCE_MIN."
   },
   "notes": "Wood family-of-lions gift. Classic dropship. Hebrew URL — translation pre-pass should fire.",
-  "capturedAt": "2026-06-27T08:19:14.712Z"
+  "capturedAt": "2026-06-27T08:19:14.712Z",
+  "expectedStorePrice": {
+    "amount": 269,
+    "currency": "ILS"
+  },
+  "expectedStorePriceNote": "'מחיר רגיל 329.00 ₪ מחיר מבצע 269.00 ₪' — sale price 269; 329 is compare-at."
 }
