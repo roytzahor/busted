@@ -38,6 +38,16 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
+      # Unit tests were never run in CI before spec 0001 — 237 tests existed
+      # and could rot unnoticed. `npm test` also carries the repo-wide SDD
+      # gate (__tests__/sdd-specs.test.ts); sdd:check prints the AC → test
+      # traceability matrix into the log so a reviewer can read it.
+      - name: Unit tests (includes the spec gate)
+        run: npm test
+
+      - name: Spec check (agent-os/specs)
+        run: npm run sdd:check
+
       # npm run eval passes --env-file=.env to tsx, which errors when the
       # file is missing. The replay needs no secrets — an empty file is fine.
       - name: Create empty .env
