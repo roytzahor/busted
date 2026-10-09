@@ -64,11 +64,21 @@ rather than as prose here. Pull them in on demand:
 | CSS, tokens, motion, surfaces | `design/tokens`, `design/motion`, `design/surfaces` |
 | the cache shape | `ai/cache-backcompat` |
 | committing on a shared tree | `git/branching-and-commits` |
+| any behaviour change (new feature, verdict, matcher, CTA, public page) | `sdd/workflow`, `sdd/constitution` — spec first |
 | any nontrivial change | `change-discipline`, `code-navigation`, `context/token-economy` |
 
 `agent-os/product/context.md` holds the thesis and open strategic questions;
 `agent-os/product/key-files.md` is the full file map; `agent-os/tools/catalog.md`
 is the tooling and skills catalog.
+
+## Spec-Driven Development
+
+Behaviour changes start as a spec in `agent-os/specs/NNNN-slug/` — requirements
+and acceptance criteria first, each AC pinned to a test with `// @spec NNNN/AC-n`.
+Loop: `/sdd:specify` → `/sdd:plan` → `/sdd:tasks` → `/sdd:implement` →
+`/sdd:verify` (`/sdd:status` for the board). `npm test` and CI enforce the
+lifecycle via `npm run sdd:check`. When a spec is required, the gates, and what
+an agent may decide alone: `sdd/workflow`. Start at `agent-os/specs/README.md`.
 
 ## Working Efficiently
 

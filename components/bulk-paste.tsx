@@ -89,9 +89,11 @@ function summariseResult(
     title,
     imageUrl,
     storeName,
-    storePriceUsd: comp?.storeProduct.priceUsd,
+    // 0 is the "unknown" sentinel on StoreProduct — never print it as $0.
+    storePriceUsd: comp && comp.storeProduct.priceUsd > 0 ? comp.storeProduct.priceUsd : undefined,
     supplierPriceUsd: comp?.supplierProduct.priceUsd,
-    savingsPercent: comp?.savingsPercent,
+    // null = no claimable saving (spec 0002) — the row then shows no percent.
+    savingsPercent: comp?.savingsPercent ?? undefined,
     mode: result.mode,
   };
 }
@@ -344,9 +346,12 @@ function BulkResultCard({ row, formatMoney }: BulkResultCardProps) {
           <p dir="auto" className="text-[11px] text-muted-foreground">{result.storeName}</p>
         ) : null}
 
+        {/* A struck-through store price claims a saving — only show the pair
+            when there is one (spec 0002, REQ-4). */}
         {row.status === "done" &&
         result?.supplierPriceUsd !== undefined &&
-        result?.storePriceUsd !== undefined ? (
+        result?.storePriceUsd !== undefined &&
+        result?.savingsPercent !== undefined ? (
           <div className="mt-1 flex items-baseline gap-1.5">
             <span className="text-sm font-black tabular-nums text-success">
               {formatMoney(result.supplierPriceUsd, { whole: true })}

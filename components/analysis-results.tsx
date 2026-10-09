@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { SilentBoundary } from "@/components/ui/silent-boundary";
 import { useCurrency, useMoney } from "@/components/currency-provider";
 import { estimateLandedCost } from "@/lib/pricing/landed-cost";
 import { MatchFeedback } from "@/components/match-feedback";
 import { ProductImage } from "@/components/product-image";
 import { ShareButton } from "@/components/share-button";
-import { AFFILIATE_DISCLOSURE } from "@/lib/brand";
+import { buildOfferView, type OfferView } from "@/lib/analyze/offer-view";
+import { AFFILIATE_DISCLOSURE, AFFILIATE_DISCLOSURE_SHORT } from "@/lib/brand";
 import { trackAffiliateClick } from "@/lib/clicks";
 import type { ProductComparisonResult } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
@@ -38,23 +40,50 @@ function formatOrders(count: number): string {
   return `${count}+ orders`;
 }
 
+/**
+ * The supplier offer. Everything it may say comes from `buildOfferView()`
+ * (spec 0002): no invented prices or trust metrics, identity wording that
+ * follows the evidence, accusation wording that follows the server tier, and
+ * a disclosure before every affiliate link. On `silent` the whole offer is
+ * not mounted — one muted line, per trust/presence-tier-contract.
+ */
 export function AnalysisResults({ result }: AnalysisResultsProps) {
   const formatMoney = useMoney();
-  const { storeProduct, supplierProduct, savingsUsd, savingsPercent, cache } = result;
+  const offer = buildOfferView(result);
+  const { storeProduct } = result;
+
+  return (
+    <SilentBoundary
+      tier={offer.tier}
+      quiet={
+        <p dir="auto" className="text-sm text-muted-foreground">
+          {storeProduct.title}
+          {offer.storePriceUsd !== null ? (
+            <>
+              {" · "}
+              <bdi dir="ltr">{formatMoney(offer.storePriceUsd)}</bdi>
+            </>
+          ) : null}
+        </p>
+      }
+    >
+      <Offer result={result} offer={offer} />
+    </SilentBoundary>
+  );
+}
+
+function Offer({ result, offer }: { result: ProductComparisonResult; offer: OfferView }) {
+  const formatMoney = useMoney();
+  const { storeProduct, supplierProduct, cache } = result;
+  const { networkLabel, savingsUsd, savingsPercent, storePriceUsd, supplierPriceUsd } = offer;
+  const isClosest = offer.matchKind === "closest";
+  const hasSaving = savingsUsd !== null && savingsPercent !== null;
+  const isFlame = offer.tier === "flame";
   // Missing data must degrade, never promote: defaulting to "high" would
   // suppress the uncertain-match warning on a response the server never scored.
   const matchQuality = result.matchQuality ?? "low";
-  const isBestEffort = result.bestEffortOnly === true;
-  // Which marketplace the match came from — labels adapt so an eBay/Amazon
-  // fallback match never renders as "AliExpress".
-  const networkLabel =
-    result.supplierNetwork === "ebay"
-      ? "eBay"
-      : result.supplierNetwork === "amazon"
-        ? "Amazon"
-        : "AliExpress";
   const isUncertainMatch =
-    isBestEffort ||
+    isClosest ||
     result.matchQuality == null ||
     matchQuality === "medium" ||
     matchQuality === "low";
@@ -68,6 +97,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
     typeof result.imageMatchScore === "number" &&
     result.imageMatchScore >= 0.7 &&
     result.imageMatchSameFunction === true;
+  const supplierPriceText = supplierPriceUsd !== null ? formatMoney(supplierPriceUsd) : null;
 
   // Sticky mobile buy bar — shown while the user is reading the comparison,
   // then auto-hidden once the real in-page CTA scrolls into view so it never
@@ -85,6 +115,72 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
     return () => observer.disconnect();
   }, []);
 
+  const trackClick = () =>
+    offer.ctaHref
+      ? trackAffiliateClick({ scanId: result.scanId, targetUrl: offer.ctaHref })
+      : undefined;
+
+  // Headline copy. Accusation ("overcharging") is earned only at flame with a
+  // real saving; amber speaks of signals (spec 0002, REQ-4/REQ-6).
+  let heading: ReactNode;
+  let subline: ReactNode;
+  if (isClosest) {
+    heading = <>Closest match on {networkLabel}</>;
+    subline = "May not be the exact same product — compare before buying";
+  } else if (hasSaving && isFlame) {
+    heading = (
+      <>
+        They&apos;re overcharging you{" "}
+        <span className="text-success">{formatMoney(savingsUsd)}</span>
+      </>
+    );
+    subline = (
+      <>
+        {formatMoney(storePriceUsd!)} here vs {supplierPriceText} on {networkLabel}
+      </>
+    );
+  } else if (hasSaving) {
+    heading = (
+      <>
+        Listed for <span className="text-success">{formatMoney(savingsUsd)}</span> less on{" "}
+        {networkLabel}
+      </>
+    );
+    subline = (
+      <>
+        Dropship signals detected · {formatMoney(storePriceUsd!)} here vs {supplierPriceText} on{" "}
+        {networkLabel}
+      </>
+    );
+  } else {
+    heading = supplierPriceText ? (
+      <>
+        Found on {networkLabel} for {supplierPriceText}
+      </>
+    ) : (
+      <>Found on {networkLabel}</>
+    );
+    subline = [
+      isFlame ? null : "Dropship signals detected",
+      storePriceUsd === null
+        ? "We couldn’t read this store’s price — compare before buying"
+        : "Not cheaper than this store’s price",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+
+  const storeBadge = isFlame
+    ? hasSaving
+      ? "Dropship markup detected"
+      : "Dropship store detected"
+    : "Dropship signals detected";
+
+  const trustParts = [
+    offer.trust.orderCount !== undefined ? `${formatOrders(offer.trust.orderCount)} sold` : null,
+    offer.trust.sellerRating !== undefined ? `${offer.trust.sellerRating}★ seller rating` : null,
+  ].filter(Boolean);
+
   return (
     <section
       aria-labelledby="comparison-heading"
@@ -93,7 +189,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
       {/* ── Savings hero banner ──────────────────────────────────── */}
       <div className={cn(
         "relative overflow-hidden rounded-2xl border p-6 backdrop-blur-sm",
-        isBestEffort ? "border-primary/20 bg-primary/8" : "border-success/20 bg-success/8",
+        hasSaving ? "border-success/20 bg-success/8" : "border-primary/20 bg-primary/8",
       )}>
         {/* Top-edge shine */}
         <div aria-hidden="true" className="shine-top pointer-events-none absolute inset-x-0 top-0 h-px" />
@@ -101,15 +197,15 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="mb-2 flex flex-wrap gap-2">
-              {isBestEffort ? (
-                <Badge className="border-primary/30 bg-primary/15 text-primary-foreground">
-                  <Package className="mr-1 size-3" aria-hidden="true" />
-                  Similar product found
-                </Badge>
-              ) : (
+              {hasSaving ? (
                 <Badge className="border-success/30 bg-success/15 text-success">
                   <TrendingDown className="mr-1 size-3" aria-hidden="true" />
-                  Save {savingsPercent}%
+                  {savingsPercent}% cheaper
+                </Badge>
+              ) : (
+                <Badge className="border-primary/30 bg-primary/15 text-primary-foreground">
+                  <Package className="mr-1 size-3" aria-hidden="true" />
+                  {isClosest ? "Similar product found" : `Found on ${networkLabel}`}
                 </Badge>
               )}
               {isVerifiedMatch ? (
@@ -129,7 +225,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                   {cache === "HIT" ? "Cached result" : "Fresh analysis"}
                 </Badge>
               )}
-              {matchPct !== null && !isBestEffort ? (
+              {matchPct !== null && !isClosest ? (
                 <Badge
                   variant="outline"
                   className={cn(
@@ -142,7 +238,7 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                   <span className="tabular-nums">{matchPct}%</span> match · {matchQuality}
                 </Badge>
               ) : null}
-              {isImageVerified && !isBestEffort ? (
+              {isImageVerified && !isClosest ? (
                 <Badge
                   variant="outline"
                   className="border-success/30 bg-success/10 text-success"
@@ -153,79 +249,47 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
                 </Badge>
               ) : null}
             </div>
-            {isBestEffort ? (
-              <>
-                <h2
-                  id="comparison-heading"
-                  className="text-2xl font-black tracking-tight sm:text-3xl"
-                >
-                  Closest match on{" "}
-                  <span className="bg-gradient-to-r from-primary to-amber-400 bg-clip-text text-transparent">
-                    {networkLabel}
-                  </span>
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  May not be the exact same product — compare before buying
-                </p>
-              </>
-            ) : (
-              <>
-                <h2
-                  id="comparison-heading"
-                  className="text-2xl font-black tracking-tight sm:text-3xl"
-                >
-                  They&apos;re overcharging you{" "}
-                  <span className="bg-gradient-to-r from-success to-emerald-400 bg-clip-text text-transparent">
-                    {formatMoney(savingsUsd)}
-                  </span>
-                </h2>
-                <p className="mt-1 tabular-nums text-sm text-muted-foreground">
-                  {formatMoney(storeProduct.priceUsd)} retail vs{" "}
-                  {formatMoney(supplierProduct.priceUsd)} on {networkLabel}
-                </p>
-              </>
-            )}
+            <h2
+              id="comparison-heading"
+              className="text-2xl font-black tracking-tight sm:text-3xl"
+            >
+              {heading}
+            </h2>
+            <p className="mt-1 tabular-nums text-sm text-muted-foreground">{subline}</p>
           </div>
 
-          {isBestEffort ? (
+          {hasSaving ? (
             <div className="text-right">
-              <div className="bg-gradient-to-br from-primary to-amber-400 bg-clip-text text-5xl font-black tabular-nums leading-none text-transparent">
-                {formatMoney(supplierProduct.priceUsd)}
-              </div>
-              <div className="text-xs text-muted-foreground">on {networkLabel}</div>
-            </div>
-          ) : (
-            <div className="text-right">
-              <div className="bg-gradient-to-br from-success via-emerald-400 to-green-300 bg-clip-text text-6xl font-black tabular-nums leading-none text-transparent">
+              <div className="text-6xl font-black tabular-nums leading-none text-success">
                 {savingsPercent}
                 <span className="text-3xl">%</span>
               </div>
-              <div className="text-xs text-muted-foreground">markup detected</div>
+              {/* A share of the store price — a saving, not a markup. */}
+              <div className="text-xs text-muted-foreground">cheaper on {networkLabel}</div>
             </div>
-          )}
+          ) : supplierPriceText ? (
+            <div className="text-right">
+              <div className="text-5xl font-black tabular-nums leading-none text-primary">
+                {supplierPriceText}
+              </div>
+              <div className="text-xs text-muted-foreground">on {networkLabel}</div>
+            </div>
+          ) : null}
         </div>
-
-        {/* Decorative glow */}
-        <div
-          aria-hidden="true"
-          className={cn(
-            "pointer-events-none absolute -right-20 -bottom-20 h-48 w-48 rounded-full blur-3xl",
-            isBestEffort ? "bg-primary/10" : "bg-success/15",
-          )}
-        />
       </div>
 
-      {/* ── Bento comparison grid ────────────────────────────────── */}
+      {/* ── Comparison grid ──────────────────────────────────────── */}
       <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr]">
-        {/* Store product — glass card, red tint */}
         <ProductCard
           variant="store"
-          label="Overpriced Store Product"
+          label="This store"
           title={storeProduct.title}
           translatedTitle={storeProduct.translatedTitle}
-          price={storeProduct.priceUsd}
+          price={storePriceUsd}
+          priceTone={isFlame ? "accuse" : "neutral"}
           imageUrl={storeProduct.imageUrl}
           storeName={storeProduct.storeName}
+          statusBadge={storeBadge}
         />
 
         {/* VS divider */}
@@ -240,21 +304,20 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
           </div>
         </div>
 
-        {/* Supplier product — glass card, green tint */}
         <ProductCard
           variant="supplier"
-          label={isBestEffort ? `Closest match on ${networkLabel}` : `Original ${networkLabel} Supplier`}
+          label={offer.supplierLabel}
+          confirmed={offer.matchKind === "same"}
           title={supplierProduct.title}
-          price={supplierProduct.priceUsd}
+          price={supplierPriceUsd}
           imageUrl={supplierProduct.imageUrl}
-          orderCount={supplierProduct.orderCount}
-          sellerRating={supplierProduct.sellerRating}
-          shippingDays={supplierProduct.shippingDays}
+          trust={offer.trust}
           variantLabel={supplierProduct.variantLabel}
           totalCostUsd={supplierProduct.totalCostUsd}
           shippingCostUsd={supplierProduct.shippingCostUsd}
           warehouseCountry={supplierProduct.warehouseCountry ?? null}
           variantWarning={supplierProduct.variantWarning}
+          statusBadge={offer.matchKind === "same" ? "Confirmed same product" : undefined}
         />
       </div>
 
@@ -272,10 +335,10 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
           </span>
           <div className="space-y-1">
             <p className="font-semibold">
-              {isBestEffort ? "Closest match we could find — verify before buying" : "Best-guess match — verify before buying"}
+              {isClosest ? "Closest match we could find — verify before buying" : "Best-guess match — verify before buying"}
             </p>
             <p className="text-muted-foreground">
-              {isBestEffort
+              {isClosest || matchPct === null
                 ? `We couldn’t confirm this is the exact same product. Open the ${networkLabel} link and compare images + specs before buying.`
                 : <>Our match confidence is only <span className="tabular-nums">{matchPct}%</span>. Open the {networkLabel} link and compare images + specs to confirm it&apos;s the same product.</>
               }
@@ -307,141 +370,133 @@ export function AnalysisResults({ result }: AnalysisResultsProps) {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <p className="font-semibold">
-              {isBestEffort ? `Shop similar on ${networkLabel}` : "Ready to skip the markup?"}
+              {isClosest
+                ? `Shop similar on ${networkLabel}`
+                : hasSaving && isFlame
+                  ? "Ready to skip the markup?"
+                  : hasSaving
+                    ? `Get it for less on ${networkLabel}`
+                    : `Compare on ${networkLabel}`}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {formatOrders(supplierProduct.orderCount)} sold ·{" "}
-              {supplierProduct.sellerRating}★ seller rating.
-            </p>
+            {trustParts.length > 0 ? (
+              <p className="text-sm text-muted-foreground">{trustParts.join(" · ")}</p>
+            ) : null}
           </div>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+          <div data-affiliate-cta="" className="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
             {/* Above the button, never below it: the conflict has to be
                 visible at the moment of the click. */}
-            <p className="text-xs text-muted-foreground sm:text-right">
-              {AFFILIATE_DISCLOSURE}
-            </p>
+            {offer.ctaHref ? (
+              <p className="text-xs text-muted-foreground sm:text-right">
+                {AFFILIATE_DISCLOSURE}
+              </p>
+            ) : null}
             <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             <ShareButton
               scanId={result.scanId}
               productUrl={result.originalUrl}
               title={storeProduct.title}
               savingsPercent={savingsPercent}
-              storeUsd={storeProduct.priceUsd}
-              aliUsd={supplierProduct.priceUsd}
+              // The share card strikes through the store price — only true
+              // when there is a real saving on the same product.
+              storeUsd={hasSaving ? storePriceUsd! : undefined}
+              aliUsd={hasSaving ? supplierPriceUsd! : undefined}
               imageUrl={storeProduct.imageUrl}
               className="w-full sm:w-auto"
             />
-            <Button
-              asChild
-              size="lg"
-              className="glow-success h-11 w-full bg-success text-success-foreground shadow-lg shadow-success/20 transition-[color,background-color,box-shadow,scale] hover:bg-success/90 hover:shadow-xl hover:shadow-success/35 active:scale-[0.96] sm:w-auto sm:min-w-[260px]"
-            >
-              <a
-                href={supplierProduct.affiliateUrl}
-                target="_blank"
-                rel="noopener noreferrer sponsored"
-                onClick={() =>
-                  trackAffiliateClick({
-                    scanId: result.scanId,
-                    targetUrl: supplierProduct.affiliateUrl,
-                  })
-                }
-                onAuxClick={() =>
-                  trackAffiliateClick({
-                    scanId: result.scanId,
-                    targetUrl: supplierProduct.affiliateUrl,
-                  })
-                }
+            {offer.ctaHref ? (
+              <Button
+                asChild
+                size="lg"
+                className="glow-success h-11 w-full bg-success text-success-foreground shadow-lg shadow-success/20 transition-[color,background-color,box-shadow,scale] hover:bg-success/90 hover:shadow-xl hover:shadow-success/35 active:scale-[0.96] sm:w-auto sm:min-w-[260px]"
               >
-                {isBestEffort ? `View on ${networkLabel}` : `Buy Original on ${networkLabel} & Save`}
-                <ExternalLink className="ml-1.5 size-4" aria-hidden="true" />
-              </a>
-            </Button>
+                <a
+                  href={offer.ctaHref}
+                  target="_blank"
+                  rel="noopener noreferrer sponsored"
+                  onClick={trackClick}
+                  onAuxClick={trackClick}
+                >
+                  {offer.ctaLabel}
+                  <ExternalLink className="ml-1.5 size-4" aria-hidden="true" />
+                </a>
+              </Button>
+            ) : null}
             </div>
           </div>
         </div>
-
-        {/* Decorative glow */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -left-20 -bottom-20 h-48 w-48 rounded-full bg-primary/10 blur-3xl"
-        />
       </div>
 
       {/* ── Match feedback (Sprint 13 learning loop) ─────────────── */}
       {result.scanId ? (
         <MatchFeedback
           scanId={result.scanId}
-          variant={isBestEffort ? "best-effort" : "confident"}
+          variant={isClosest ? "best-effort" : "confident"}
         />
       ) : null}
 
       {/* ── Sticky mobile buy bar ────────────────────────────────── */}
-      <div
-        aria-hidden={!showStickyBar}
-        className={cn(
-          "fixed inset-x-0 bottom-0 z-40 transform-gpu transition-transform duration-300 ease-out will-change-transform md:hidden",
-          showStickyBar ? "translate-y-0" : "pointer-events-none translate-y-[130%]",
-        )}
-      >
-        {/* Top-edge shine to lift the bar off the content behind it. */}
-        <div aria-hidden="true" className="shine-top h-px" />
-        <div className="flex items-center gap-3 border-t border-white/10 bg-background/85 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
-          <div className="min-w-0 flex-1">
-            {isBestEffort ? (
-              <>
-                <p className="text-xs font-medium text-muted-foreground">
-                  Closest match on {networkLabel}
-                </p>
-                <p className="text-lg font-black leading-tight tabular-nums text-primary">
-                  {formatMoney(supplierProduct.priceUsd)}
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="flex items-center gap-1 text-sm font-bold leading-tight text-success">
-                  <TrendingDown className="size-3.5 shrink-0" aria-hidden="true" />
-                  Save {formatMoney(savingsUsd)}
-                  <span className="text-success/80">· {savingsPercent}%</span>
-                </p>
-                <p className="truncate text-xs tabular-nums text-muted-foreground">
-                  {formatMoney(storeProduct.priceUsd)} →{" "}
-                  <span className="font-semibold text-foreground">
-                    {formatMoney(supplierProduct.priceUsd)}
-                  </span>
-                </p>
-              </>
-            )}
+      {offer.ctaHref ? (
+        <div
+          aria-hidden={!showStickyBar}
+          className={cn(
+            "fixed inset-x-0 bottom-0 z-40 transform-gpu transition-transform duration-300 ease-out will-change-transform md:hidden",
+            showStickyBar ? "translate-y-0" : "pointer-events-none translate-y-[130%]",
+          )}
+        >
+          {/* Top-edge shine to lift the bar off the content behind it. */}
+          <div aria-hidden="true" className="shine-top h-px" />
+          <div data-affiliate-cta="" className="border-t border-white/10 bg-background/85 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-xl">
+            {/* The bar is its own CTA container, so it carries its own
+                disclosure — the in-page line is off screen while it shows. */}
+            <p className="mb-1.5 text-[10px] text-muted-foreground">{AFFILIATE_DISCLOSURE_SHORT}</p>
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                {hasSaving ? (
+                  <>
+                    <p className="flex items-center gap-1 text-sm font-bold leading-tight text-success">
+                      <TrendingDown className="size-3.5 shrink-0" aria-hidden="true" />
+                      Save {formatMoney(savingsUsd)}
+                      <span className="text-success/80">· {savingsPercent}%</span>
+                    </p>
+                    <p className="truncate text-xs tabular-nums text-muted-foreground">
+                      {formatMoney(storePriceUsd!)} →{" "}
+                      <span className="font-semibold text-foreground">{supplierPriceText}</span>
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-medium text-muted-foreground">
+                      {offer.supplierLabel}
+                    </p>
+                    {supplierPriceText ? (
+                      <p className="text-lg font-black leading-tight tabular-nums text-primary">
+                        {supplierPriceText}
+                      </p>
+                    ) : null}
+                  </>
+                )}
+              </div>
+              <Button
+                asChild
+                size="lg"
+                tabIndex={showStickyBar ? undefined : -1}
+                className="glow-success h-11 shrink-0 bg-success px-5 text-success-foreground shadow-lg shadow-success/25 transition-[background-color,box-shadow,scale] hover:bg-success/90 active:scale-[0.96]"
+              >
+                <a
+                  href={offer.ctaHref}
+                  target="_blank"
+                  rel="noopener noreferrer sponsored"
+                  onClick={trackClick}
+                  onAuxClick={trackClick}
+                >
+                  {hasSaving && !isClosest ? "Buy & save" : "View"}
+                  <ExternalLink className="ml-1.5 size-4" aria-hidden="true" />
+                </a>
+              </Button>
+            </div>
           </div>
-          <Button
-            asChild
-            size="lg"
-            tabIndex={showStickyBar ? undefined : -1}
-            className="glow-success h-11 shrink-0 bg-success px-5 text-success-foreground shadow-lg shadow-success/25 transition-[background-color,box-shadow,scale] hover:bg-success/90 active:scale-[0.96]"
-          >
-            <a
-              href={supplierProduct.affiliateUrl}
-              target="_blank"
-              rel="noopener noreferrer sponsored"
-              onClick={() =>
-                trackAffiliateClick({
-                  scanId: result.scanId,
-                  targetUrl: supplierProduct.affiliateUrl,
-                })
-              }
-              onAuxClick={() =>
-                trackAffiliateClick({
-                  scanId: result.scanId,
-                  targetUrl: supplierProduct.affiliateUrl,
-                })
-              }
-            >
-              {isBestEffort ? "View" : "Buy & Save"}
-              <ExternalLink className="ml-1.5 size-4" aria-hidden="true" />
-            </a>
-          </Button>
         </div>
-      </div>
+      ) : null}
     </section>
   );
 }
@@ -484,17 +539,21 @@ interface ProductCardProps {
   title: string;
   /** English translation when original title was non-Latin. */
   translatedTitle?: string;
-  price: number;
+  /** Null when unknown — rendered as an absence, never as $0. */
+  price: number | null;
+  /** Store only: red is an accusation, earned at flame. */
+  priceTone?: "accuse" | "neutral";
+  /** Supplier only: the match is confirmed (Gold Path or image-verified high). */
+  confirmed?: boolean;
   imageUrl: string;
   storeName?: string;
-  orderCount?: number;
-  sellerRating?: number;
-  shippingDays?: number;
+  trust?: OfferView["trust"];
   variantLabel?: string;
   totalCostUsd?: number;
   shippingCostUsd?: number;
   warehouseCountry?: string | null;
   variantWarning?: boolean;
+  statusBadge?: string;
 }
 
 function ProductCard({
@@ -503,44 +562,47 @@ function ProductCard({
   title,
   translatedTitle,
   price,
+  priceTone = "neutral",
+  confirmed = false,
   imageUrl,
   storeName,
-  orderCount,
-  sellerRating,
-  shippingDays,
+  trust,
   variantLabel,
   totalCostUsd,
   shippingCostUsd,
   warehouseCountry,
   variantWarning,
+  statusBadge,
 }: ProductCardProps) {
   const formatMoney = useMoney();
   const isStore = variant === "store";
+  const hasTrust =
+    !isStore &&
+    trust !== undefined &&
+    (trust.orderCount !== undefined || trust.sellerRating !== undefined || trust.shippingDays !== undefined);
 
   return (
     <article
       className={cn(
         "relative flex flex-col gap-4 overflow-hidden rounded-2xl border p-5 backdrop-blur-sm sm:p-6",
         isStore
-          ? "border-destructive/20 bg-destructive/6"
+          ? priceTone === "accuse"
+            ? "border-destructive/20 bg-destructive/6"
+            : "border-white/10 bg-white/[0.03]"
           : "border-success/20 bg-success/6",
       )}
     >
-      {/* Decorative corner glow */}
-      <div
-        aria-hidden="true"
-        className={cn(
-          "pointer-events-none absolute -top-10 -right-10 h-32 w-32 rounded-full blur-3xl",
-          isStore ? "bg-destructive/20" : "bg-success/20",
-        )}
-      />
-
       {/* Label */}
       <div className="relative z-10 flex items-center gap-2">
         {isStore ? (
-          <ArrowDownRight className="size-4 shrink-0 text-destructive" aria-hidden="true" />
-        ) : (
+          <ArrowDownRight
+            className={cn("size-4 shrink-0", priceTone === "accuse" ? "text-destructive" : "text-muted-foreground")}
+            aria-hidden="true"
+          />
+        ) : confirmed ? (
           <ShieldCheck className="size-4 shrink-0 text-success" aria-hidden="true" />
+        ) : (
+          <Package className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         )}
         <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
           {label}
@@ -593,14 +655,18 @@ function ProductCard({
           </div>
         ) : null}
 
-        <p
-          className={cn(
-            "text-3xl font-black tabular-nums sm:text-4xl",
-            isStore ? "text-destructive" : "text-success",
-          )}
-        >
-          {formatMoney(price)}
-        </p>
+        {price !== null ? (
+          <p
+            className={cn(
+              "text-3xl font-black tabular-nums sm:text-4xl",
+              isStore ? (priceTone === "accuse" ? "text-destructive" : "text-foreground") : "text-success",
+            )}
+          >
+            {formatMoney(price)}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">Price not found on the page</p>
+        )}
 
         {/* Total with shipping — only when shipping cost is known */}
         {!isStore &&
@@ -619,7 +685,7 @@ function ProductCard({
         ) : null}
 
         {/* Landed cost — the honest total after import VAT for the user's market */}
-        {!isStore ? (
+        {!isStore && price !== null ? (
           <LandedCostLine itemUsd={price} shippingUsd={shippingCostUsd ?? null} />
         ) : null}
       </div>
@@ -634,35 +700,33 @@ function ProductCard({
         </div>
       ) : null}
 
-      {/* Trust badges (supplier only) */}
-      {!isStore && orderCount !== undefined && sellerRating !== undefined ? (
+      {/* Trust metrics (supplier only) — only what the source reported */}
+      {hasTrust ? (
         <ul
           className="relative z-10 flex flex-wrap gap-2"
           aria-label="Supplier trust metrics"
         >
-          <li>
-            <Badge variant="secondary" className="gap-1 border border-white/10 bg-white/8">
-              <Star
-                className="size-3 fill-amber-400 text-amber-400"
-                aria-hidden="true"
-              />
-              {sellerRating} rating
-            </Badge>
-          </li>
-          <li>
-            <Badge variant="secondary" className="gap-1 border border-white/10 bg-white/8">
-              <Package className="size-3" aria-hidden="true" />
-              {formatOrders(orderCount)}
-            </Badge>
-          </li>
-          {shippingDays !== undefined ? (
+          {trust!.sellerRating !== undefined ? (
             <li>
-              <Badge
-                variant="secondary"
-                className="gap-1 border border-white/10 bg-white/8"
-              >
+              <Badge variant="secondary" className="gap-1 border border-white/10 bg-white/8">
+                <Star className="size-3 fill-amber-400 text-amber-400" aria-hidden="true" />
+                {trust!.sellerRating} rating
+              </Badge>
+            </li>
+          ) : null}
+          {trust!.orderCount !== undefined ? (
+            <li>
+              <Badge variant="secondary" className="gap-1 border border-white/10 bg-white/8">
+                <Package className="size-3" aria-hidden="true" />
+                {formatOrders(trust!.orderCount)}
+              </Badge>
+            </li>
+          ) : null}
+          {trust!.shippingDays !== undefined ? (
+            <li>
+              <Badge variant="secondary" className="gap-1 border border-white/10 bg-white/8">
                 <Truck className="size-3" aria-hidden="true" />
-                ~{shippingDays} day shipping
+                ~{trust!.shippingDays} day shipping
               </Badge>
             </li>
           ) : null}
@@ -670,17 +734,20 @@ function ProductCard({
       ) : null}
 
       {/* Status badge */}
-      <div className="relative z-10">
-        {isStore ? (
-          <Badge variant="destructive" className="w-fit">
-            Dropship markup detected
+      {statusBadge ? (
+        <div className="relative z-10">
+          <Badge
+            variant={isStore ? (priceTone === "accuse" ? "destructive" : "outline") : "default"}
+            className={cn(
+              "w-fit",
+              isStore && priceTone !== "accuse" && "border-accent/40 text-accent-foreground",
+              !isStore && "bg-success text-success-foreground hover:bg-success",
+            )}
+          >
+            {statusBadge}
           </Badge>
-        ) : (
-          <Badge className="w-fit bg-success text-success-foreground hover:bg-success">
-            Verified original supplier — we got you
-          </Badge>
-        )}
-      </div>
+        </div>
+      ) : null}
     </article>
   );
 }

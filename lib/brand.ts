@@ -34,6 +34,13 @@ export const AFFILIATE_DISCLOSURE =
   "We earn a commission on this link. It never affects the verdict.";
 
 /**
+ * Compact form for CTA containers too small for the full line — the sticky
+ * mobile buy bar and each browse card. Same rule: inside the container, before
+ * the link (spec 0002, REQ-7). Never a substitute where the full line fits.
+ */
+export const AFFILIATE_DISCLOSURE_SHORT = "Affiliate link · we earn a commission";
+
+/**
  * "Why this exists" FAQ shown below the how-it-works grid in idle state.
  * Keep it skimmable; this is for the curious-but-not-sold visitor. The
  * money question is non-negotiable: a trust product that hides how it earns

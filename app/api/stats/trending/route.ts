@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { parseAliExpressData } from "@/lib/types/analyze";
 import { parseCachedAiPrediction, parseCachedScrapeData } from "@/lib/types/cache";
+import { claimableSavings } from "@/lib/analyze/offer-view";
 
 /**
  * Trending Now feed — surfaces recently-scanned products with confirmed
@@ -89,11 +90,15 @@ export async function GET(request: Request): Promise<NextResponse<TrendingPayloa
       scrape.detectedStorePriceUsd ??
       0;
     const supplierPriceUsd = supplier.priceUsd;
-    if (storePriceUsd <= 0 || supplierPriceUsd <= 0) continue;
-    if (supplierPriceUsd >= storePriceUsd) continue;
-
-    const savingsUsd = storePriceUsd - supplierPriceUsd;
-    const savingsPercent = Math.round((savingsUsd / storePriceUsd) * 100);
+    // A public grid of "save N%" is a claim about a named store: only scans
+    // whose own tier speaks, only real deltas (spec 0002, REQ-10).
+    const claim = claimableSavings({
+      prediction: ai?.prediction,
+      storePriceUsd,
+      supplierPriceUsd,
+    });
+    if (!claim) continue;
+    const { savingsUsd, savingsPercent } = claim;
 
     items.push({
       scanId: row.id,
