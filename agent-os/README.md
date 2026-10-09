@@ -20,6 +20,8 @@ agent-os/
     eval/             # which gates to run, what they don't prove, the corpus
     scraping/         # provider chain, error surfacing
     extension/        # render verbatim, fail closed
+    sdd/              # spec-driven workflow + the constitution plans are checked against
+  specs/              # NNNN-slug/{spec,plan,tasks}.md — one per behaviour change
   product/
     context.md        # thesis, phases, open strategic questions
     key-files.md      # the file map — orientation, not an invariant
@@ -40,7 +42,8 @@ create a folder named `root`.
 ```
 
 Only `standards/` is injectable. `product/` and `tools/` are orientation — read
-them directly.
+them directly. `specs/` is the work itself — see `specs/README.md` and the
+`/sdd:*` commands.
 
 ## Which standards matter for what
 
@@ -57,6 +60,7 @@ them directly.
 | CSS, tokens, motion, surfaces | `design/tokens`, `design/motion`, `design/surfaces` |
 | spending context, or writing a subagent prompt | `context/token-economy`, `context/delegation` |
 | editing `CLAUDE.md` or any standard | `context/single-source`, `context/caveman` |
+| any behaviour change | `sdd/workflow`, `sdd/constitution` — write the spec first |
 | any nontrivial change | `change-discipline`, `code-navigation` |
 
 ## Adding a standard
