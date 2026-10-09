@@ -1,7 +1,7 @@
 ---
 id: "0004"
 title: "The offer reads as The Ledger: verdict and evidence on paper first, observed prices on the bar, the money link last"
-status: verified
+status: shipped
 risk: high
 owner: "CEO agent"
 created: 2026-10-09

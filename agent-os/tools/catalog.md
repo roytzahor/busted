@@ -62,6 +62,10 @@ Rejected:
 - `security-guidance`: an edit-time hook that calls a model on every change, a per-firing cost of the kind lessons 2026-09-14 warns about. `/security-review` covers the same ground on demand.
 - `typescript-lsp`: needs a global `typescript-language-server`, and codebase-memory already answers structural questions locally.
 
+Design plugins seen in the claude.ai directory on 2026-10-09, with the keep and
+reject reasoning: see `agent-os/specs/0007-design-direction-v2/spec.md`. They
+are user-level plugins, so an agent cannot enable them for the owner.
+
 Also available on claude.ai accounts with the Anthropic **Design** plugin:
 `design:design-critique`, `design:accessibility-review`, `design:ux-copy`,
 `design:design-system`. Use `ux-copy` for verdict and disclosure microcopy,
