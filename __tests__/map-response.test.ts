@@ -94,6 +94,13 @@ describe("mapAnalyzeResponseToComparison — the tier decides whether an offer e
     expect(cmp.supplierProduct.affiliateUrl).toBeUndefined();
   });
 
+  // @spec 0004/AC-5
+  it("carries the verdict into the comparison so the offer can state its reasoning", () => {
+    const r = response();
+    const cmp = mapAnalyzeResponseToComparison(r)!.comparison!;
+    expect(cmp.dropshipPrediction).toEqual(r.dropshipPrediction);
+  });
+
   // @spec 0002/AC-9
   it("passes real supplier metrics and a real delta through untouched", () => {
     const mapped = mapAnalyzeResponseToComparison(

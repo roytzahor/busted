@@ -1,3 +1,4 @@
+import type { DropshipPrediction } from "@/lib/ai/dropship-verifier";
 import type { PresenceTier } from "@/lib/analyze/presence-tier";
 
 export interface StoreProduct {
@@ -51,6 +52,11 @@ export interface ProductComparisonResult {
    * and a silent scan renders no offer (spec 0002, trust/presence-tier-contract).
    */
   presenceTier?: PresenceTier;
+  /**
+   * The verdict behind the offer, passed through untouched so the result can
+   * state its reasoning before the money link (spec 0004, DESIGN §8.1).
+   */
+  dropshipPrediction?: DropshipPrediction;
   matchConfidence?: number;
   matchQuality?: SupplierMatchQuality;
   matchReasons?: string[];

@@ -175,6 +175,7 @@ export function mapAnalyzeResponseToComparison(
         scanId: response.scanId,
         cache: response.cache,
         presenceTier,
+        ...(response.dropshipPrediction ? { dropshipPrediction: response.dropshipPrediction } : {}),
         storeProduct: {
           ...storeProduct,
           priceUsd: storePriceUsd,

@@ -146,10 +146,12 @@ describe("AnalysisResults — accusation wording follows the tier", () => {
 
 describe("AnalysisResults — disclosure and links", () => {
   // @spec 0002/AC-6
-  it("puts a disclosure before every sponsored link, including the sticky mobile bar", () => {
+  it("puts a disclosure before every sponsored link, in its own container", () => {
     const html = render(comparison());
     const anchors = sponsoredAnchors(html);
-    expect(anchors.length).toBe(2); // main CTA + sticky bar
+    // One money link. Spec 0004 removed the sticky mobile bar: a pinned CTA
+    // precedes the reasoning, which DESIGN.md §8.1/§11 forbids.
+    expect(anchors.length).toBe(1);
     for (const a of anchors) expect(a.tag).toContain('rel="noopener noreferrer sponsored"');
     expect(eachLinkHasPrecedingDisclosure(html)).toBe(true);
   });
