@@ -1,5 +1,13 @@
 # Shape Spec
 
+> **In this repo, specs are written with `/sdd:specify`** (then `/sdd:plan`,
+> `/sdd:tasks`, `/sdd:implement`, `/sdd:verify`) — see
+> `agent-os/standards/sdd/workflow.md`. This interactive interview is still
+> useful when a human wants to shape an idea together, but its output must land
+> in the SDD format (`agent-os/specs/NNNN-slug/spec.md` from `_templates/`,
+> scaffolded with `npm run sdd:new`), not the date-stamped folder layout below,
+> or `npm run sdd:check` will fail it.
+
 Gather context and structure planning for significant work. **Run this command while in plan mode.**
 
 ## Important Guidelines
